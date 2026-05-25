@@ -1,0 +1,26 @@
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Eclipse / VS Code (혹시 사용 시)
+.vscode/
+.classpath
+.project
+.settings/
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
+
+# 빌드 산출물 (api/.gitignore에도 있지만 루트에서도 안전망)
+build/
+target/
+
+# 환경 변수
+.env
+.env.local
