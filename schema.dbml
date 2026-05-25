@@ -1,0 +1,149 @@
+// 오늘의 우리 — Database Schema
+// dbdiagram.io에 그대로 붙여넣기
+
+Project our_today {
+  database_type: 'PostgreSQL'
+  Note: '연인용 3줄 일기 + 아카이빙 앱'
+}
+
+// ===== Enums =====
+Enum couple_status {
+  PENDING
+  CONNECTED
+  BROKEN
+}
+
+Enum emoji_type {
+  HEART
+  LAUGH
+  SURPRISE
+  SAD
+  FIRE
+}
+
+// ===== Tables =====
+
+Table users {
+  id uuid [pk]
+  kakao_id varchar [unique, not null, note: '카카오 OAuth 식별자']
+  nickname varchar [not null]
+  profile_image_url varchar
+  created_at timestamp [not null, default: `now()`]
+}
+
+Table user_settings {
+  user_id uuid [pk]
+  notify_memory_today boolean [not null, default: true, note: '작년 오늘 알림']
+  notify_partner_post boolean [not null, default: true, note: '상대가 글/메모 작성 시 알림']
+  updated_at timestamp [not null, default: `now()`]
+}
+
+Table couples {
+  id uuid [pk]
+  invite_code varchar [unique, note: '6~8자리, 두 번째 멤버 합류 시 NULL 처리']
+  invite_code_expires_at timestamp
+  started_at date [note: '두 번째 멤버 합류 시점에 세팅, 마이페이지에서 수정 가능']
+  status couple_status [not null, default: 'PENDING']
+  created_at timestamp [not null, default: `now()`]
+
+  Indexes {
+    invite_code
+  }
+}
+
+Table couple_members {
+  couple_id uuid [not null]
+  user_id uuid [not null]
+  joined_at timestamp [not null, default: `now()`]
+
+  Indexes {
+    (couple_id, user_id) [pk]
+    user_id [note: '활성 커플 1개 제약은 애플리케이션 레벨에서 처리']
+  }
+}
+
+Table posts {
+  id uuid [pk]
+  couple_id uuid [not null]
+  author_id uuid [not null]
+  content varchar(300) [not null, note: '3줄 일기 본문']
+  posted_date date [not null, note: '작년 오늘 조회의 핵심']
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+
+  Indexes {
+    (couple_id, posted_date) [name: 'idx_posts_couple_date']
+    (couple_id, author_id, created_at) [name: 'idx_posts_couple_author']
+  }
+}
+
+Table post_images {
+  id uuid [pk]
+  post_id uuid [not null]
+  image_url varchar [not null, note: 'S3 객체 URL 또는 key']
+  display_order int [not null, default: 0]
+}
+
+Table reactions {
+  id uuid [pk]
+  post_id uuid [not null]
+  user_id uuid [not null]
+  emoji_type emoji_type [not null]
+  created_at timestamp [not null, default: `now()`]
+
+  Indexes {
+    (post_id, user_id, emoji_type) [unique]
+    post_id
+  }
+}
+
+Table calendar_memos {
+  id uuid [pk]
+  couple_id uuid [not null]
+  author_id uuid [not null]
+  date date [not null, note: '메모가 표시될 날짜']
+  title varchar(50) [not null]
+  description text
+  color varchar [note: '예: #FFB6C1']
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+
+  Indexes {
+    (couple_id, date) [name: 'idx_memos_couple_date']
+  }
+}
+
+Table bucket_items {
+  id uuid [pk]
+  couple_id uuid [not null]
+  created_by uuid [not null]
+  title varchar [not null]
+  description text
+  target_date date
+  is_completed boolean [not null, default: false]
+  completed_post_id uuid [note: '완료 시 어떤 게시글에서 달성했는지 연결']
+  created_at timestamp [not null, default: `now()`]
+  completed_at timestamp
+}
+
+// ===== References =====
+
+Ref: user_settings.user_id > users.id
+
+Ref: couple_members.couple_id > couples.id
+Ref: couple_members.user_id > users.id
+
+Ref: posts.couple_id > couples.id
+Ref: posts.author_id > users.id
+
+Ref: post_images.post_id > posts.id
+
+Ref: reactions.post_id > posts.id
+Ref: reactions.user_id > users.id
+
+Ref: calendar_memos.couple_id > couples.id
+Ref: calendar_memos.author_id > users.id
+
+Ref: bucket_items.couple_id > couples.id
+Ref: bucket_items.created_by > users.id
+Ref: bucket_items.completed_post_id > posts.id

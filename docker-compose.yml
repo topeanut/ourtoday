@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: ourtoday-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ourtoday
+      POSTGRES_USER: ourtoday
+      POSTGRES_PASSWORD: ourtoday_dev_pw
+    ports:
+      - "5432:5432"
+    volumes:
+      - ourtoday_pgdata:/var/lib/postgresql/data
+
+volumes:
+  ourtoday_pgdata:
