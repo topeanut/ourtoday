@@ -395,3 +395,50 @@
   "size": 20
 }
 ```
+
+---
+
+## 중요 엔드포인트 요약
+
+인증
+GET /auth/kakao/callback - 카카오 로그인 후 JWT 발급
+POST /auth/refresh - 액세스 토큰 재발급
+
+온보딩
+GET /users/me/onboarding-status - 커플 매칭 상태 확인
+
+커플 매칭
+POST /couples/invite - 초대코드 생성
+POST /couples/join - 초대코드로 합류
+GET /couples/me - 내 커플 정보
+
+게시글
+POST /posts - 작성
+GET /posts - 목록 (페이징)
+GET /posts/{id} - 상세, 공유 링크에서 호출
+GET /posts/memories/today - 작년 오늘
+
+이미지 업로드
+POST /images/presigned-url - S3 업로드 URL 발급
+
+반응
+POST /posts/{id}/reactions - 이모지 토글
+
+캘린더 메모
+POST /calendar/memos - 메모 생성
+GET /calendar/memos - 월간 조회 (from, to 쿼리)
+
+버킷리스트
+POST /bucket-items - 추가
+GET /bucket-items - 목록
+PATCH /bucket-items/{id}/complete - 완료 처리
+
+통계
+GET /couples/me/stats - 작성 횟수, 연속일, 사귄 일수
+
+마이페이지
+GET /users/me - 프로필 조회
+PATCH /users/me - 프로필 수정
+GET /users/me/settings - 알림 설정 조회
+PATCH /users/me/settings - 알림 설정 수정
+
