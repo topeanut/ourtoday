@@ -24,3 +24,9 @@ target/
 # 환경 변수
 .env
 .env.local
+
+# 개인 문서 (저장소 미공개)
+API.md
+API-CONVENTIONS.md
+PLAN.md
+todo.md
