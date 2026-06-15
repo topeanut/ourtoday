@@ -29,7 +29,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         Authentication authentication
     ) throws IOException {
         OAuth2User oauth2User = (OAuth2User) authentication.getPrincipal();
-        String kakaoId = String.valueOf(oauth2User.getAttribute("id"));
+        String kakaoId = oauth2User.getAttributes().get("id").toString();
 
         User user = userService.findOrCreateByKakaoId(kakaoId);
         String accessToken = tokenProvider.generateAccessToken(user.getId());
