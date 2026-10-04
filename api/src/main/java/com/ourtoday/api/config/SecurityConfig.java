@@ -2,6 +2,7 @@ package com.ourtoday.api.config;
 
 import com.ourtoday.api.auth.JwtAuthenticationFilter;
 import com.ourtoday.api.auth.OAuth2LoginSuccessHandler;
+import com.ourtoday.api.auth.RestAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -17,6 +18,7 @@ public class SecurityConfig {
 
     private final OAuth2LoginSuccessHandler oauth2LoginSuccessHandler;
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final RestAuthenticationEntryPoint restAuthenticationEntryPoint;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -34,6 +36,7 @@ public class SecurityConfig {
                 ).permitAll()
                 .anyRequest().authenticated()
             )
+            .exceptionHandling(e -> e.authenticationEntryPoint(restAuthenticationEntryPoint))
             .oauth2Login(oauth -> oauth.successHandler(oauth2LoginSuccessHandler))
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
