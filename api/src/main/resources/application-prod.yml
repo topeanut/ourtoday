@@ -1,0 +1,39 @@
+# 운영 프로필 — SPRING_PROFILES_ACTIVE=prod 로 활성화
+# 비밀값은 전부 환경변수로 주입 (기본값 없음 → 누락 시 부팅 실패)
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+
+  jpa:
+    hibernate:
+      ddl-auto: update   # 마이그레이션 도구(Flyway) 도입 전까지 임시
+    properties:
+      hibernate:
+        format_sql: false
+    show-sql: false
+
+  security:
+    oauth2:
+      client:
+        registration:
+          kakao:
+            client-id: ${KAKAO_CLIENT_ID}
+            client-secret: ${KAKAO_CLIENT_SECRET}
+            # Vercel 프록시가 원래 Host 를 넘기지 않아 {baseUrl} 로는 EC2 IP 가 잡힘 → 명시
+            redirect-uri: ${KAKAO_REDIRECT_URI}
+
+app:
+  jwt:
+    secret: ${JWT_SECRET}
+
+server:
+  # Nginx 리버스 프록시 뒤에서 {baseUrl} 이 https/도메인으로 잡히도록
+  forward-headers-strategy: framework
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
