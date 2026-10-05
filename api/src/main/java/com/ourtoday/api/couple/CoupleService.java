@@ -103,6 +103,24 @@ public class CoupleService {
         return toResponse(couple);
     }
 
+    /** 연결된 커플 ID. 없으면 COUPLE_REQUIRED */
+    @Transactional(readOnly = true)
+    public UUID getConnectedCoupleId(UUID userId) {
+        return coupleRepository.findByMemberUserId(userId)
+            .filter(Couple::isConnected)
+            .map(Couple::getId)
+            .orElseThrow(() -> new BusinessException(ErrorCode.COUPLE_REQUIRED));
+    }
+
+    @Transactional(readOnly = true)
+    public UUID getPartnerId(UUID coupleId, UUID userId) {
+        return coupleMemberRepository.findByCoupleIdOrderByJoinedAtAsc(coupleId).stream()
+            .map(CoupleMember::getUserId)
+            .filter(id -> !id.equals(userId))
+            .findFirst()
+            .orElseThrow(() -> new BusinessException(ErrorCode.COUPLE_REQUIRED));
+    }
+
     private CoupleResponse toResponse(Couple couple) {
         List<UUID> memberIds = coupleMemberRepository.findByCoupleIdOrderByJoinedAtAsc(couple.getId()).stream()
             .map(CoupleMember::getUserId)

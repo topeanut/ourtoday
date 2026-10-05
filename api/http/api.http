@@ -1,7 +1,8 @@
-### 온보딩 흐름 (IntelliJ HTTP Client)
+### 오늘의 우리 API (IntelliJ HTTP Client)
 # 토큰: 브라우저에서 {{host}}/oauth2/authorization/kakao 로 로그인 → accessToken 복사
 @host = http://localhost:8080
 @token = 여기에_accessToken
+@postId = 여기에_게시글ID
 
 ### 내 프로필
 GET {{host}}/api/v1/users/me
@@ -31,4 +32,31 @@ Content-Type: application/json
 
 ### 내 커플
 GET {{host}}/api/v1/couples/me
+Authorization: Bearer {{token}}
+
+### ===== 게시글 =====
+### 작성
+POST {{host}}/api/v1/posts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "content": "오늘 처음 같이 본 영화", "postedDate": "2026-10-05" }
+
+### 목록 (정렬: sort=postedDate,desc | postedDate,asc | createdAt,desc | createdAt,asc)
+GET {{host}}/api/v1/posts?sort=postedDate,desc&author=me&page=0&size=20
+Authorization: Bearer {{token}}
+
+### 상세
+GET {{host}}/api/v1/posts/{{postId}}
+Authorization: Bearer {{token}}
+
+### 수정 (작성자만)
+PATCH {{host}}/api/v1/posts/{{postId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "content": "고친 내용", "postedDate": "2026-10-04" }
+
+### 삭제 (작성자만)
+DELETE {{host}}/api/v1/posts/{{postId}}
 Authorization: Bearer {{token}}
