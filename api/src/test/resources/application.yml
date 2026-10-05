@@ -42,5 +42,11 @@ app:
     secret: test_secret_minimum_32_chars_for_hs256_algorithm_padding_xxxxxxxx
     access-token-validity-ms: 1800000
     refresh-token-validity-ms: 1209600000
+  storage:
+    endpoint:
+    region: auto
+    bucket: test-bucket
+    upload-url-ttl: 10m
+    download-url-ttl: 1h
   oauth2:
     success-redirect-uri:

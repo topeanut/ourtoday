@@ -45,6 +45,15 @@ app:
     secret: ${JWT_SECRET:dev_only_change_me_minimum_32_chars_for_hs256_algorithm_padding}
     access-token-validity-ms: 1800000   # 30분
     refresh-token-validity-ms: 1209600000   # 14일
+  storage:
+    # Cloudflare R2 (S3 호환). endpoint 비우면 이미지 기능 비활성
+    endpoint: ${STORAGE_ENDPOINT:}
+    region: auto
+    bucket: ${STORAGE_BUCKET:ourtoday-images}
+    access-key: ${STORAGE_ACCESS_KEY:}
+    secret-key: ${STORAGE_SECRET_KEY:}
+    upload-url-ttl: 10m
+    download-url-ttl: 1h
   oauth2:
     # 로그인 성공 후 프론트 주소 (예: https://ourtoday.vercel.app/auth/callback). 비우면 JSON 응답
     success-redirect-uri: ${OAUTH2_SUCCESS_REDIRECT_URI:}

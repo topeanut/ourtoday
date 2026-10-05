@@ -30,6 +30,7 @@ import java.util.UUID;
 public class Post {
 
     public static final int CONTENT_MAX_LENGTH = 300;
+    public static final int MAX_IMAGES = 4;
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

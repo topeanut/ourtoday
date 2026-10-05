@@ -3,6 +3,7 @@ package com.ourtoday.api.post;
 import com.ourtoday.api.common.error.BusinessException;
 import com.ourtoday.api.common.error.ErrorCode;
 import com.ourtoday.api.couple.CoupleService;
+import com.ourtoday.api.image.ImageService;
 import com.ourtoday.api.post.dto.PostCreateRequest;
 import com.ourtoday.api.post.dto.PostResponse;
 import com.ourtoday.api.post.dto.PostUpdateRequest;
@@ -21,6 +22,8 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -36,16 +39,22 @@ public class PostService {
     private static final ZoneId SERVICE_ZONE = ZoneId.of("Asia/Seoul");
 
     private final PostRepository postRepository;
+    private final PostImageRepository postImageRepository;
     private final UserRepository userRepository;
     private final CoupleService coupleService;
+    private final ImageService imageService;
     private final Clock clock;
 
     @Transactional
     public PostResponse create(UUID userId, PostCreateRequest request) {
         validatePostedDate(request.postedDate());
         UUID coupleId = coupleService.getConnectedCoupleId(userId);
+        List<String> imageKeys = normalizeImageKeys(request.imageKeys());
+        imageService.verifyAttachable(coupleId, imageKeys);
+
         Post post = postRepository.save(Post.create(coupleId, userId, request.content().strip(), request.postedDate()));
-        return toResponse(post, loadUsers(Set.of(userId)));
+        saveImages(post.getId(), imageKeys);
+        return toResponse(post);
     }
 
     /**
@@ -68,13 +77,13 @@ public class PostService {
         Page<Post> page = postRepository.findAll(spec, withStableSort(pageable));
 
         Map<UUID, User> users = loadUsers(page.map(Post::getAuthorId).toSet());
-        return page.map(p -> toResponse(p, users));
+        Map<UUID, List<PostImage>> images = loadImages(page.map(Post::getId).toSet());
+        return page.map(p -> toResponse(p, users, images));
     }
 
     @Transactional(readOnly = true)
     public PostResponse get(UUID userId, UUID postId) {
-        Post post = getPostInMyCouple(userId, postId);
-        return toResponse(post, loadUsers(Set.of(post.getAuthorId())));
+        return toResponse(getPostInMyCouple(userId, postId));
     }
 
     @Transactional
@@ -82,12 +91,32 @@ public class PostService {
         validatePostedDate(request.postedDate());
         Post post = getMyPost(userId, postId);
         post.update(request.content().strip(), request.postedDate());
-        return toResponse(post, loadUsers(Set.of(userId)));
+
+        if (request.imageKeys() != null) {
+            List<String> newKeys = normalizeImageKeys(request.imageKeys());
+            List<String> oldKeys = postImageRepository.findByPostIdOrderByDisplayOrderAsc(postId).stream()
+                .map(PostImage::getImageKey)
+                .toList();
+            // 기존 이미지는 이미 검증됨 → 새로 추가된 것만 검증
+            imageService.verifyAttachable(post.getCoupleId(), newKeys.stream().filter(k -> !oldKeys.contains(k)).toList());
+
+            postImageRepository.deleteByPostId(postId);
+            postImageRepository.flush();
+            saveImages(postId, newKeys);
+            imageService.deleteAfterCommit(oldKeys.stream().filter(k -> !newKeys.contains(k)).toList());
+        }
+        return toResponse(post);
     }
 
     @Transactional
     public void delete(UUID userId, UUID postId) {
-        postRepository.delete(getMyPost(userId, postId));
+        Post post = getMyPost(userId, postId);
+        List<String> keys = postImageRepository.findByPostIdOrderByDisplayOrderAsc(postId).stream()
+            .map(PostImage::getImageKey)
+            .toList();
+        postImageRepository.deleteByPostId(postId);
+        postRepository.delete(post);
+        imageService.deleteAfterCommit(keys);
     }
 
     private Post getPostInMyCouple(UUID userId, UUID postId) {
@@ -143,18 +172,52 @@ public class PostService {
         }
     }
 
+    private List<String> normalizeImageKeys(List<String> keys) {
+        if (keys == null) {
+            return List.of();
+        }
+        List<String> stripped = keys.stream().map(String::strip).toList();
+        if (new HashSet<>(stripped).size() != stripped.size()) {
+            throw new BusinessException(ErrorCode.VALIDATION_FAILED, "같은 이미지를 두 번 넣을 수 없습니다.");
+        }
+        return stripped;
+    }
+
+    private void saveImages(UUID postId, List<String> keys) {
+        for (int i = 0; i < keys.size(); i++) {
+            postImageRepository.save(PostImage.of(postId, keys.get(i), i));
+        }
+    }
+
     private Map<UUID, User> loadUsers(Collection<UUID> ids) {
         return userRepository.findAllById(ids).stream()
             .collect(Collectors.toMap(User::getId, Function.identity()));
     }
 
-    private PostResponse toResponse(Post post, Map<UUID, User> users) {
+    private Map<UUID, List<PostImage>> loadImages(Collection<UUID> postIds) {
+        if (postIds.isEmpty()) {
+            return Map.of();
+        }
+        return postImageRepository.findByPostIdInOrderByDisplayOrderAsc(postIds).stream()
+            .collect(Collectors.groupingBy(PostImage::getPostId));
+    }
+
+    private PostResponse toResponse(Post post) {
+        return toResponse(post, loadUsers(Set.of(post.getAuthorId())), loadImages(Set.of(post.getId())));
+    }
+
+    private PostResponse toResponse(Post post, Map<UUID, User> users, Map<UUID, List<PostImage>> images) {
         User author = users.get(post.getAuthorId());
+        List<PostResponse.Image> imageResponses = images.getOrDefault(post.getId(), List.of()).stream()
+            .map(img -> new PostResponse.Image(
+                imageService.downloadUrl(img.getImageKey()), img.getImageKey(), img.getDisplayOrder()))
+            .toList();
         return new PostResponse(
             post.getId(),
             new PostResponse.Author(author.getId(), author.getNickname(), author.getProfileImageUrl()),
             post.getContent(),
             post.getPostedDate(),
+            imageResponses,
             post.getCreatedAt(),
             post.getUpdatedAt()
         );

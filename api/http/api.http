@@ -60,3 +60,18 @@ Content-Type: application/json
 ### 삭제 (작성자만)
 DELETE {{host}}/api/v1/posts/{{postId}}
 Authorization: Bearer {{token}}
+
+### ===== 이미지 =====
+### 1) 업로드 URL 발급
+POST {{host}}/api/v1/images/presigned-url
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "contentType": "image/jpeg", "contentLength": 2048000 }
+
+### 2) 응답의 uploadUrl 로 PUT (Content-Type/Content-Length 동일하게), 3) imageKey 를 게시글에
+POST {{host}}/api/v1/posts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "content": "사진 일기", "postedDate": "2026-10-05", "imageKeys": ["couples/.../posts/....jpg"] }
