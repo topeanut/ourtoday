@@ -18,7 +18,20 @@
 
 > 무료 ARM(A1) 서버는 오사카 재고 부족("Out of host capacity")으로 못 만들었음. 여유 생기면 A1 로 옮기면 사양↑ + 서버 빌드 가능.
 
-## 재배포 (저사양 서버라 jar 는 로컬에서 빌드)
+## 자동화 (2026-10-25~)
+
+| 무엇 | 어떻게 | 확인 |
+|------|--------|------|
+| **자동 배포** | `main` 에 `api/**` push → GitHub Actions(`.github/workflows/deploy.yml`) 가 test·bootJar 후 `ghcr.io/buildup2026/ourtoday-api:latest` 푸시 → 서버 타이머 `ourtoday-deploy-pull`(2분) 가 새 이미지면 교체 | `journalctl -u ourtoday-deploy-pull -n 20` |
+| **DB 백업** | 타이머 `ourtoday-backup` 매일 04:00 KST → 서버 `~/backups`(7일) + Object Storage `ourtoday-backup/db/`(30일) | `journalctl -u ourtoday-backup -n 5` |
+| **ARM 재시도** | 타이머 `ourtoday-arm-retry` 10분마다 무료 A1(2코어/12GB) `ourtoday-arm` 생성 시도, 성공 시 `~/ARM_CREATED` 기록 후 타이머 자동 해제 → 이관은 수동 | `journalctl -u ourtoday-arm-retry -n 5`, `cat ~/ARM_CREATED` |
+
+- 서버는 인스턴스 프린시펄(동적 그룹 `ourtoday-vm` + 정책 `ourtoday-vm-policy`)로 OCI API 호출 — 키 파일 없음
+- GHCR 읽기 토큰(classic PAT, `read:packages`)으로 서버 `docker login` 되어 있음. **토큰 만료 시 자동 배포만 멈춤** → 새 토큰으로 다시 로그인
+- 서버 `.env` 의 `COMPOSE_FILE=docker-compose.prod.yml:docker-compose.image.yml` 때문에 서버에서 `docker compose ...` 는 GHCR 이미지 기준으로 동작
+- 타이머 재설치: `bash ~/ourtoday/ops/install-timers.sh`
+
+## 수동 재배포 (자동 배포가 안 될 때, 저사양 서버라 jar 는 로컬에서 빌드)
 
 ```bash
 # 로컬 (프로젝트 루트)
