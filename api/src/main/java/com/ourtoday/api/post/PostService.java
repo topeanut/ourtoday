@@ -7,6 +7,8 @@ import com.ourtoday.api.image.ImageService;
 import com.ourtoday.api.post.dto.PostCreateRequest;
 import com.ourtoday.api.post.dto.PostResponse;
 import com.ourtoday.api.post.dto.PostUpdateRequest;
+import com.ourtoday.api.reaction.ReactionCount;
+import com.ourtoday.api.reaction.ReactionRepository;
 import com.ourtoday.api.user.User;
 import com.ourtoday.api.user.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +24,7 @@ import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -40,6 +43,7 @@ public class PostService {
 
     private final PostRepository postRepository;
     private final PostImageRepository postImageRepository;
+    private final ReactionRepository reactionRepository;
     private final UserRepository userRepository;
     private final CoupleService coupleService;
     private final ImageService imageService;
@@ -54,7 +58,7 @@ public class PostService {
 
         Post post = postRepository.save(Post.create(coupleId, userId, request.content().strip(), request.postedDate()));
         saveImages(post.getId(), imageKeys);
-        return toResponse(post);
+        return toResponse(post, userId);
     }
 
     /**
@@ -77,13 +81,15 @@ public class PostService {
         Page<Post> page = postRepository.findAll(spec, withStableSort(pageable));
 
         Map<UUID, User> users = loadUsers(page.map(Post::getAuthorId).toSet());
-        Map<UUID, List<PostImage>> images = loadImages(page.map(Post::getId).toSet());
-        return page.map(p -> toResponse(p, users, images));
+        Set<UUID> postIds = page.map(Post::getId).toSet();
+        Map<UUID, List<PostImage>> images = loadImages(postIds);
+        Map<UUID, List<ReactionCount>> reactions = loadReactions(postIds, userId);
+        return page.map(p -> toResponse(p, users, images, reactions));
     }
 
     @Transactional(readOnly = true)
     public PostResponse get(UUID userId, UUID postId) {
-        return toResponse(getPostInMyCouple(userId, postId));
+        return toResponse(getPostInMyCouple(userId, postId), userId);
     }
 
     @Transactional
@@ -105,7 +111,7 @@ public class PostService {
             saveImages(postId, newKeys);
             imageService.deleteAfterCommit(oldKeys.stream().filter(k -> !newKeys.contains(k)).toList());
         }
-        return toResponse(post);
+        return toResponse(post, userId);
     }
 
     @Transactional
@@ -115,11 +121,14 @@ public class PostService {
             .map(PostImage::getImageKey)
             .toList();
         postImageRepository.deleteByPostId(postId);
+        reactionRepository.deleteByPostId(postId);
         postRepository.delete(post);
         imageService.deleteAfterCommit(keys);
     }
 
-    private Post getPostInMyCouple(UUID userId, UUID postId) {
+    /** 우리 커플 글인지 확인 후 반환 (반응 등 다른 도메인에서도 사용) */
+    @Transactional(readOnly = true)
+    public Post getPostInMyCouple(UUID userId, UUID postId) {
         UUID coupleId = coupleService.getConnectedCoupleId(userId);
         Post post = postRepository.findById(postId)
             .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "게시글을 찾을 수 없습니다."));
@@ -202,15 +211,29 @@ public class PostService {
             .collect(Collectors.groupingBy(PostImage::getPostId));
     }
 
-    private PostResponse toResponse(Post post) {
-        return toResponse(post, loadUsers(Set.of(post.getAuthorId())), loadImages(Set.of(post.getId())));
+    private Map<UUID, List<ReactionCount>> loadReactions(Collection<UUID> postIds, UUID viewerId) {
+        if (postIds.isEmpty()) {
+            return Map.of();
+        }
+        return reactionRepository.countByPostIds(postIds, viewerId).stream()
+            .collect(Collectors.groupingBy(ReactionCount::postId));
     }
 
-    private PostResponse toResponse(Post post, Map<UUID, User> users, Map<UUID, List<PostImage>> images) {
+    private PostResponse toResponse(Post post, UUID viewerId) {
+        Set<UUID> ids = Set.of(post.getId());
+        return toResponse(post, loadUsers(Set.of(post.getAuthorId())), loadImages(ids), loadReactions(ids, viewerId));
+    }
+
+    private PostResponse toResponse(Post post, Map<UUID, User> users, Map<UUID, List<PostImage>> images,
+                                    Map<UUID, List<ReactionCount>> reactions) {
         User author = users.get(post.getAuthorId());
         List<PostResponse.Image> imageResponses = images.getOrDefault(post.getId(), List.of()).stream()
             .map(img -> new PostResponse.Image(
                 imageService.downloadUrl(img.getImageKey()), img.getImageKey(), img.getDisplayOrder()))
+            .toList();
+        List<PostResponse.Reaction> reactionResponses = reactions.getOrDefault(post.getId(), List.of()).stream()
+            .sorted(Comparator.comparing(ReactionCount::emojiType))
+            .map(r -> new PostResponse.Reaction(r.emojiType(), r.count(), r.reactedByMe()))
             .toList();
         return new PostResponse(
             post.getId(),
@@ -218,6 +241,7 @@ public class PostService {
             post.getContent(),
             post.getPostedDate(),
             imageResponses,
+            reactionResponses,
             post.getCreatedAt(),
             post.getUpdatedAt()
         );

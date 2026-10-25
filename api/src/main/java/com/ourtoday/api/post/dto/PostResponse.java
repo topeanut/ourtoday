@@ -1,5 +1,6 @@
 package com.ourtoday.api.post.dto;
 
+import com.ourtoday.api.reaction.EmojiType;
 import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.time.Instant;
@@ -13,6 +14,7 @@ public record PostResponse(
     @Schema(description = "본문") String content,
     @Schema(description = "기록 날짜") LocalDate postedDate,
     @Schema(description = "이미지 (표시 순서)") List<Image> images,
+    @Schema(description = "반응 집계 (1개 이상인 이모지만, HEART→FIRE 순)") List<Reaction> reactions,
     @Schema(description = "작성 시각") Instant createdAt,
     @Schema(description = "수정 시각") Instant updatedAt
 ) {
@@ -27,5 +29,11 @@ public record PostResponse(
         @Schema(description = "임시 조회 URL (1시간 유효)") String url,
         @Schema(description = "수정 시 imageKeys 에 다시 넣을 값") String imageKey,
         int order
+    ) {}
+
+    public record Reaction(
+        EmojiType emojiType,
+        long count,
+        @Schema(description = "내가 누른 반응인지") boolean reactedByMe
     ) {}
 }

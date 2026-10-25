@@ -75,3 +75,11 @@ Authorization: Bearer {{token}}
 Content-Type: application/json
 
 { "content": "사진 일기", "postedDate": "2026-10-05", "imageKeys": ["couples/.../posts/....jpg"] }
+
+### ===== 반응 =====
+### 토글 (HEART, LAUGH, SURPRISE, SAD, FIRE)
+POST {{host}}/api/v1/posts/{{postId}}/reactions
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "emojiType": "HEART" }
