@@ -1,0 +1,7 @@
+# 서버 자동 배포용 오버라이드: 로컬 빌드 대신 GHCR 이미지 사용
+#   docker compose -f docker-compose.prod.yml -f docker-compose.image.yml up -d
+services:
+  api:
+    image: ghcr.io/buildup2026/ourtoday-api:latest
+    pull_policy: always
+    build: !reset null
