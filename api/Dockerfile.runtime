@@ -1,0 +1,8 @@
+# 저사양 서버용 — 로컬에서 빌드한 jar 만 담음 (서버에서 Gradle 빌드 안 함)
+#   로컬: ./gradlew bootJar → build/libs/app.jar 를 서버 api/build/libs/ 로 업로드
+FROM eclipse-temurin:21-jre
+WORKDIR /app
+COPY build/libs/app.jar app.jar
+ENV JAVA_OPTS="-Xms256m -Xmx384m"
+EXPOSE 8080
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]

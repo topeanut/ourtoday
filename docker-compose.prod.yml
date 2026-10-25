@@ -19,7 +19,10 @@ services:
     # 외부 포트 노출 안 함 (api 컨테이너만 접근)
 
   api:
-    build: ./api
+    build:
+      context: ./api
+      # 저사양 서버는 .env 에 API_DOCKERFILE=Dockerfile.runtime (로컬 빌드 jar 사용)
+      dockerfile: ${API_DOCKERFILE:-Dockerfile}
     container_name: ourtoday-api
     restart: unless-stopped
     depends_on:
