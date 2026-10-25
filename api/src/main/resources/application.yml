@@ -46,9 +46,9 @@ app:
     access-token-validity-ms: 1800000   # 30분
     refresh-token-validity-ms: 1209600000   # 14일
   storage:
-    # Cloudflare R2 (S3 호환). endpoint 비우면 이미지 기능 비활성
+    # S3 호환 저장소 (운영: Oracle Object Storage). endpoint 비우면 이미지 기능 비활성
     endpoint: ${STORAGE_ENDPOINT:}
-    region: auto
+    region: ${STORAGE_REGION:auto}
     bucket: ${STORAGE_BUCKET:ourtoday-images}
     access-key: ${STORAGE_ACCESS_KEY:}
     secret-key: ${STORAGE_SECRET_KEY:}
