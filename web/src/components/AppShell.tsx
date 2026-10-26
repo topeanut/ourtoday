@@ -27,7 +27,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const hideTabs = /^\/posts\/(new|[^/]+\/edit)/.test(pathname);
 
   useEffect(() => {
-    markNavigation();
+    markNavigation(pathname);
   }, [pathname]);
 
   return (

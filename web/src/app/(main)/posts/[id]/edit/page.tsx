@@ -3,7 +3,7 @@
 import { use } from "react";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
-import { api, fetcher } from "@/lib/api";
+import { api, fetcher, revalidateAll } from "@/lib/api";
 import { goBack } from "@/lib/nav";
 import type { Post } from "@/lib/types";
 import { PageHeader } from "@/components/AppShell";
@@ -42,6 +42,7 @@ export default function EditPostPage({ params }: { params: Promise<{ id: string 
             onSubmit={async (value) => {
               await api<Post>(`/posts/${id}`, { method: "PATCH", body: value });
               toast("수정했어요");
+              await revalidateAll();
               router.replace(`/posts/${id}`);
             }}
           />

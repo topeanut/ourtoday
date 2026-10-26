@@ -14,11 +14,13 @@ npm install
 BACKEND_ORIGIN=http://localhost:8080 npx next dev -p 3100   # 3000 은 다른 프로젝트가 쓰는 경우가 있음
 ```
 
-백엔드 없이 화면만 보려면 `api` 에서 샘플 데이터로 띄운 뒤 토큰을 localStorage 에 넣는다.
+**한 번에 실행 (추천)**: 백엔드(메모리 DB + 샘플 데이터 + 임시 로그인 + 가짜 사진 저장소) + 프론트
 
 ```bash
-cd ../api && ./gradlew bootTestRun --args='--spring.profiles.active=seed'   # build/seed-tokens.txt
+bash ../ops/local.sh   # → http://localhost:3100, 개발 로그인에 minji / jiho(커플) / solo(커플 없음) / 아무 이름(새 계정)
 ```
+
+데이터는 메모리라 껐다 켜면 초기화. 카카오 로그인은 로컬에서 안 됨 (운영에서 확인).
 
 ## 로그인 흐름
 

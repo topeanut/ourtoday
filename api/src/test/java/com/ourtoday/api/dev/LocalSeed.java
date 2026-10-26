@@ -25,8 +25,8 @@ import java.util.UUID;
 
 /**
  * 로컬 화면 점검용 샘플 데이터 (테스트 코드라 운영 빌드에 안 들어감).
- * 실행: ./gradlew bootTestRun --args='--spring.profiles.active=seed'
- * → build/seed-tokens.txt 에 두 사용자 토큰 + 커플 미연결 사용자 토큰
+ * 실행: ops/local.sh (seed,dev 프로필) → 화면의 개발 로그인에 minji / jiho / solo
+ * (커플 연결된 두 사람 + 커플 없는 한 사람). build/seed-tokens.txt 에 토큰도 기록
  */
 @Component
 @Profile("seed")
@@ -54,11 +54,11 @@ class LocalSeed implements CommandLineRunner {
 
     @Override
     public void run(String... args) throws Exception {
-        UUID a = user("민지");
-        UUID b = user("지호");
+        UUID a = user("minji", "민지");
+        UUID b = user("jiho", "지호");
         coupleService.join(b, coupleService.createInvite(a).inviteCode());
         coupleService.updateStartedAt(a, today().minusDays(437));
-        UUID solo = user("혼자");
+        UUID solo = user("solo", "혼자");
 
         String[][] posts = {
             {"0", "a", "퇴근길에 같이 붕어빵 사 먹었다.\n팥이 꼬리까지 꽉 차 있어서 둘 다 감동\n내일도 저 가게 가자"},
@@ -95,8 +95,9 @@ class LocalSeed implements CommandLineRunner {
             "solo=" + tokenProvider.generateAccessToken(solo)) + "\n");
     }
 
-    private UUID user(String nickname) {
-        UUID id = userService.findOrCreateByKakaoId("seed-" + UUID.randomUUID()).getId();
+    /** 임시 로그인(dev 프로필)에서 같은 이름으로 들어올 수 있게 kakaoId 를 dev:{name} 으로 */
+    private UUID user(String name, String nickname) {
+        UUID id = userService.findOrCreateByKakaoId("dev:" + name).getId();
         userService.updateMe(id, new UserUpdateRequest(nickname, null));
         return id;
     }

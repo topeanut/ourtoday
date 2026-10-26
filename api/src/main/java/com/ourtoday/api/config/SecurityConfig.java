@@ -10,6 +10,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.context.RequestAttributeSecurityContextRepository;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
@@ -24,7 +25,10 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .csrf(AbstractHttpConfigurer::disable)
+            // 세션은 카카오 OAuth state 저장에만 씀. 인증 정보는 세션에 저장하지 않음
+            // (저장하면 JWT 없이 JSESSIONID 쿠키만으로 인증돼서 로그아웃·토큰 만료가 무력화됨)
             .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
+            .securityContext(c -> c.securityContextRepository(new RequestAttributeSecurityContextRepository()))
             .authorizeHttpRequests(auth -> auth
                 .requestMatchers(
                     "/api/v1/health",

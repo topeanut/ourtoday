@@ -3,7 +3,7 @@
 import { Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import useSWR from "swr";
-import { api, fetcher } from "@/lib/api";
+import { api, fetcher, revalidateAll } from "@/lib/api";
 import { goBack } from "@/lib/nav";
 import type { BucketItem, Post } from "@/lib/types";
 import { PageHeader } from "@/components/AppShell";
@@ -40,7 +40,7 @@ function NewPost() {
       <div className="mx-auto max-w-2xl px-4 pb-10 md:px-8">
         {item && (
           <p className="mb-3 rounded-2xl bg-brand-soft px-4 py-3 text-sm text-brand-strong">
-            ✅ <b>{item.title}</b> 을(를) 이 기록과 함께 완료해요
+            ✅ 이 기록과 함께 <b>{item.title}</b> 달성으로 표시돼요
           </p>
         )}
         <PostForm
@@ -54,6 +54,7 @@ function NewPost() {
                 .catch(() => false);
             }
             toast(completed ? "기록했어요" : "기록은 남겼지만 버킷리스트 완료 처리에 실패했어요");
+            await revalidateAll();
             router.replace(bucketId ? "/bucket" : "/");
           }}
         />

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { api, errorMessage } from "@/lib/api";
+import { api, errorMessage, revalidateAll } from "@/lib/api";
 import { formatDay } from "@/lib/date";
 import { haptic, share } from "@/lib/native";
 import type { EmojiType, Post } from "@/lib/types";
@@ -52,6 +52,7 @@ export function PostCard({
       toast("기록을 지웠어요");
       setConfirmDelete(false);
       onDeleted?.();
+      revalidateAll();
     } catch (e) {
       toast(errorMessage(e));
     } finally {

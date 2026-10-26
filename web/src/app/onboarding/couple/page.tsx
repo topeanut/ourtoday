@@ -22,7 +22,7 @@ export default function CoupleOnboardingPage() {
   const { data, isValidating } = useSWR<{ status: OnboardingStatus }>(
     getToken() ? "/users/me/onboarding-status" : null,
     fetcher,
-    { refreshInterval: mode === "invite" ? 3000 : 0 },
+    { refreshInterval: mode === "invite" ? 3000 : 0, refreshWhenHidden: true },
   );
 
   useEffect(() => {

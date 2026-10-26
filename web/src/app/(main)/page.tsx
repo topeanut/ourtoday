@@ -28,6 +28,13 @@ export default function HomePage() {
   );
   const memories = useSWR<Memories>("/posts/memories/today", fetcher);
 
+  // 작성·수정·삭제 후 돌아왔을 때 항상 최신으로. SWR 기본 재검증은 requestAnimationFrame 이라
+  // 숨김 상태(웹뷰 백그라운드 복귀 직후 등)에서 안 돌 수 있어 직접 호출
+  const { mutate: refreshFeed } = feed;
+  useEffect(() => {
+    refreshFeed();
+  }, [refreshFeed]);
+
   const posts = feed.data?.flatMap((p) => p.content) ?? [];
   const last = feed.data?.[feed.data.length - 1];
   const hasMore = !!last && last.page.number + 1 < last.page.totalPages;

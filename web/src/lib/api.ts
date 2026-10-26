@@ -1,3 +1,4 @@
+import { mutate as globalMutate } from "swr";
 import { clearToken, getRefreshToken, getToken, rememberReturnTo, setTokens } from "./auth";
 
 export class ApiError extends Error {
@@ -109,4 +110,9 @@ export function errorMessage(e: unknown): string {
     return e.message;
   }
   return "네트워크 상태를 확인해 주세요.";
+}
+
+/** 쓰기 후 화면 캐시 전체 다시 불러오기 (피드·작년 오늘·캘린더·통계가 서로 얽혀 있어서 통째로) */
+export function revalidateAll() {
+  return globalMutate(() => true);
 }

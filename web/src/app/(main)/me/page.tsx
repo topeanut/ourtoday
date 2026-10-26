@@ -80,8 +80,9 @@ export default function MyPage() {
               <p className="truncate text-lg font-bold">
                 {me.nickname} <span className="text-brand">♥</span> {partner?.nickname}
               </p>
-              <button className="text-sm text-sub" onClick={() => setEditDate(true)}>
-                {formatDay(couple.startedAt, true)}부터 · <b className="text-brand-strong">{stats.data?.couple.daysTogether ?? "-"}일째</b>
+              <button className="block text-left text-sm text-sub" onClick={() => setEditDate(true)}>
+                <b className="text-brand-strong">{stats.data?.couple.daysTogether ?? "-"}일째</b>
+                <span className="block text-xs">{formatDay(couple.startedAt, true)}부터</span>
               </button>
             </div>
           </div>

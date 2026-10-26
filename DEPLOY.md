@@ -67,7 +67,9 @@ oci network security-list update --security-list-id $SL --force --ingress-securi
 `https://ourtoday.vercel.app` 는 이제 Next.js 앱. 백엔드 프록시는 `web/next.config.ts` rewrites 가 대신함 (`vercel-proxy/` 는 예전 프록시, 비상용으로만 보관).
 배포 방법은 `web/README.md`. 서버 `.env` 에 `OAUTH2_SUCCESS_REDIRECT_URI=https://ourtoday.vercel.app/auth/callback` 필요 (비우면 로그인 결과가 JSON 으로 보임).
 
-## 개발 서버 (나만 쓰는 QA 용) — 2026-10-26~
+## 개발 서버 (보류 — 지금은 로컬로 QA)
+
+> 2026-10-26 결정: 서버 메모리가 빠듯해서 개발 서버 대신 **로컬**(`bash ops/local.sh`)로 개발·QA. 아래 구성은 ARM/추가 서버가 생기면 다시 사용
 
 | 항목 | 값 |
 |------|-----|
