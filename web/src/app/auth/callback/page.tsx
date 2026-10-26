@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { mutate } from "swr";
 import { api } from "@/lib/api";
 import { setTokens, takeReturnTo } from "@/lib/auth";
 import type { OnboardingStatus } from "@/lib/types";
@@ -22,7 +23,10 @@ export default function AuthCallbackPage() {
     }
     setTokens(token, params.get("refreshToken"));
     api<{ status: OnboardingStatus }>("/users/me/onboarding-status")
-      .then(({ status }) => {
+      .then((res) => {
+        // 다음 화면이 같은 요청을 다시 기다리지 않게 결과를 캐시에 넣어 둠
+        mutate("/users/me/onboarding-status", res, { revalidate: false });
+        const { status } = res;
         if (status === "NEED_PROFILE") router.replace("/onboarding/profile");
         else if (status === "CONNECTED") router.replace(takeReturnTo() ?? "/");
         else router.replace("/onboarding/couple");

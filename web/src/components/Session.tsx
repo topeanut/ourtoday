@@ -29,10 +29,12 @@ export function SessionGate({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const hasToken = typeof window !== "undefined" && !!getToken();
 
+  // 셋을 동시에 요청 (순서대로 기다리면 느린 서버에서 왕복이 쌓임).
+  // 커플이 없으면 /couples/me 는 403 → 공통 처리에서 온보딩으로 보냄
   const status = useSWR<{ status: OnboardingStatus }>(hasToken ? "/users/me/onboarding-status" : null, fetcher);
+  const me = useSWR<User>(hasToken ? "/users/me" : null, fetcher);
+  const couple = useSWR<Couple>(hasToken ? "/couples/me" : null, fetcher, { shouldRetryOnError: false });
   const connected = status.data?.status === "CONNECTED";
-  const me = useSWR<User>(connected ? "/users/me" : null, fetcher);
-  const couple = useSWR<Couple>(connected ? "/couples/me" : null, fetcher);
 
   useEffect(() => {
     if (!getToken()) {
