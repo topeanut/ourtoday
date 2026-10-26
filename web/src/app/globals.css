@@ -1,0 +1,87 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand: #ff7a8a;
+  --color-brand-strong: #f2566b;
+  --color-brand-soft: #ffe3e7;
+  --color-cream: #fff8f5;
+  --color-ink: #2b2326;
+  --color-sub: #8a7e82;
+  --color-line: #f1e6e3;
+  --color-card: #ffffff;
+  --font-sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, "Apple SD Gothic Neo",
+    "Noto Sans KR", sans-serif;
+}
+
+:root {
+  color-scheme: light;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+html,
+body {
+  background: var(--color-cream);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
+body {
+  min-height: 100dvh;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+
+input,
+textarea,
+select,
+button {
+  font: inherit;
+}
+
+/* iOS 입력 시 확대 방지 */
+input,
+textarea,
+select {
+  font-size: 16px;
+}
+
+.pt-safe {
+  padding-top: var(--safe-top);
+}
+.pb-safe {
+  padding-bottom: var(--safe-bottom);
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(24px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.animate-sheet {
+  animation: sheet-up 0.22s ease-out;
+}
+.animate-fade {
+  animation: fade-in 0.18s ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-sheet,
+  .animate-fade {
+    animation: none;
+  }
+}
