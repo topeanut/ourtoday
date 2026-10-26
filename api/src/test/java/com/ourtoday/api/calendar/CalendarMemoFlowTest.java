@@ -58,6 +58,8 @@ class CalendarMemoFlowTest {
     void 기간_조회는_날짜순이고_상대_메모도_보인다() throws Exception {
         create(me, "2026-06-14", "1주년", "#ffb6c1").andExpect(status().isCreated())
             .andExpect(jsonPath("$.color").value("#FFB6C1"))
+            .andExpect(jsonPath("$.createdAt").isNotEmpty())
+            .andExpect(jsonPath("$.updatedAt").isNotEmpty())
             .andExpect(jsonPath("$.author.nickname").value("민지"));
         create(partner, "2026-06-01", "영화", null);
         create(me, "2026-07-01", "범위 밖", null);
@@ -73,7 +75,10 @@ class CalendarMemoFlowTest {
 
     @Test
     void 수정_삭제는_작성자만() throws Exception {
-        String id = idOf(create(me, "2026-06-14", "1주년", null));
+        ResultActions created = create(me, "2026-06-14", "1주년", null);
+        String id = idOf(created);
+        String updatedBefore = objectMapper.readTree(created.andReturn().getResponse().getContentAsString())
+            .get("updatedAt").asText();
         String body = "{\"date\":\"2026-06-15\",\"title\":\"하루 미룸\"}";
 
         mvc.perform(patch("/api/v1/calendar/memos/" + id).header("Authorization", partner)
@@ -83,7 +88,10 @@ class CalendarMemoFlowTest {
                 .contentType(MediaType.APPLICATION_JSON).content(body))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.date").value("2026-06-15"))
-            .andExpect(jsonPath("$.title").value("하루 미룸"));
+            .andExpect(jsonPath("$.title").value("하루 미룸"))
+            .andExpect(result -> org.assertj.core.api.Assertions.assertThat(
+                objectMapper.readTree(result.getResponse().getContentAsString()).get("updatedAt").asText())
+                .isGreaterThan(updatedBefore));
 
         mvc.perform(delete("/api/v1/calendar/memos/" + id).header("Authorization", partner))
             .andExpect(status().isForbidden());

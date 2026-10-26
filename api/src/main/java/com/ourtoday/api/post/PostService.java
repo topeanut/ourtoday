@@ -61,7 +61,7 @@ public class PostService {
         List<String> imageKeys = normalizeImageKeys(request.imageKeys());
         imageService.verifyAttachable(coupleId, imageKeys);
 
-        Post post = postRepository.save(Post.create(coupleId, userId, request.content().strip(), request.postedDate()));
+        Post post = postRepository.saveAndFlush(Post.create(coupleId, userId, request.content().strip(), request.postedDate()));
         saveImages(post.getId(), imageKeys);
         return toResponse(post, userId);
     }
@@ -116,6 +116,8 @@ public class PostService {
             saveImages(postId, newKeys);
             imageService.deleteAfterCommit(oldKeys.stream().filter(k -> !newKeys.contains(k)).toList());
         }
+        // 응답의 updatedAt 이 반영되도록 (@UpdateTimestamp 는 flush 때 채워짐)
+        postRepository.flush();
         return toResponse(post, userId);
     }
 

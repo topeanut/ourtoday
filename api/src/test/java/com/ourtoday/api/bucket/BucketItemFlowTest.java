@@ -61,6 +61,7 @@ class BucketItemFlowTest {
         String id = idOf(create(me, "오로라 보러 가기")
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.completed").value(false))
+            .andExpect(jsonPath("$.createdAt").isNotEmpty())
             .andExpect(jsonPath("$.createdBy.nickname").value("민지")));
 
         mvc.perform(patch("/api/v1/bucket-items/" + id).header("Authorization", partner)

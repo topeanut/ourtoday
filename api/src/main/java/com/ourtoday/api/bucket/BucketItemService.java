@@ -36,7 +36,7 @@ public class BucketItemService {
     @Transactional
     public BucketItemResponse create(UUID userId, BucketItemCreateRequest request) {
         UUID coupleId = coupleService.getConnectedCoupleId(userId);
-        BucketItem item = bucketItemRepository.save(BucketItem.create(coupleId, userId,
+        BucketItem item = bucketItemRepository.saveAndFlush(BucketItem.create(coupleId, userId,
             request.title().strip(), blankToNull(request.description()), request.targetDate()));
         return toResponse(item);
     }

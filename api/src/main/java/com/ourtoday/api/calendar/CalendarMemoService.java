@@ -37,7 +37,7 @@ public class CalendarMemoService {
     @Transactional
     public CalendarMemoResponse create(UUID userId, CalendarMemoCreateRequest request) {
         UUID coupleId = coupleService.getConnectedCoupleId(userId);
-        CalendarMemo memo = calendarMemoRepository.save(CalendarMemo.create(coupleId, userId, request.date(),
+        CalendarMemo memo = calendarMemoRepository.saveAndFlush(CalendarMemo.create(coupleId, userId, request.date(),
             request.title().strip(), blankToNull(request.description()), normalizeColor(request.color())));
         return toResponse(memo, loadUsers(List.of(userId)));
     }
@@ -68,6 +68,7 @@ public class CalendarMemoService {
         CalendarMemo memo = getMyMemo(userId, memoId);
         memo.update(request.date(), request.title().strip(), blankToNull(request.description()),
             normalizeColor(request.color()));
+        calendarMemoRepository.flush();
         return toResponse(memo, loadUsers(List.of(userId)));
     }
 

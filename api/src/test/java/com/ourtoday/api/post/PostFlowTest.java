@@ -72,7 +72,8 @@ class PostFlowTest {
             .andExpect(status().isCreated())
             .andExpect(jsonPath("$.content").value("오늘 처음 같이 본 영화"))
             .andExpect(jsonPath("$.author.nickname").value("민지"))
-            .andExpect(jsonPath("$.postedDate").value(TODAY.toString()));
+            .andExpect(jsonPath("$.postedDate").value(TODAY.toString()))
+            .andExpect(jsonPath("$.createdAt").isNotEmpty());
     }
 
     @Test
