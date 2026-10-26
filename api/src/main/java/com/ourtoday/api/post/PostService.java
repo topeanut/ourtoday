@@ -123,7 +123,17 @@ public class PostService {
 
     @Transactional
     public void delete(UUID userId, UUID postId) {
-        Post post = getMyPost(userId, postId);
+        deleteWithRelations(getMyPost(userId, postId));
+    }
+
+    /** 탈퇴용: 이 사용자가 쓴 글 전부 (이미지·반응 포함) */
+    @Transactional
+    public void deleteAllWrittenBy(UUID userId) {
+        postRepository.findByAuthorId(userId).forEach(this::deleteWithRelations);
+    }
+
+    private void deleteWithRelations(Post post) {
+        UUID postId = post.getId();
         List<String> keys = postImageRepository.findByPostIdOrderByDisplayOrderAsc(postId).stream()
             .map(PostImage::getImageKey)
             .toList();

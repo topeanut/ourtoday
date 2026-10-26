@@ -26,6 +26,10 @@ public interface PostRepository extends JpaRepository<Post, UUID>, JpaSpecificat
 
     long countByCoupleIdAndAuthorId(UUID coupleId, UUID authorId);
 
+    List<Post> findByCoupleIdOrderByPostedDateAscCreatedAtAsc(UUID coupleId);
+
+    List<Post> findByAuthorId(UUID authorId);
+
     long countByCoupleIdAndAuthorIdAndPostedDateBetween(UUID coupleId, UUID authorId, LocalDate from, LocalDate to);
 
     /** 연속 작성일 계산용: 기준일 이전 작성 날짜 (최신순, 중복 제거) */

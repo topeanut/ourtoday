@@ -11,4 +11,8 @@ public interface CalendarMemoRepository extends JpaRepository<CalendarMemo, UUID
     List<CalendarMemo> findByCoupleIdAndDateBetweenOrderByDateAscCreatedAtAsc(UUID coupleId, LocalDate from, LocalDate to);
 
     long countByCoupleIdAndAuthorId(UUID coupleId, UUID authorId);
+
+    List<CalendarMemo> findByCoupleIdOrderByDateAscCreatedAtAsc(UUID coupleId);
+
+    void deleteByAuthorId(UUID authorId);
 }

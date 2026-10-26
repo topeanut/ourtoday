@@ -1,5 +1,10 @@
 package com.ourtoday.api.image;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.UncheckedIOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Map;
 import java.util.OptionalLong;
 import java.util.concurrent.ConcurrentHashMap;
@@ -10,6 +15,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class FakeImageStorage implements ImageStorage {
 
     private final Map<String, Long> objects = new ConcurrentHashMap<>();
+    private final Map<String, byte[]> contents = new ConcurrentHashMap<>();
 
     public void upload(String key, long size) {
         objects.put(key, size);
@@ -42,5 +48,35 @@ public class FakeImageStorage implements ImageStorage {
     @Override
     public void delete(String key) {
         objects.remove(key);
+        contents.remove(key);
+    }
+
+    @Override
+    public void put(String key, Path file, String contentType) {
+        try {
+            byte[] bytes = Files.readAllBytes(file);
+            contents.put(key, bytes);
+            objects.put(key, (long) bytes.length);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    @Override
+    public void copyTo(String key, OutputStream out) {
+        try {
+            out.write(contents.getOrDefault(key, new byte[objects.getOrDefault(key, 0L).intValue()]));
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
+
+    @Override
+    public String presignAttachment(String key, String fileName) {
+        return "https://fake-storage/download/" + key + "?filename=" + fileName;
+    }
+
+    public byte[] content(String key) {
+        return contents.get(key);
     }
 }

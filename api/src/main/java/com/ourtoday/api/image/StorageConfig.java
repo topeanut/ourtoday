@@ -7,6 +7,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.util.StringUtils;
 
+import java.io.OutputStream;
+import java.nio.file.Path;
 import java.util.OptionalLong;
 
 @Slf4j
@@ -45,6 +47,21 @@ public class StorageConfig {
 
         @Override
         public void delete(String key) {
+            throw disabled();
+        }
+
+        @Override
+        public void put(String key, Path file, String contentType) {
+            throw disabled();
+        }
+
+        @Override
+        public void copyTo(String key, OutputStream out) {
+            throw disabled();
+        }
+
+        @Override
+        public String presignAttachment(String key, String fileName) {
             throw disabled();
         }
 

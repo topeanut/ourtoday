@@ -71,6 +71,17 @@ public class Couple {
         this.inviteCodeExpiresAt = null;
     }
 
+    public void updateStartedAt(LocalDate startedAt) {
+        this.startedAt = startedAt;
+    }
+
+    /** 해제: 멤버 연결은 서비스에서 끊고, 기록은 남겨 둠 */
+    public void breakUp() {
+        this.status = CoupleStatus.BROKEN;
+        this.inviteCode = null;
+        this.inviteCodeExpiresAt = null;
+    }
+
     public boolean isConnected() {
         return status == CoupleStatus.CONNECTED;
     }

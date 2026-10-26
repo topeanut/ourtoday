@@ -13,7 +13,12 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
 import software.amazon.awssdk.services.s3.presigner.S3Presigner;
 
+import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.core.sync.ResponseTransformer;
+
+import java.io.OutputStream;
 import java.net.URI;
+import java.nio.file.Path;
 import java.util.OptionalLong;
 
 public class S3ImageStorage implements ImageStorage {
@@ -76,5 +81,26 @@ public class S3ImageStorage implements ImageStorage {
     @Override
     public void delete(String key) {
         client.deleteObject(DeleteObjectRequest.builder().bucket(props.bucket()).key(key).build());
+    }
+
+    @Override
+    public void put(String key, Path file, String contentType) {
+        client.putObject(PutObjectRequest.builder().bucket(props.bucket()).key(key).contentType(contentType).build(),
+            RequestBody.fromFile(file));
+    }
+
+    @Override
+    public void copyTo(String key, OutputStream out) {
+        client.getObject(GetObjectRequest.builder().bucket(props.bucket()).key(key).build(),
+            ResponseTransformer.toOutputStream(out));
+    }
+
+    @Override
+    public String presignAttachment(String key, String fileName) {
+        GetObjectRequest get = GetObjectRequest.builder().bucket(props.bucket()).key(key)
+            .responseContentDisposition("attachment; filename=\"" + fileName + "\"")
+            .build();
+        return presigner.presignGetObject(r -> r.signatureDuration(props.downloadUrlTtl()).getObjectRequest(get))
+            .url().toString();
     }
 }

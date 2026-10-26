@@ -1,5 +1,7 @@
 package com.ourtoday.api.image;
 
+import java.io.OutputStream;
+import java.nio.file.Path;
 import java.util.OptionalLong;
 
 /**
@@ -17,4 +19,13 @@ public interface ImageStorage {
     OptionalLong size(String key);
 
     void delete(String key);
+
+    /** 서버에서 직접 올림 (데이터 내보내기 zip 등) */
+    void put(String key, Path file, String contentType);
+
+    /** 객체 내용을 out 으로 복사 (out 은 닫지 않음) */
+    void copyTo(String key, OutputStream out);
+
+    /** 다운로드용 임시 URL. 브라우저가 fileName 으로 저장하도록 Content-Disposition 지정 */
+    String presignAttachment(String key, String fileName);
 }

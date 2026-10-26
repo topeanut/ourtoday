@@ -2,6 +2,8 @@ package com.ourtoday.api.user;
 
 import com.ourtoday.api.user.dto.OnboardingStatusResponse;
 import com.ourtoday.api.user.dto.UserResponse;
+import com.ourtoday.api.user.dto.UserSettingsResponse;
+import com.ourtoday.api.user.dto.UserSettingsUpdateRequest;
 import com.ourtoday.api.user.dto.UserUpdateRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -40,5 +42,18 @@ public class UserController {
     @GetMapping("/onboarding-status")
     public OnboardingStatusResponse onboardingStatus(@AuthenticationPrincipal UUID userId) {
         return userService.getOnboardingStatus(userId);
+    }
+
+    @Operation(summary = "알림 설정 조회")
+    @GetMapping("/settings")
+    public UserSettingsResponse settings(@AuthenticationPrincipal UUID userId) {
+        return userService.getSettings(userId);
+    }
+
+    @Operation(summary = "알림 설정 수정")
+    @PatchMapping("/settings")
+    public UserSettingsResponse updateSettings(@AuthenticationPrincipal UUID userId,
+                                               @Valid @RequestBody UserSettingsUpdateRequest request) {
+        return userService.updateSettings(userId, request);
     }
 }

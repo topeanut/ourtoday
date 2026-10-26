@@ -5,13 +5,16 @@ import com.ourtoday.api.common.guard.RequireProfile;
 import com.ourtoday.api.couple.dto.CoupleInviteResponse;
 import com.ourtoday.api.couple.dto.CoupleJoinRequest;
 import com.ourtoday.api.couple.dto.CoupleResponse;
+import com.ourtoday.api.couple.dto.CoupleUpdateRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -48,5 +51,20 @@ public class CoupleController {
     @GetMapping("/me")
     public CoupleResponse me(@AuthenticationPrincipal UUID userId) {
         return coupleService.getMyCouple(userId);
+    }
+
+    @Operation(summary = "커플 정보 수정 (사귄 날짜)")
+    @RequireCouple
+    @PatchMapping("/me")
+    public CoupleResponse update(@AuthenticationPrincipal UUID userId, @Valid @RequestBody CoupleUpdateRequest request) {
+        return coupleService.updateStartedAt(userId, request.startedAt());
+    }
+
+    @Operation(summary = "커플 해제", description = "두 사람 모두 커플 없음 상태로. 함께 쓴 기록은 더 이상 볼 수 없음")
+    @RequireCouple
+    @DeleteMapping("/me")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void breakUp(@AuthenticationPrincipal UUID userId) {
+        coupleService.breakUp(userId);
     }
 }

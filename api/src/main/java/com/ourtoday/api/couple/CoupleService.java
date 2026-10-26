@@ -97,10 +97,48 @@ public class CoupleService {
 
     @Transactional(readOnly = true)
     public CoupleResponse getMyCouple(UUID userId) {
-        Couple couple = coupleRepository.findByMemberUserId(userId)
+        return toResponse(getConnectedCouple(userId));
+    }
+
+    private Couple getConnectedCouple(UUID userId) {
+        return coupleRepository.findByMemberUserId(userId)
             .filter(Couple::isConnected)
             .orElseThrow(() -> new BusinessException(ErrorCode.COUPLE_REQUIRED));
+    }
+
+    @Transactional
+    public CoupleResponse updateStartedAt(UUID userId, LocalDate startedAt) {
+        if (startedAt.isAfter(LocalDate.now(clock.withZone(SERVICE_ZONE)))) {
+            throw new BusinessException(ErrorCode.VALIDATION_FAILED, "사귄 날짜는 오늘 이후일 수 없습니다.");
+        }
+        Couple couple = getConnectedCouple(userId);
+        couple.updateStartedAt(startedAt);
         return toResponse(couple);
+    }
+
+    /**
+     * 커플 해제: 두 사람 모두 커플 없음 상태가 되고 다시 초대코드로 연결 가능.
+     * 함께 쓴 기록은 지우지 않지만(복구 여지) 해제된 커플 데이터는 누구도 조회할 수 없음
+     */
+    @Transactional
+    public void breakUp(UUID userId) {
+        Couple couple = getConnectedCouple(userId);
+        couple.breakUp();
+        coupleMemberRepository.deleteByCoupleId(couple.getId());
+    }
+
+    /** 탈퇴용: 연결된 커플은 해제, 대기 중 초대는 삭제 */
+    @Transactional
+    public void leaveAny(UUID userId) {
+        coupleRepository.findByMemberUserId(userId).ifPresent(couple -> {
+            if (couple.isConnected()) {
+                couple.breakUp();
+                coupleMemberRepository.deleteByCoupleId(couple.getId());
+            } else {
+                coupleMemberRepository.deleteByCoupleId(couple.getId());
+                coupleRepository.delete(couple);
+            }
+        });
     }
 
     /** 연결된 커플 ID. 없으면 COUPLE_REQUIRED */

@@ -6,6 +6,8 @@ import com.ourtoday.api.couple.Couple;
 import com.ourtoday.api.couple.CoupleRepository;
 import com.ourtoday.api.user.dto.OnboardingStatusResponse;
 import com.ourtoday.api.user.dto.UserResponse;
+import com.ourtoday.api.user.dto.UserSettingsResponse;
+import com.ourtoday.api.user.dto.UserSettingsUpdateRequest;
 import com.ourtoday.api.user.dto.UserUpdateRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -62,6 +64,28 @@ public class UserService {
             .map(c -> c.isConnected() ? OnboardingStatus.CONNECTED : OnboardingStatus.PENDING_INVITE)
             .orElse(OnboardingStatus.NO_COUPLE);
         return new OnboardingStatusResponse(status);
+    }
+
+    @Transactional
+    public UserSettingsResponse getSettings(UUID userId) {
+        return toResponse(getOrCreateSettings(userId));
+    }
+
+    @Transactional
+    public UserSettingsResponse updateSettings(UUID userId, UserSettingsUpdateRequest request) {
+        UserSettings settings = getOrCreateSettings(userId);
+        settings.updateNotificationSettings(request.notifyMemoryToday(), request.notifyPartnerPost());
+        return toResponse(settings);
+    }
+
+    /** 설정 행이 없던 초기 가입자 대비 */
+    private UserSettings getOrCreateSettings(UUID userId) {
+        return userSettingsRepository.findById(userId)
+            .orElseGet(() -> userSettingsRepository.save(UserSettings.createDefault(getUser(userId))));
+    }
+
+    private UserSettingsResponse toResponse(UserSettings settings) {
+        return new UserSettingsResponse(settings.isNotifyMemoryToday(), settings.isNotifyPartnerPost());
     }
 
     private User getUser(UUID userId) {

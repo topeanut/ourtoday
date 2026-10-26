@@ -15,6 +15,8 @@ public interface ReactionRepository extends JpaRepository<Reaction, UUID> {
 
     void deleteByPostId(UUID postId);
 
+    void deleteByUserId(UUID userId);
+
     /** 게시글별·이모지별 개수와 viewer 가 눌렀는지 — 목록도 한 번에 */
     @Query("""
         select new com.ourtoday.api.reaction.ReactionCount(
