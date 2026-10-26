@@ -44,7 +44,7 @@ app:
   jwt:
     secret: ${JWT_SECRET:dev_only_change_me_minimum_32_chars_for_hs256_algorithm_padding}
     access-token-validity-ms: 1800000   # 30분
-    refresh-token-validity-ms: 1209600000   # 14일
+    refresh-token-validity-ms: 2592000000   # 30일
   storage:
     # S3 호환 저장소 (운영: Oracle Object Storage). endpoint 비우면 이미지 기능 비활성
     endpoint: ${STORAGE_ENDPOINT:}

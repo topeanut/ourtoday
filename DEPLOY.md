@@ -62,7 +62,22 @@ oci network security-list update --security-list-id $SL --force --ingress-securi
    {"source":"0.0.0.0/0","protocol":"1","icmpOptions":{"type":3,"code":4}}]'
 ```
 
-## Vercel 프록시 재배포
+## 프론트엔드 (Next.js, `web/`) — 2026-10-26~
+
+`https://ourtoday.vercel.app` 는 이제 Next.js 앱. 백엔드 프록시는 `web/next.config.ts` rewrites 가 대신함 (`vercel-proxy/` 는 예전 프록시, 비상용으로만 보관).
+배포 방법은 `web/README.md`. 서버 `.env` 에 `OAUTH2_SUCCESS_REDIRECT_URI=https://ourtoday.vercel.app/auth/callback` 필요 (비우면 로그인 결과가 JSON 으로 보임).
+
+## 모바일 앱 (`mobile/`)
+
+Android/iOS 웹뷰 껍데기. 빌드·서명·스토어 메모는 `mobile/README.md`.
+
+## DB 스키마 수동 변경 기록
+
+`ddl-auto: update` 는 enum 체크 제약을 고치지 않음 → enum 값을 추가하면 운영 DB 제약을 직접 바꿔야 함.
+- 2026-10-26 `couples.status` 에 `BROKEN` 추가 (커플 해제):
+  `alter table couples drop constraint couples_status_check; alter table couples add constraint couples_status_check check (status in ('PENDING','CONNECTED','BROKEN'));`
+
+## Vercel 프록시 재배포 (예전 방식, 비상용)
 
 서버 IP 가 바뀌면 `vercel-proxy/vercel.json` 수정 후 배포.
 ⚠️ git 저장소 안에서 배포하면 커밋 작성자 권한 문제로 `Blocked` → **git 밖 복사본에서 배포**:

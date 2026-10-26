@@ -37,9 +37,11 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
         User user = userService.findOrCreateByKakaoId(kakaoId);
         String accessToken = tokenProvider.generateAccessToken(user.getId());
+        String refreshToken = tokenProvider.generateRefreshToken(user.getId());
 
         Map<String, String> result = Map.of(
             "accessToken", accessToken,
+            "refreshToken", refreshToken,
             "userId", user.getId().toString(),
             "profileCompleted", String.valueOf(user.isProfileCompleted())
         );
@@ -61,6 +63,7 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         response.setCharacterEncoding("UTF-8");
         objectMapper.writeValue(response.getWriter(), Map.of(
             "accessToken", accessToken,
+            "refreshToken", refreshToken,
             "userId", user.getId().toString(),
             "profileCompleted", user.isProfileCompleted()
         ));

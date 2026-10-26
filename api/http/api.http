@@ -137,3 +137,32 @@ Authorization: Bearer {{token}}
 ### ===== 통계 =====
 GET {{host}}/api/v1/couples/me/stats
 Authorization: Bearer {{token}}
+
+### ===== 마이페이지 =====
+### 알림 설정
+GET {{host}}/api/v1/users/me/settings
+Authorization: Bearer {{token}}
+
+### 알림 설정 수정
+PATCH {{host}}/api/v1/users/me/settings
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "notifyMemoryToday": true, "notifyPartnerPost": false }
+
+### 사귄 날짜 수정
+PATCH {{host}}/api/v1/couples/me
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "startedAt": "2025-03-14" }
+
+### 데이터 내보내기 (zip URL)
+POST {{host}}/api/v1/users/me/export
+Authorization: Bearer {{token}}
+
+### 토큰 재발급
+POST {{host}}/api/v1/auth/refresh
+Content-Type: application/json
+
+{ "refreshToken": "여기에_refreshToken" }
