@@ -78,6 +78,19 @@ npx vercel deploy --cwd /tmp/ourtoday-proxy --prod --yes
 `KAKAO_CLIENT_ID` / `KAKAO_CLIENT_SECRET` = 카카오 앱 1467289 의 REST API 키 / 카카오 로그인 클라이언트 시크릿 (사용자가 직접 입력).
 수정 후 `docker compose -f docker-compose.prod.yml up -d`.
 
+## 사진 저장소 (Oracle Object Storage, S3 호환)
+
+| 항목 | 값 |
+|------|-----|
+| 버킷 | `ourtoday-images` (비공개, 앱이 발급한 임시 URL 로만 접근: 업로드 10분 / 조회 1시간) |
+| endpoint | `https://axfvsij57xcq.compat.objectstorage.ap-osaka-1.oraclecloud.com` (path-style) |
+| `.env` | `STORAGE_ENDPOINT`, `STORAGE_REGION=ap-osaka-1`, `STORAGE_BUCKET`, `STORAGE_ACCESS_KEY`/`STORAGE_SECRET_KEY` |
+| 키 | Oracle 콘솔 > 내 프로필 > 고객 암호 키(Customer Secret Keys) — 사용자가 서버에서 직접 입력 |
+
+- endpoint·키 중 하나라도 비면 앱은 정상 기동하고 **이미지 API 만 비활성** (2026-10-26 키 없이 endpoint 만 넣어 502 났던 사고 대응)
+- 점검: `bash ~/ourtoday/ops/e2e-image.sh` — 임시 유저·커플로 업로드 URL → PUT → 게시글 첨부 → 다운로드 → 삭제까지 확인 후 임시 데이터 정리
+- 자동 배포는 **이미지만** 바꿈. `docker-compose*.yml`·`ops/` 변경은 서버로 직접 복사(`rsync`) 후 `docker compose up -d`
+
 ## DB 백업 / 복원
 
 ```bash
