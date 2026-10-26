@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 108dp 캔버스, 안전 영역(가운데 66dp) 안에 하트 + 작은 해 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- 해 (오른쪽 위) -->
+    <path
+        android:fillColor="#FFC27A"
+        android:pathData="M70,36m-7,0a7,7 0,1 1,14 0a7,7 0,1 1,-14 0" />
+    <!-- 하트 -->
+    <path
+        android:fillColor="#FF7A8A"
+        android:pathData="M54,76 C54,76 34,63 34,49 C34,42 39.5,37 45.5,37 C49.5,37 52.5,39.2 54,42.3 C55.5,39.2 58.5,37 62.5,37 C68.5,37 74,42 74,49 C74,63 54,76 54,76 Z" />
+    <!-- 하이라이트 -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:fillAlpha="0.55"
+        android:pathData="M42,47m-3,0a3,3 0,1 1,6 0a3,3 0,1 1,-6 0" />
+</vector>

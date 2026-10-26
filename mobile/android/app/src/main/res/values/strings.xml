@@ -1,0 +1,7 @@
+<resources>
+    <string name="app_name">오늘의 우리</string>
+    <string name="error_title">연결할 수 없어요</string>
+    <string name="error_message">인터넷 연결을 확인한 뒤 다시 시도해 주세요.</string>
+    <string name="retry">다시 시도</string>
+    <string name="share_title">공유하기</string>
+</resources>

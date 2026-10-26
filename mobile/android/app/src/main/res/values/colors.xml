@@ -1,0 +1,7 @@
+<resources>
+    <color name="brand">#FF7A8A</color>
+    <color name="background">#FFF8F5</color>
+    <color name="text_primary">#3A2E2C</color>
+    <color name="text_secondary">#8A7A76</color>
+    <color name="icon_background">#FFF1EC</color>
+</resources>
