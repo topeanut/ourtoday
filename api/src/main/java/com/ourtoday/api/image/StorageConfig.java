@@ -15,8 +15,11 @@ public class StorageConfig {
 
     @Bean
     public ImageStorage imageStorage(StorageProperties props) {
-        if (!StringUtils.hasText(props.endpoint())) {
-            log.warn("app.storage.endpoint 미설정 → 이미지 기능 비활성");
+        // 설정이 하나라도 비면 앱 기동은 막지 않고 이미지 기능만 끔
+        if (!StringUtils.hasText(props.endpoint())
+            || !StringUtils.hasText(props.accessKey())
+            || !StringUtils.hasText(props.secretKey())) {
+            log.warn("app.storage endpoint/access-key/secret-key 중 미설정 → 이미지 기능 비활성");
             return new DisabledImageStorage();
         }
         return new S3ImageStorage(props);
