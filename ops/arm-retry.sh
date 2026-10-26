@@ -13,7 +13,7 @@ IMG=$(oci compute image list -c "$C" --operating-system "Canonical Ubuntu" --ope
   --shape VM.Standard.A1.Flex --sort-by TIMECREATED --sort-order DESC --query 'data[0].id' --raw-output)
 
 out=$(oci compute instance launch -c "$C" --availability-domain "$AD" --shape VM.Standard.A1.Flex \
-  --shape-config '{"ocpus":2,"memoryInGBs":12}' --image-id "$IMG" --subnet-id "$SUB" --assign-public-ip true \
+  --shape-config '{"ocpus":1,"memoryInGBs":6}' --image-id "$IMG" --subnet-id "$SUB" --assign-public-ip true \
   --display-name ourtoday-arm --ssh-authorized-keys-file /home/ubuntu/.ssh/authorized_keys \
   --user-data-file /home/ubuntu/ourtoday/ops/arm-cloud-init.sh --boot-volume-size-in-gbs 50 \
   --query 'data.id' --raw-output 2>&1)

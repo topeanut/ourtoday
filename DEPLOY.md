@@ -24,7 +24,7 @@
 |------|--------|------|
 | **자동 배포** | `main` 에 `api/**` push → GitHub Actions(`.github/workflows/deploy.yml`) 가 test·bootJar 후 `ghcr.io/buildup2026/ourtoday-api:latest` 푸시 → 서버 타이머 `ourtoday-deploy-pull`(2분) 가 새 이미지면 교체 | `journalctl -u ourtoday-deploy-pull -n 20` |
 | **DB 백업** | 타이머 `ourtoday-backup` 매일 04:00 KST → 서버 `~/backups`(7일) + Object Storage `ourtoday-backup/db/`(30일) | `journalctl -u ourtoday-backup -n 5` |
-| **ARM 재시도** | 타이머 `ourtoday-arm-retry` 10분마다 무료 A1(2코어/12GB) `ourtoday-arm` 생성 시도, 성공 시 `~/ARM_CREATED` 기록 후 타이머 자동 해제 → 이관은 수동 | `journalctl -u ourtoday-arm-retry -n 5`, `cat ~/ARM_CREATED` |
+| **ARM 재시도** | 타이머 `ourtoday-arm-retry` 10분마다 무료 A1(1코어/6GB — 작게 요청할수록 잘 잡힘) `ourtoday-arm` 생성 시도, 성공 시 `~/ARM_CREATED` 기록 후 타이머 자동 해제 → 이관은 수동 | `journalctl -u ourtoday-arm-retry -n 5`, `cat ~/ARM_CREATED` |
 
 - 서버는 인스턴스 프린시펄(동적 그룹 `ourtoday-vm` + 정책 `ourtoday-vm-policy`)로 OCI API 호출 — 키 파일 없음
 - GHCR 읽기 토큰(classic PAT, `read:packages`)으로 서버 `docker login` 되어 있음. **토큰 만료 시 자동 배포만 멈춤** → 새 토큰으로 다시 로그인
@@ -66,6 +66,25 @@ oci network security-list update --security-list-id $SL --force --ingress-securi
 
 `https://ourtoday.vercel.app` 는 이제 Next.js 앱. 백엔드 프록시는 `web/next.config.ts` rewrites 가 대신함 (`vercel-proxy/` 는 예전 프록시, 비상용으로만 보관).
 배포 방법은 `web/README.md`. 서버 `.env` 에 `OAUTH2_SUCCESS_REDIRECT_URI=https://ourtoday.vercel.app/auth/callback` 필요 (비우면 로그인 결과가 JSON 으로 보임).
+
+## 개발 서버 (나만 쓰는 QA 용) — 2026-10-26~
+
+| 항목 | 값 |
+|------|-----|
+| 주소 | `https://develop-ourtoday.vercel.app` (Vercel 프로젝트 `ourtoday-develop`, 화면 상단 DEV 표시) |
+| 백엔드 | 운영 서버의 컨테이너 `ourtoday-api-dev` (포트 8081, JVM 160MB, 컨테이너 320MB) — **필요할 때만 켬** |
+| DB | 같은 Postgres 의 `ourtoday_dev` (운영 데이터와 분리), JWT 키도 분리(`DEV_JWT_SECRET`) |
+| 로그인 | 카카오 대신 **임시 로그인**(이름만, `POST /api/v1/dev/login`). `dev` 프로필에서만 존재 |
+| 배포 | `develop` 브랜치 push → CI 가 `:develop` 이미지 빌드 → `dev.sh up` 때 받음 |
+
+```bash
+ssh -i ~/.ssh/ourtoday-key ubuntu@129.225.158.235 'bash ~/ourtoday/ops/dev.sh up'     # 켜기 (1~2분 뒤 사용)
+ssh -i ~/.ssh/ourtoday-key ubuntu@129.225.158.235 'bash ~/ourtoday/ops/dev.sh down'   # 끄기
+```
+
+- 켜 두면 운영도 메모리가 빠듯해짐 → QA 끝나면 끄기
+- Oracle 보안 목록에 8081 수신 규칙 필요 (Docker 포트라 서버 iptables 는 무관)
+- 프론트 배포: `web/` 를 복사본에서 `npx vercel deploy --prod --yes --build-env NEXT_PUBLIC_DEV=1 --build-env BACKEND_ORIGIN=http://129.225.158.235:8081` (복사본 이름 `ourtoday-develop`)
 
 ## 모바일 앱 (`mobile/`)
 

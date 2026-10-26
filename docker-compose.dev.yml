@@ -1,0 +1,31 @@
+# 개발 서버 (나만 쓰는 QA 용, 필요할 때만 켬): ops/dev.sh up | down | status
+# 운영과 같은 서버·같은 Postgres 를 쓰되 DB(ourtoday_dev)와 JWT 키는 분리, 메모리는 최소
+services:
+  api-dev:
+    image: ghcr.io/buildup2026/ourtoday-api:develop
+    pull_policy: always
+    container_name: ourtoday-api-dev
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod,dev
+      JAVA_OPTS: "-Xms48m -Xmx160m -XX:MaxMetaspaceSize=128m -XX:+UseSerialGC -XX:TieredStopAtLevel=1 -Xss512k"
+      DB_URL: jdbc:postgresql://postgres:5432/ourtoday_dev
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      # 개발 서버는 임시 로그인만 씀 (카카오 값은 형식만 채움)
+      KAKAO_CLIENT_ID: dev-unused
+      KAKAO_CLIENT_SECRET: dev-unused
+      KAKAO_REDIRECT_URI: https://develop-ourtoday.vercel.app/login/oauth2/code/kakao
+      OAUTH2_SUCCESS_REDIRECT_URI: https://develop-ourtoday.vercel.app/auth/callback
+      STORAGE_ENDPOINT: ${STORAGE_ENDPOINT:-}
+      STORAGE_BUCKET: ${STORAGE_BUCKET:-ourtoday-images}
+      STORAGE_REGION: ${STORAGE_REGION:-auto}
+      STORAGE_ACCESS_KEY: ${STORAGE_ACCESS_KEY:-}
+      STORAGE_SECRET_KEY: ${STORAGE_SECRET_KEY:-}
+      JWT_SECRET: ${DEV_JWT_SECRET}
+    mem_limit: 320m
+    ports:
+      - "8081:8080"

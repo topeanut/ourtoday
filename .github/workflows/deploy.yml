@@ -1,10 +1,11 @@
-# main 에 push → 테스트 → jar 빌드 → 이미지(GHCR) 푸시
-# 서버는 2분마다 새 이미지를 확인해서 스스로 교체 (ops/deploy-pull.sh). 서버로 들어오는 SSH 불필요
+# main 에 push → 테스트 → jar 빌드 → 이미지(GHCR) :latest 푸시
+#   서버는 2분마다 새 이미지를 확인해서 스스로 교체 (ops/deploy-pull.sh). 서버로 들어오는 SSH 불필요
+# develop 에 push → 같은 과정으로 :develop 이미지만 푸시 (운영 영향 없음, 개발 서버는 ops/dev.sh up 때 받음)
 name: deploy
 
 on:
   push:
-    branches: [main]
+    branches: [main, develop]
     paths:
       - "api/**"
       - ".github/workflows/deploy.yml"
@@ -47,5 +48,5 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: |
-            ${{ env.IMAGE }}:latest
+            ${{ env.IMAGE }}:${{ github.ref_name == 'main' && 'latest' || 'develop' }}
             ${{ env.IMAGE }}:${{ github.sha }}
