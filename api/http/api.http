@@ -83,3 +83,57 @@ Authorization: Bearer {{token}}
 Content-Type: application/json
 
 { "emojiType": "HEART" }
+
+### 작년 오늘 (같은 월/일, 지난 연도별)
+GET {{host}}/api/v1/posts/memories/today
+Authorization: Bearer {{token}}
+
+### ===== 캘린더 메모 =====
+### 생성
+POST {{host}}/api/v1/calendar/memos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "date": "2026-06-14", "title": "1주년 기념일", "description": "OO 호텔 예약", "color": "#FFB6C1" }
+
+### 기간 조회 (최대 100일)
+GET {{host}}/api/v1/calendar/memos?from=2026-06-01&to=2026-06-30
+Authorization: Bearer {{token}}
+
+### 수정 (작성자만, 전체 교체)
+PATCH {{host}}/api/v1/calendar/memos/여기에_메모ID
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "date": "2026-06-15", "title": "1주년 기념일", "description": null, "color": null }
+
+### 삭제 (작성자만)
+DELETE {{host}}/api/v1/calendar/memos/여기에_메모ID
+Authorization: Bearer {{token}}
+
+### ===== 버킷리스트 (커플 둘 다 수정·삭제·완료) =====
+### 추가
+POST {{host}}/api/v1/bucket-items
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "title": "오로라 보러 가기", "description": "아이슬란드", "targetDate": "2027-01-01" }
+
+### 목록 (status=ALL | TODO | DONE)
+GET {{host}}/api/v1/bucket-items?status=ALL
+Authorization: Bearer {{token}}
+
+### 완료 (postId 선택)
+PATCH {{host}}/api/v1/bucket-items/여기에_항목ID/complete
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "postId": "{{postId}}" }
+
+### 완료 취소
+DELETE {{host}}/api/v1/bucket-items/여기에_항목ID/complete
+Authorization: Bearer {{token}}
+
+### ===== 통계 =====
+GET {{host}}/api/v1/couples/me/stats
+Authorization: Bearer {{token}}

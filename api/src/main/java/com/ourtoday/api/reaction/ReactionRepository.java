@@ -25,4 +25,11 @@ public interface ReactionRepository extends JpaRepository<Reaction, UUID> {
         group by r.postId, r.emojiType
         """)
     List<ReactionCount> countByPostIds(@Param("postIds") Collection<UUID> postIds, @Param("viewerId") UUID viewerId);
+
+    /** 우리 커플 글에 이 사용자가 남긴 반응 수 */
+    @Query("""
+        select count(r) from Reaction r, com.ourtoday.api.post.Post p
+        where r.postId = p.id and p.coupleId = :coupleId and r.userId = :userId
+        """)
+    long countGivenInCouple(@Param("coupleId") UUID coupleId, @Param("userId") UUID userId);
 }
