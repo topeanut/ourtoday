@@ -1,10 +1,12 @@
 package com.ourtoday.api.post;
 
+import com.ourtoday.api.bucket.BucketItemRepository;
 import com.ourtoday.api.common.error.BusinessException;
 import com.ourtoday.api.common.error.ErrorCode;
 import com.ourtoday.api.couple.CoupleService;
 import com.ourtoday.api.image.ImageService;
 import com.ourtoday.api.post.dto.PostCreateRequest;
+import com.ourtoday.api.post.dto.PostMemoriesResponse;
 import com.ourtoday.api.post.dto.PostResponse;
 import com.ourtoday.api.post.dto.PostUpdateRequest;
 import com.ourtoday.api.reaction.ReactionCount;
@@ -23,9 +25,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -44,6 +48,7 @@ public class PostService {
     private final PostRepository postRepository;
     private final PostImageRepository postImageRepository;
     private final ReactionRepository reactionRepository;
+    private final BucketItemRepository bucketItemRepository;
     private final UserRepository userRepository;
     private final CoupleService coupleService;
     private final ImageService imageService;
@@ -123,7 +128,31 @@ public class PostService {
         postImageRepository.deleteByPostId(postId);
         reactionRepository.deleteByPostId(postId);
         postRepository.delete(post);
+        bucketItemRepository.unlinkPost(postId);
         imageService.deleteAfterCommit(keys);
+    }
+
+    /** 작년 오늘: 오늘(Asia/Seoul)과 같은 월/일의 지난 연도 글을 연도별로 */
+    @Transactional(readOnly = true)
+    public PostMemoriesResponse memoriesToday(UUID userId) {
+        UUID coupleId = coupleService.getConnectedCoupleId(userId);
+        LocalDate today = LocalDate.now(clock.withZone(SERVICE_ZONE));
+        List<Post> posts = postRepository.findMemories(coupleId, today.getMonthValue(), today.getDayOfMonth(),
+            today.withDayOfYear(1));
+
+        Map<UUID, User> users = loadUsers(posts.stream().map(Post::getAuthorId).collect(Collectors.toSet()));
+        Set<UUID> postIds = posts.stream().map(Post::getId).collect(Collectors.toSet());
+        Map<UUID, List<PostImage>> images = loadImages(postIds);
+        Map<UUID, List<ReactionCount>> reactions = loadReactions(postIds, userId);
+
+        Map<Integer, List<PostResponse>> byYear = new LinkedHashMap<>();
+        for (Post p : posts) {
+            byYear.computeIfAbsent(p.getPostedDate().getYear(), y -> new ArrayList<>())
+                .add(toResponse(p, users, images, reactions));
+        }
+        return new PostMemoriesResponse(today, byYear.entrySet().stream()
+            .map(e -> new PostMemoriesResponse.YearMemories(e.getKey(), e.getValue()))
+            .toList());
     }
 
     /** 우리 커플 글인지 확인 후 반환 (반응 등 다른 도메인에서도 사용) */

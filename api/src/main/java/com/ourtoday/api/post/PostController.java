@@ -2,6 +2,7 @@ package com.ourtoday.api.post;
 
 import com.ourtoday.api.common.guard.RequireCouple;
 import com.ourtoday.api.post.dto.PostCreateRequest;
+import com.ourtoday.api.post.dto.PostMemoriesResponse;
 import com.ourtoday.api.post.dto.PostResponse;
 import com.ourtoday.api.post.dto.PostUpdateRequest;
 import io.swagger.v3.oas.annotations.Operation;
@@ -60,6 +61,12 @@ public class PostController {
         @ParameterObject @PageableDefault(size = 20, sort = "postedDate", direction = Sort.Direction.DESC) Pageable pageable
     ) {
         return postService.list(userId, author, from, to, pageable);
+    }
+
+    @Operation(summary = "작년 오늘", description = "오늘(Asia/Seoul)과 같은 월/일의 지난 연도 글을 연도별로 묶어서")
+    @GetMapping("/memories/today")
+    public PostMemoriesResponse memoriesToday(@AuthenticationPrincipal UUID userId) {
+        return postService.memoriesToday(userId);
     }
 
     @Operation(summary = "상세 (공유 링크)")
