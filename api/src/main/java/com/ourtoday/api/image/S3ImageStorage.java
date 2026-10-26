@@ -8,6 +8,8 @@ import software.amazon.awssdk.services.s3.S3Configuration;
 import software.amazon.awssdk.services.s3.model.DeleteObjectRequest;
 import software.amazon.awssdk.services.s3.model.GetObjectRequest;
 import software.amazon.awssdk.services.s3.model.HeadObjectRequest;
+import software.amazon.awssdk.services.s3.model.ListObjectsV2Request;
+import software.amazon.awssdk.services.s3.model.S3Object;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 import software.amazon.awssdk.services.s3.model.S3Exception;
@@ -81,6 +83,14 @@ public class S3ImageStorage implements ImageStorage {
     @Override
     public void delete(String key) {
         client.deleteObject(DeleteObjectRequest.builder().bucket(props.bucket()).key(key).build());
+    }
+
+    @Override
+    public void deleteByPrefix(String prefix) {
+        client.listObjectsV2Paginator(ListObjectsV2Request.builder().bucket(props.bucket()).prefix(prefix).build())
+            .contents().stream()
+            .map(S3Object::key)
+            .forEach(this::delete);
     }
 
     @Override

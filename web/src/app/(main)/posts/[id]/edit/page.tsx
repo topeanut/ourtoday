@@ -4,6 +4,7 @@ import { use } from "react";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import { api, fetcher } from "@/lib/api";
+import { goBack } from "@/lib/nav";
 import type { Post } from "@/lib/types";
 import { PageHeader } from "@/components/AppShell";
 import { BackIcon } from "@/components/Icons";
@@ -24,7 +25,7 @@ export default function EditPostPage({ params }: { params: Promise<{ id: string 
       <PageHeader
         title="기록 수정"
         left={
-          <button onClick={() => router.back()} className="-ml-2 rounded-full p-2 hover:bg-black/5" aria-label="뒤로">
+          <button onClick={() => goBack(router, `/posts/${id}`)} className="-ml-2 rounded-full p-2 hover:bg-black/5" aria-label="뒤로">
             <BackIcon />
           </button>
         }

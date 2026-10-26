@@ -195,7 +195,11 @@ export default function CalendarPage() {
         onClose={() => setEditing(null)}
         onSaved={(date) => {
           setEditing(null);
-          if (date) setSelected(date);
+          if (date) {
+            setSelected(date);
+            const d = parseDate(date);
+            setCursor({ year: d.getFullYear(), month: d.getMonth() });
+          }
           memos.mutate();
         }}
       />

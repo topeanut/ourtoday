@@ -10,7 +10,11 @@ import org.json.JSONObject
  *
  * JavascriptInterface 는 백그라운드 스레드에서 불리므로 UI 작업은 메인 스레드로 넘김
  */
-class NativeBridge(private val handler: Handler) {
+class NativeBridge(
+    private val handler: Handler,
+    /** 현재 메인 프레임 URL (우리 웹일 때만 동작) */
+    private val currentUrl: () -> String?,
+) {
 
     interface Handler {
         fun onShare(title: String?, text: String?, url: String)
@@ -22,6 +26,7 @@ class NativeBridge(private val handler: Handler) {
 
     @JavascriptInterface
     fun postMessage(json: String) {
+        if (!NavigationPolicy.isAppPage(currentUrl())) return
         val message = runCatching { JSONObject(json) }.getOrNull() ?: return
         mainHandler.post {
             when (message.optString("type")) {
@@ -33,7 +38,8 @@ class NativeBridge(private val handler: Handler) {
                 }
                 "openExternal" -> {
                     val url = message.optString("url")
-                    if (url.isNotEmpty()) handler.onOpenExternal(url)
+                    // 외부 브라우저로 여는 건 웹 링크만 (임의 스킴·file:// 차단)
+                    if (url.startsWith("https://") || url.startsWith("http://")) handler.onOpenExternal(url)
                 }
                 "haptic" -> handler.onHaptic()
             }

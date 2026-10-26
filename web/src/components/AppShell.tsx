@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect } from "react";
 import { usePathname } from "next/navigation";
+import { markNavigation } from "@/lib/nav";
 import { formatDay } from "@/lib/date";
 import { BucketIcon, CalendarIcon, HomeIcon, UserIcon } from "./Icons";
 import { useSession } from "./Session";
@@ -23,6 +25,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { me, partner, couple } = useSession();
   const hideTabs = /^\/posts\/(new|[^/]+\/edit)/.test(pathname);
+
+  useEffect(() => {
+    markNavigation();
+  }, [pathname]);
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-6xl">

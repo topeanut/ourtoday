@@ -98,6 +98,27 @@ public class ImageService {
         }
     }
 
+    /** 커밋 후 prefix 아래 파일 삭제. 실패해도 요청은 성공 처리 */
+    public void deletePrefixAfterCommit(String prefix) {
+        Runnable task = () -> {
+            try {
+                storage.deleteByPrefix(prefix);
+            } catch (RuntimeException e) {
+                log.warn("저장소 정리 실패 prefix={}", prefix, e);
+            }
+        };
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    task.run();
+                }
+            });
+        } else {
+            task.run();
+        }
+    }
+
     private String prefixOf(UUID coupleId) {
         return "couples/" + coupleId + "/posts/";
     }

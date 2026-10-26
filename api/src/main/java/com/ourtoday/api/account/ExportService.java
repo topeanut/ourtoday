@@ -26,14 +26,17 @@ import com.ourtoday.api.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -42,13 +45,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
 /**
- * 데이터 내보내기: data.json + images/ 를 zip 으로 묶어 저장소에 올리고 임시 다운로드 URL 반환 (동기)
+ * 데이터 내보내기: data.json + images/ 를 zip 으로 묶어 저장소에 올리고 임시 다운로드 URL 반환 (동기).
+ * DB 는 짧은 읽기 트랜잭션에서만 쓰고, 사진 다운로드·zip·업로드는 트랜잭션 밖에서 (커넥션 점유 방지)
  */
 @Slf4j
 @Service
@@ -67,9 +72,39 @@ public class ExportService {
     private final StorageProperties storageProperties;
     private final ObjectMapper objectMapper;
     private final Clock clock;
+    private final PlatformTransactionManager transactionManager;
 
-    @Transactional(readOnly = true)
+    /** 사용자별 진행 중/최근 내보내기 시각 (서버 1대라 메모리로 충분) */
+    private final Map<UUID, Instant> recent = new ConcurrentHashMap<>();
+    static final Duration COOLDOWN = Duration.ofMinutes(1);
+
     public ExportResponse export(UUID userId) {
+        Instant now = clock.instant();
+        Instant previous = recent.putIfAbsent(userId, now);
+        if (previous != null) {
+            if (previous.plus(COOLDOWN).isAfter(now)) {
+                throw new BusinessException(ErrorCode.VALIDATION_FAILED, "내보내기는 1분에 한 번만 할 수 있어요. 잠시 후 다시 시도해 주세요.");
+            }
+            recent.put(userId, now);
+        }
+        try {
+            Snapshot snapshot = readOnly().execute(status -> snapshot(userId));
+            return writeAndUpload(userId, snapshot);
+        } catch (RuntimeException e) {
+            recent.remove(userId);
+            throw e;
+        }
+    }
+
+    private TransactionTemplate readOnly() {
+        TransactionTemplate template = new TransactionTemplate(transactionManager);
+        template.setReadOnly(true);
+        return template;
+    }
+
+    private record Snapshot(Map<String, Object> data, List<String> imageEntries, List<String> imageKeys) {}
+
+    private Snapshot snapshot(UUID userId) {
         User me = userRepository.findById(userId)
             .orElseThrow(() -> new BusinessException(ErrorCode.NOT_FOUND, "사용자를 찾을 수 없습니다."));
         Optional<Couple> couple = coupleRepository.findByMemberUserId(userId).filter(Couple::isConnected);
@@ -83,11 +118,14 @@ public class ExportService {
         if (couple.isEmpty()) {
             data.put("couple", null);
         }
+        return new Snapshot(data, imageEntries, imageKeys);
+    }
 
+    private ExportResponse writeAndUpload(UUID userId, Snapshot snapshot) {
         Path zip = null;
         try {
             zip = Files.createTempFile("ourtoday-export-", ".zip");
-            writeZip(zip, data, imageEntries, imageKeys);
+            writeZip(zip, snapshot.data(), snapshot.imageEntries(), snapshot.imageKeys());
             String key = "exports/" + userId + "/" + UUID.randomUUID() + ".zip";
             storage.put(key, zip, "application/zip");
             String fileName = "ourtoday-" + LocalDate.now(clock) + ".zip";
@@ -178,14 +216,28 @@ public class ExportService {
             out.write(objectMapper.copy().disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS)
                 .writerWithDefaultPrettyPrinter().writeValueAsBytes(data));
             out.closeEntry();
-            for (int i = 0; i < entries.size(); i++) {
-                out.putNextEntry(new ZipEntry(entries.get(i)));
-                try {
-                    storage.copyTo(keys.get(i), new NonClosing(out));
-                } catch (RuntimeException e) {
-                    // 사진 하나 못 받아도 나머지는 내보냄
-                    log.warn("내보내기 이미지 누락 key={}", keys.get(i), e);
+            List<String> missing = new ArrayList<>();
+            Path buffer = Files.createTempFile("ourtoday-img-", ".bin");
+            try {
+                for (int i = 0; i < entries.size(); i++) {
+                    // 먼저 임시 파일로 받아서, 중간에 실패한 사진이 깨진 채 zip 에 들어가지 않게
+                    try (OutputStream tmp = Files.newOutputStream(buffer)) {
+                        storage.copyTo(keys.get(i), tmp);
+                    } catch (RuntimeException e) {
+                        log.warn("내보내기 이미지 누락 key={}", keys.get(i), e);
+                        missing.add(entries.get(i));
+                        continue;
+                    }
+                    out.putNextEntry(new ZipEntry(entries.get(i)));
+                    Files.copy(buffer, out);
+                    out.closeEntry();
                 }
+            } finally {
+                deleteQuietly(buffer);
+            }
+            if (!missing.isEmpty()) {
+                out.putNextEntry(new ZipEntry("missing-images.txt"));
+                out.write(("받지 못한 사진:\n" + String.join("\n", missing) + "\n").getBytes(StandardCharsets.UTF_8));
                 out.closeEntry();
             }
         }
@@ -199,30 +251,6 @@ public class ExportService {
             Files.deleteIfExists(path);
         } catch (IOException ignored) {
             // 임시 파일이라 무시
-        }
-    }
-
-    /** SDK 가 스트림을 닫아도 zip 은 계속 쓸 수 있게 */
-    private static final class NonClosing extends OutputStream {
-        private final OutputStream delegate;
-
-        NonClosing(OutputStream delegate) {
-            this.delegate = delegate;
-        }
-
-        @Override
-        public void write(int b) throws IOException {
-            delegate.write(b);
-        }
-
-        @Override
-        public void write(byte[] b, int off, int len) throws IOException {
-            delegate.write(b, off, len);
-        }
-
-        @Override
-        public void close() {
-            // 닫지 않음
         }
     }
 }

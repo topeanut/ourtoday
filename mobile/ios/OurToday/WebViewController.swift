@@ -97,7 +97,9 @@ final class WebViewController: UIViewController {
             guard let urlString = dict["url"] as? String, let url = URL(string: urlString) else { return }
             share(title: dict["title"] as? String, text: dict["text"] as? String, url: url)
         case "openExternal":
-            guard let urlString = dict["url"] as? String, let url = URL(string: urlString) else { return }
+            // 외부로 여는 건 웹 링크만 (임의 앱 스킴 실행 차단)
+            guard let urlString = dict["url"] as? String, let url = URL(string: urlString),
+                  ["http", "https"].contains(url.scheme?.lowercased() ?? "") else { return }
             openExternally(url)
         case "haptic":
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
@@ -221,7 +223,11 @@ extension WebViewController: WKScriptMessageHandler {
 
     func userContentController(_ userContentController: WKUserContentController,
                                didReceive message: WKScriptMessage) {
-        guard message.name == "ourtoday" else { return }
+        // 우리 웹의 메인 프레임에서 온 메시지만 처리
+        guard message.name == "ourtoday",
+              message.frameInfo.isMainFrame,
+              message.frameInfo.securityOrigin.host.lowercased() == AppConfig.startURL.host?.lowercased()
+        else { return }
         handle(message: message.body)
     }
 }

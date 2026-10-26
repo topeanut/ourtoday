@@ -20,6 +20,9 @@ public interface ImageStorage {
 
     void delete(String key);
 
+    /** prefix 아래 객체 모두 삭제 (탈퇴 시 내보내기 파일 정리) */
+    void deleteByPrefix(String prefix);
+
     /** 서버에서 직접 올림 (데이터 내보내기 zip 등) */
     void put(String key, Path file, String contentType);
 

@@ -11,8 +11,11 @@ enum AppConfig {
     /// 기본 UA 끝에 붙는 값. 웹은 /OurTodayApp/ 로 앱 여부 판단
     static let userAgentSuffix = "Mobile/15E148 OurTodayApp/1.0 (ios)"
 
-    /// WebView 안에서 열 카카오 로그인 화면 도메인
-    static let loginHostSuffixes = ["kakao.com", "kakao.co.kr", "daum.net"]
+    /// WebView 안에서 열 카카오 로그인 화면 (카페·블로그 등 사용자 콘텐츠 도메인은 제외)
+    static let loginHosts: Set<String> = [
+        "kauth.kakao.com", "accounts.kakao.com", "logins.kakao.com",
+        "accounts.daum.net", "logins.daum.net",
+    ]
 
     static let brand = UIColor(red: 1.0, green: 0x7A / 255.0, blue: 0x8A / 255.0, alpha: 1)
     static let background = UIColor(red: 1.0, green: 0xF8 / 255.0, blue: 0xF5 / 255.0, alpha: 1)
@@ -40,7 +43,7 @@ enum NavigationPolicy {
         if host == AppConfig.startURL.host?.lowercased() || host == "localhost" {
             return .inApp
         }
-        if AppConfig.loginHostSuffixes.contains(where: { host == $0 || host.hasSuffix("." + $0) }) {
+        if AppConfig.loginHosts.contains(host) {
             return .inApp
         }
         return .externalBrowser

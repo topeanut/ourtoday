@@ -4,10 +4,21 @@ import type { PresignedUrl } from "./types";
 const MAX_EDGE = 1920;
 const MAX_BYTES = 10 * 1024 * 1024;
 
-/** 큰 사진은 긴 변 1920px JPEG 로 줄여서 올림 (용량·속도). 디코딩 못 하는 형식(HEIC 등)은 원본 */
+const BROWSER_SAFE = ["image/jpeg", "image/png", "image/webp"];
+
+/**
+ * 큰 사진은 긴 변 1920px JPEG 로 줄여서 올림 (용량·속도).
+ * HEIC 처럼 이 브라우저가 못 읽는 형식은 다른 기기에서도 깨져 보이므로 거부
+ */
 export async function compressImage(file: File): Promise<Blob> {
+  let bitmap: ImageBitmap;
   try {
-    const bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+    bitmap = await createImageBitmap(file, { imageOrientation: "from-image" });
+  } catch {
+    if (BROWSER_SAFE.includes(file.type)) return file;
+    throw new Error("이 사진 형식은 올릴 수 없어요. JPG나 PNG로 바꿔서 올려 주세요.");
+  }
+  try {
     const scale = Math.min(1, MAX_EDGE / Math.max(bitmap.width, bitmap.height));
     if (scale === 1 && file.size < 1.5 * 1024 * 1024 && file.type === "image/jpeg") {
       bitmap.close();
@@ -19,16 +30,19 @@ export async function compressImage(file: File): Promise<Blob> {
     canvas.getContext("2d")!.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
     bitmap.close();
     const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/jpeg", 0.85));
-    return blob ?? file;
+    if (blob) return blob;
   } catch {
-    return file;
+    // 아래에서 처리
   }
+  if (BROWSER_SAFE.includes(file.type)) return file;
+  throw new Error("이 사진 형식은 올릴 수 없어요. JPG나 PNG로 바꿔서 올려 주세요.");
 }
 
 /** presigned URL 발급 → 저장소에 직접 PUT → imageKey 반환 */
 export async function uploadImage(file: File): Promise<string> {
   const blob = await compressImage(file);
-  const contentType = blob.type || file.type || "image/jpeg";
+  const contentType = blob.type || file.type;
+  if (!BROWSER_SAFE.includes(contentType)) throw new Error("이 사진 형식은 올릴 수 없어요. JPG나 PNG로 바꿔서 올려 주세요.");
   if (blob.size > MAX_BYTES) throw new Error("사진은 10MB 이하만 올릴 수 있어요.");
   const presigned = await api<PresignedUrl>("/images/presigned-url", {
     method: "POST",

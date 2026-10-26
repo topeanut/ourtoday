@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { mutate } from "swr";
 import { api, errorMessage } from "@/lib/api";
 import { getToken } from "@/lib/auth";
 import { Button, Field, inputClass } from "@/components/ui";
@@ -22,6 +23,8 @@ export default function ProfileOnboardingPage() {
     setSaving(true);
     try {
       await api("/users/me", { method: "PATCH", body: { nickname: nickname.trim(), profileImageUrl: null } });
+      // 캐시된 NEED_PROFILE 때문에 다시 돌아오지 않게 먼저 갱신
+      await mutate("/users/me/onboarding-status");
       router.replace("/onboarding/couple");
     } catch (err) {
       toast(errorMessage(err));

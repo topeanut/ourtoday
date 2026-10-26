@@ -150,6 +150,9 @@ class MyPageFlowTest {
         String imageEntry = data.get("posts").findValues("images").stream()
             .filter(n -> !n.isEmpty()).findFirst().orElseThrow().get(0).asText();
         assertThat(entries.get(imageEntry)).hasSize(5);
+
+        mvc.perform(post("/api/v1/users/me/export").header("Authorization", partner))
+            .andExpect(status().isBadRequest());
     }
 
     @Test

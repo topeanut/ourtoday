@@ -52,6 +52,12 @@ public class FakeImageStorage implements ImageStorage {
     }
 
     @Override
+    public void deleteByPrefix(String prefix) {
+        objects.keySet().removeIf(k -> k.startsWith(prefix));
+        contents.keySet().removeIf(k -> k.startsWith(prefix));
+    }
+
+    @Override
     public void put(String key, Path file, String contentType) {
         try {
             byte[] bytes = Files.readAllBytes(file);

@@ -40,10 +40,11 @@ export function SessionGate({ children }: { children: React.ReactNode }) {
       router.replace("/login");
       return;
     }
+    if (status.isValidating) return;
     const s = status.data?.status;
     if (s === "NEED_PROFILE") router.replace("/onboarding/profile");
     else if (s === "NO_COUPLE" || s === "PENDING_INVITE") router.replace("/onboarding/couple");
-  }, [status.data, pathname, router]);
+  }, [status.data, status.isValidating, pathname, router]);
 
   if (!connected || !me.data || !couple.data) return <PageSpinner />;
 

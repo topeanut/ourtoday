@@ -2,12 +2,12 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { api, errorMessage } from "@/lib/api";
 import { formatDay } from "@/lib/date";
 import { haptic, share } from "@/lib/native";
 import type { EmojiType, Post } from "@/lib/types";
-import { EditIcon, MoreIcon, ShareIcon, TrashIcon } from "./Icons";
+import { CloseIcon, EditIcon, MoreIcon, ShareIcon, TrashIcon } from "./Icons";
 import { useSession } from "./Session";
 import { useToast } from "./Toast";
 import { Avatar, Confirm, Sheet } from "./ui";
@@ -140,9 +140,27 @@ function ImageGrid({ images, onOpen }: { images: string[]; onOpen: (i: number) =
 
 function ImageViewer({ images, index, onClose }: { images: string[]; index: number; onClose: () => void }) {
   const [i, setI] = useState(index);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowRight") setI((n) => Math.min(images.length - 1, n + 1));
+      if (e.key === "ArrowLeft") setI((n) => Math.max(0, n - 1));
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [images.length, onClose]);
   return (
-    <div className="animate-fade fixed inset-0 z-[70] flex items-center justify-center bg-black/90" onClick={onClose} role="dialog" aria-modal>
-      <img src={images[i]} alt="" className="max-h-full max-w-full object-contain" />
+    <div className="animate-fade fixed inset-0 z-[70] flex items-center justify-center bg-black/90" onClick={onClose} role="dialog" aria-modal aria-label="사진 보기">
+      <img src={images[i]} alt={`사진 ${i + 1} / ${images.length}`} className="max-h-full max-w-full object-contain" />
+      <button
+        onClick={onClose}
+        className="absolute right-4 rounded-full bg-white/15 p-2 text-white"
+        style={{ top: "calc(16px + var(--safe-top))" }}
+        aria-label="닫기"
+        autoFocus
+      >
+        <CloseIcon className="h-6 w-6" />
+      </button>
       {images.length > 1 && (
         <div className="pb-safe absolute inset-x-0 bottom-6 flex justify-center gap-2" onClick={(e) => e.stopPropagation()}>
           {images.map((_, n) => (

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import useSWR from "swr";
 import { ApiError, fetcher } from "@/lib/api";
+import { goBack } from "@/lib/nav";
 import type { Post } from "@/lib/types";
 import { PageHeader } from "@/components/AppShell";
 import { BackIcon } from "@/components/Icons";
@@ -16,7 +17,7 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
   const router = useRouter();
   const { data, error, mutate } = useSWR<Post>(`/posts/${id}`, fetcher, { shouldRetryOnError: false });
 
-  const back = () => (window.history.length > 1 ? router.back() : router.replace("/"));
+  const back = () => goBack(router);
 
   return (
     <>

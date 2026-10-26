@@ -30,8 +30,11 @@ export async function api<T>(path: string, { body, headers, ...init }: Options =
 
   let res = await send();
   // 액세스 토큰(30분) 만료 → 리프레시 토큰으로 한 번 재발급 후 재시도
-  if (res.status === 401 && getRefreshToken() && (await refreshTokens())) {
-    res = await send();
+  if (res.status === 401 && getRefreshToken()) {
+    const refreshed = await refreshTokens();
+    if (refreshed === "ok") res = await send();
+    // 망 불안정·서버 재시작 중이면 로그아웃시키지 않고 오류만 (리프레시 토큰 유지)
+    else if (refreshed === "error") throw new ApiError(0, "NETWORK", "연결이 불안정해요. 잠시 후 다시 시도해 주세요.");
   }
 
   if (res.status === 204) return undefined as T;
@@ -70,10 +73,10 @@ function handleGlobal(error: ApiError) {
   }
 }
 
-let refreshing: Promise<boolean> | null = null;
+let refreshing: Promise<"ok" | "invalid" | "error"> | null = null;
 
-/** 동시에 여러 요청이 401 이어도 재발급은 한 번만 */
-function refreshTokens(): Promise<boolean> {
+/** 동시에 여러 요청이 401 이어도 재발급은 한 번만. invalid = 리프레시 토큰 만료/무효 */
+function refreshTokens(): Promise<"ok" | "invalid" | "error"> {
   refreshing ??= (async () => {
     try {
       const res = await fetch("/api/v1/auth/refresh", {
@@ -81,12 +84,13 @@ function refreshTokens(): Promise<boolean> {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ refreshToken: getRefreshToken() }),
       });
-      if (!res.ok) return false;
+      if (res.status === 401 || res.status === 400) return "invalid";
+      if (!res.ok) return "error";
       const data = (await res.json()) as { accessToken: string; refreshToken: string };
       setTokens(data.accessToken, data.refreshToken);
-      return true;
+      return "ok";
     } catch {
-      return false;
+      return "error";
     } finally {
       setTimeout(() => (refreshing = null), 0);
     }

@@ -114,7 +114,7 @@ export function Sheet({
 
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center md:items-center" role="dialog" aria-modal>
+    <div className="fixed inset-0 z-50 flex items-end justify-center md:items-center" role="dialog" aria-modal aria-label={title}>
       <button className="animate-fade absolute inset-0 bg-black/35" onClick={onClose} aria-label="닫기" />
       <div className="animate-sheet relative max-h-[88dvh] w-full overflow-y-auto rounded-t-3xl bg-white px-5 pb-[calc(20px+var(--safe-bottom))] pt-4 shadow-xl md:max-w-md md:rounded-3xl md:pb-6">
         <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-line md:hidden" />

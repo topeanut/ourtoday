@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import useSWR from "swr";
 import { api, fetcher } from "@/lib/api";
+import { goBack } from "@/lib/nav";
 import type { BucketItem, Post } from "@/lib/types";
 import { PageHeader } from "@/components/AppShell";
 import { BackIcon } from "@/components/Icons";
@@ -31,7 +32,7 @@ function NewPost() {
       <PageHeader
         title={item ? "버킷리스트 달성 기록" : "오늘 기록하기"}
         left={
-          <button onClick={() => router.back()} className="-ml-2 rounded-full p-2 hover:bg-black/5" aria-label="뒤로">
+          <button onClick={() => goBack(router, bucketId ? "/bucket" : "/")} className="-ml-2 rounded-full p-2 hover:bg-black/5" aria-label="뒤로">
             <BackIcon />
           </button>
         }
@@ -43,16 +44,16 @@ function NewPost() {
           </p>
         )}
         <PostForm
-          key={item?.id ?? "new"}
           submitLabel="기록하기"
           onSubmit={async (value) => {
             const post = await api<Post>("/posts", { method: "POST", body: value });
+            let completed = true;
             if (bucketId) {
-              await api(`/bucket-items/${bucketId}/complete`, { method: "PATCH", body: { postId: post.id } }).catch(() =>
-                toast("버킷리스트 완료 처리에 실패했어요"),
-              );
+              completed = await api(`/bucket-items/${bucketId}/complete`, { method: "PATCH", body: { postId: post.id } })
+                .then(() => true)
+                .catch(() => false);
             }
-            toast("기록했어요");
+            toast(completed ? "기록했어요" : "기록은 남겼지만 버킷리스트 완료 처리에 실패했어요");
             router.replace(bucketId ? "/bucket" : "/");
           }}
         />

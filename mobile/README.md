@@ -53,7 +53,9 @@ window.webkit.messageHandlers.ourtoday.postMessage(msg)
 | `haptic` | — | 가벼운 진동 (지원 안 하면 무시) |
 
 ### 이동 정책 (메인 프레임만)
-- **앱 안에서 열림**: 시작 URL 호스트, `*.kakao.com`, `*.kakao.co.kr`, `*.daum.net` (카카오 로그인 화면)
+- **앱 안에서 열림**: 시작 URL 호스트 + 카카오 로그인 화면만 (`kauth.kakao.com`, `accounts.kakao.com`, `logins.kakao.com`, `accounts.daum.net`, `logins.daum.net`). 카카오 로그인이 다른 호스트로 넘어가 외부 브라우저가 열리면 이 목록에 추가
+- **브리지 보안**: 우리 웹(시작 URL 호스트)의 메인 프레임에서 온 메시지만 처리, `openExternal` 은 http/https 만
+- Android `allowBackup=false` (리프레시 토큰이 든 WebView 저장소가 다른 기기로 복원되지 않게)
 - **시스템 브라우저**: 그 외 http(s) (예: Oracle 저장소 다운로드 링크)
 - **OS 로 넘김**: `intent://`, `kakaotalk://`, `kakaokompassauth://`, `tel:`, `mailto:` 등
   - Android `intent://` 는 해당 앱이 없으면 `browser_fallback_url` → 없으면 플레이스토어

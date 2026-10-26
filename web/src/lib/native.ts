@@ -32,7 +32,7 @@ function postNative(msg: NativeMessage): boolean {
   return false;
 }
 
-/** @returns "shared" | "copied" | "cancelled" */
+/** @returns "shared" | "copied" | "cancelled" | "failed" */
 export async function share(data: { title?: string; text?: string; url: string }) {
   if (postNative({ type: "share", ...data })) return "shared";
   if (navigator.share) {
@@ -43,8 +43,33 @@ export async function share(data: { title?: string; text?: string; url: string }
       return "cancelled";
     }
   }
-  await navigator.clipboard.writeText(data.url);
-  return "copied";
+  return (await copyText(data.text ? `${data.text}\n${data.url}` : data.url)) ? "copied" : "failed";
+}
+
+/** 클립보드 복사. 비보안 컨텍스트·권한 거부면 예전 방식으로 */
+export async function copyText(text: string): Promise<boolean> {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {
+    // 아래 방식으로
+  }
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand("copy");
+    ta.remove();
+    return ok;
+  } catch {
+    return false;
+  }
 }
 
 export function openExternal(url: string) {

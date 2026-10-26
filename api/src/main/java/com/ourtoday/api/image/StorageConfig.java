@@ -51,6 +51,11 @@ public class StorageConfig {
         }
 
         @Override
+        public void deleteByPrefix(String prefix) {
+            // 저장소가 없으면 지울 것도 없음
+        }
+
+        @Override
         public void put(String key, Path file, String contentType) {
             throw disabled();
         }

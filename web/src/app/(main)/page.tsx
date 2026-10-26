@@ -34,15 +34,21 @@ export default function HomePage() {
   const loadingMore = feed.isValidating && feed.size > (feed.data?.length ?? 0);
 
   const sentinel = useRef<HTMLDivElement>(null);
+  const { setSize } = feed;
+  const busy = useRef(false);
+  busy.current = loadingMore;
   useEffect(() => {
     const el = sentinel.current;
     if (!el || !hasMore) return;
-    const io = new IntersectionObserver((entries) => entries[0].isIntersecting && feed.setSize((s) => s + 1), {
-      rootMargin: "400px",
-    });
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && !busy.current) setSize((s) => s + 1);
+      },
+      { rootMargin: "400px" },
+    );
     io.observe(el);
     return () => io.disconnect();
-  }, [hasMore, feed]);
+  }, [hasMore, setSize]);
 
   const updatePost = (updated: Post) =>
     feed.mutate(

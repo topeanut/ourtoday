@@ -38,10 +38,10 @@ export function PostForm({
   const [saving, setSaving] = useState(false);
   const [progress, setProgress] = useState("");
 
-  useEffect(() => {
-    return () => slots.forEach((s) => s.file && URL.revokeObjectURL(s.preview));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // 떠날 때 미리보기 URL 해제 (최신 slots 를 ref 로)
+  const slotsRef = useRef(slots);
+  slotsRef.current = slots;
+  useEffect(() => () => slotsRef.current.forEach((s) => s.file && URL.revokeObjectURL(s.preview)), []);
 
   const addFiles = (files: FileList | null) => {
     if (!files) return;
@@ -50,12 +50,17 @@ export function PostForm({
     if (picked.length > room) toast(`사진은 ${MAX_IMAGES}장까지 올릴 수 있어요`);
     setSlots((cur) => [
       ...cur,
-      ...picked.slice(0, room).map((file) => ({ key: crypto.randomUUID(), preview: URL.createObjectURL(file), file })),
+      ...picked.slice(0, room).map((file) => ({ key: `${Date.now()}-${Math.random()}`, preview: URL.createObjectURL(file), file })),
     ]);
     if (fileRef.current) fileRef.current.value = "";
   };
 
-  const removeSlot = (key: string) => setSlots((cur) => cur.filter((s) => s.key !== key));
+  const removeSlot = (key: string) =>
+    setSlots((cur) => {
+      const target = cur.find((s) => s.key === key);
+      if (target?.file) URL.revokeObjectURL(target.preview);
+      return cur.filter((s) => s.key !== key);
+    });
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();

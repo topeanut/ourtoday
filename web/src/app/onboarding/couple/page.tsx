@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import useSWR from "swr";
+import useSWR, { mutate } from "swr";
 import { api, errorMessage, fetcher } from "@/lib/api";
 import { getToken, logout, takeReturnTo } from "@/lib/auth";
 import { share } from "@/lib/native";
@@ -19,7 +19,7 @@ export default function CoupleOnboardingPage() {
   const [busy, setBusy] = useState(false);
 
   // 초대코드를 띄워둔 동안 상대가 합류했는지 3초마다 확인
-  const { data } = useSWR<{ status: OnboardingStatus }>(
+  const { data, isValidating } = useSWR<{ status: OnboardingStatus }>(
     getToken() ? "/users/me/onboarding-status" : null,
     fetcher,
     { refreshInterval: mode === "invite" ? 3000 : 0 },
@@ -27,9 +27,11 @@ export default function CoupleOnboardingPage() {
 
   useEffect(() => {
     if (!getToken()) router.replace("/login");
+    // 오래된 캐시 값으로 잘못 이동하지 않게 최신 값일 때만
+    if (isValidating) return;
     if (data?.status === "NEED_PROFILE") router.replace("/onboarding/profile");
     if (data?.status === "CONNECTED") router.replace(takeReturnTo() ?? "/");
-  }, [data, router]);
+  }, [data, isValidating, router]);
 
   const createInvite = async () => {
     setBusy(true);
@@ -48,7 +50,7 @@ export default function CoupleOnboardingPage() {
     setBusy(true);
     try {
       await api("/couples/join", { method: "POST", body: { inviteCode: code.trim() } });
-      router.replace(takeReturnTo() ?? "/");
+      await mutate("/users/me/onboarding-status");
     } catch (err) {
       toast(errorMessage(err));
       setBusy(false);
@@ -63,6 +65,7 @@ export default function CoupleOnboardingPage() {
       url: window.location.origin,
     });
     if (result === "copied") toast("초대 메시지를 복사했어요");
+    else if (result === "failed") toast("복사하지 못했어요. 화면의 코드를 직접 알려 주세요");
   };
 
   return (

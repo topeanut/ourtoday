@@ -28,6 +28,9 @@ import androidx.swiperefreshlayout.widget.SwipeRefreshLayout
 
 class MainActivity : AppCompatActivity(), NativeBridge.Handler {
 
+    /** 브리지 호출 출처 확인용 (JavascriptInterface 는 다른 스레드에서 읽음) */
+    @Volatile private var currentMainUrl: String? = null
+
     private lateinit var webView: WebView
     private lateinit var swipeRefresh: SwipeRefreshLayout
     private lateinit var errorView: View
@@ -98,7 +101,7 @@ class MainActivity : AppCompatActivity(), NativeBridge.Handler {
         }
         WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG)
 
-        webView.addJavascriptInterface(NativeBridge(this), NativeBridge.NAME)
+        webView.addJavascriptInterface(NativeBridge(this) { currentMainUrl }, NativeBridge.NAME)
         webView.webViewClient = AppWebViewClient()
         webView.webChromeClient = AppChromeClient()
     }
@@ -234,7 +237,14 @@ class MainActivity : AppCompatActivity(), NativeBridge.Handler {
             }
         }
 
+        override fun doUpdateVisitedHistory(view: WebView, url: String?, isReload: Boolean) {
+            // SPA 내부 이동(pushState)도 반영
+            currentMainUrl = url
+            super.doUpdateVisitedHistory(view, url, isReload)
+        }
+
         override fun onPageStarted(view: WebView, url: String?, favicon: Bitmap?) {
+            currentMainUrl = url
             errorView.visibility = View.GONE
         }
 
