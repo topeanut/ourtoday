@@ -7,7 +7,7 @@ export const WEB_APP_URL = "https://ourtoday.vercel.app";
 export const PLAY_URL = "https://play.google.com/store/apps/details?id=app.ourtoday";
 export const PLAY_READY = false;
 /** 문의 이메일 (비우면 "준비 중" 표시) */
-export const CONTACT_EMAIL = "";
+export const CONTACT_EMAIL = "ljhh1648@gmail.com";
 /** 네이버 서치어드바이저 / 구글 서치콘솔 HTML 태그 인증값 (content 값만) */
 export const NAVER_VERIFICATION = "";
 export const GOOGLE_VERIFICATION = "";
