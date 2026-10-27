@@ -35,7 +35,15 @@ export default function LoginPage() {
         </button>
         {IS_DEV && <DevLogin />}
         <p className="mt-4 text-center text-xs leading-relaxed text-sub">
-          로그인하면 서비스 이용에 동의하는 것으로 봐요.
+          로그인하면{" "}
+          <a href="https://ourtoday-app.vercel.app/terms" className="underline">
+            이용약관
+          </a>
+          과{" "}
+          <a href="https://ourtoday-app.vercel.app/privacy" className="underline">
+            개인정보처리방침
+          </a>
+          에 동의하는 것으로 봐요.
           <br />
           카카오에서는 회원 식별값만 받아요.
         </p>

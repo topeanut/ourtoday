@@ -11,7 +11,9 @@ cleanup() { kill "$API_PID" "$WEB_PID" 2>/dev/null || true; }
 trap cleanup EXIT INT TERM
 
 cd "$ROOT/api"
-./gradlew -q bootTestRun --args="--spring.profiles.active=seed,dev --server.port=$API_PORT" &
+# 에뮬레이터에서 사진까지 보려면: STORAGE_BASE=http://10.0.2.2:8080/dev-storage/ bash ops/local.sh
+STORAGE_BASE="${STORAGE_BASE:-http://localhost:$API_PORT/dev-storage/}"
+./gradlew -q bootTestRun --args="--spring.profiles.active=seed,dev --server.port=$API_PORT --dev.storage.base=$STORAGE_BASE" &
 API_PID=$!
 
 cd "$ROOT/web"

@@ -1,0 +1,79 @@
+---
+import "../styles/global.css";
+import { SITE_URL, SITE_NAME, WEB_APP_URL, NAVER_VERIFICATION, GOOGLE_VERIFICATION } from "../config";
+
+interface Props {
+  title: string;
+  description: string;
+  path?: string;
+  jsonLd?: Record<string, unknown>[];
+  noindex?: boolean;
+}
+const { title, description, path = Astro.url.pathname, jsonLd = [], noindex = false } = Astro.props;
+const canonical = new URL(path === "/" ? "/" : path.replace(/\/$/, ""), SITE_URL).href;
+const ogImage = new URL("/og.png", SITE_URL).href;
+
+const baseLd = [
+  { "@context": "https://schema.org", "@type": "Organization", name: SITE_NAME, url: SITE_URL, logo: new URL("/icon-512.png", SITE_URL).href },
+  { "@context": "https://schema.org", "@type": "WebSite", name: SITE_NAME, url: SITE_URL, inLanguage: "ko-KR" },
+];
+const ld = [...baseLd, ...jsonLd];
+---
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    {noindex && <meta name="robots" content="noindex" />}
+    {NAVER_VERIFICATION && <meta name="naver-site-verification" content={NAVER_VERIFICATION} />}
+    {GOOGLE_VERIFICATION && <meta name="google-site-verification" content={GOOGLE_VERIFICATION} />}
+    <meta name="theme-color" content="#fff8f5" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={SITE_NAME} />
+    <meta property="og:locale" content="ko_KR" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="오늘의 우리 — 세 줄이면 충분한 커플 일기" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={ogImage} />
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css" />
+    {ld.map((item) => <script type="application/ld+json" set:html={JSON.stringify(item)} />)}
+  </head>
+  <body>
+    <a class="skip" href="#main">본문으로 건너뛰기</a>
+    <header class="site-header">
+      <div class="wrap">
+        <a class="logo" href="/" aria-label="오늘의 우리 홈">
+          <img src="/favicon.svg" alt="" width="30" height="30" />
+          <span>오늘의 우리</span>
+        </a>
+        <a class="header-cta" href={WEB_APP_URL}>웹으로 시작</a>
+      </div>
+    </header>
+    <main id="main">
+      <slot />
+    </main>
+    <footer class="site-footer">
+      <div class="wrap">
+        <nav aria-label="정책">
+          <a href="/privacy">개인정보처리방침</a>
+          <a href="/terms">이용약관</a>
+        </nav>
+        <p>© 2026 오늘의 우리</p>
+      </div>
+    </footer>
+  </body>
+</html>

@@ -34,7 +34,13 @@ class LocalDevStorage {
     private record Obj(byte[] bytes, String contentType) {}
 
     private final Map<String, Obj> objects = new ConcurrentHashMap<>();
-    private final String base = "http://localhost:" + System.getProperty("server.port", "8080") + PREFIX;
+    /** 사진 주소 앞부분. 에뮬레이터에서 볼 때는 --dev.storage.base=http://10.0.2.2:8080/dev-storage/ */
+    private final String base;
+
+    LocalDevStorage(@org.springframework.beans.factory.annotation.Value(
+        "${dev.storage.base:http://localhost:8080/dev-storage/}") String base) {
+        this.base = base;
+    }
 
     @Bean
     @Primary
