@@ -6,7 +6,8 @@
 type NativeMessage =
   | { type: "share"; title?: string; text?: string; url: string }
   | { type: "openExternal"; url: string }
-  | { type: "haptic" };
+  | { type: "haptic" }
+  | { type: "appleLogin" };
 
 declare global {
   interface Window {
@@ -19,7 +20,12 @@ export function isApp(): boolean {
   return typeof navigator !== "undefined" && /OurTodayApp/.test(navigator.userAgent);
 }
 
-function postNative(msg: NativeMessage): boolean {
+/** iOS 앱 (UA 끝이 "OurTodayApp/x (ios)") */
+export function isIOSApp(): boolean {
+  return typeof navigator !== "undefined" && /OurTodayApp\/[\d.]+ \(ios\)/.test(navigator.userAgent);
+}
+
+export function postNative(msg: NativeMessage): boolean {
   if (typeof window === "undefined") return false;
   if (window.OurTodayNative) {
     window.OurTodayNative.postMessage(JSON.stringify(msg));

@@ -2,18 +2,47 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { KakaoSymbol } from "@/components/Icons";
-import { api, errorMessage } from "@/lib/api";
+import { AppleSymbol, KakaoSymbol } from "@/components/Icons";
+import { api, ApiError, errorMessage } from "@/lib/api";
+import { AppleLoginCancelled, canUseAppleLogin, signInWithApple } from "@/lib/apple";
 import { getToken, setTokens, startKakaoLogin, takeReturnTo } from "@/lib/auth";
 import { IS_DEV } from "@/lib/env";
 import type { OnboardingStatus } from "@/lib/types";
 
+/** 로그인 직후 가입 단계에 맞는 화면으로 */
+async function goAfterLogin(router: ReturnType<typeof useRouter>) {
+  const { status } = await api<{ status: OnboardingStatus }>("/users/me/onboarding-status");
+  if (status === "NEED_PROFILE") router.replace("/onboarding/profile");
+  else if (status === "CONNECTED") router.replace(takeReturnTo() ?? "/");
+  else router.replace("/onboarding/couple");
+}
+
 export default function LoginPage() {
   const router = useRouter();
+  const [showApple, setShowApple] = useState(false);
+  const [appleBusy, setAppleBusy] = useState(false);
+  const [appleError, setAppleError] = useState("");
 
   useEffect(() => {
     if (getToken()) router.replace("/");
+    setShowApple(canUseAppleLogin());
   }, [router]);
+
+  const loginWithApple = async () => {
+    setAppleBusy(true);
+    setAppleError("");
+    try {
+      const t = await signInWithApple();
+      setTokens(t.accessToken, t.refreshToken);
+      await goAfterLogin(router);
+    } catch (err) {
+      if (!(err instanceof AppleLoginCancelled)) {
+        // apple.ts 의 안내 문구는 그대로, 서버 오류는 공통 문구로
+        setAppleError(err instanceof Error && !(err instanceof ApiError) && !(err instanceof TypeError) ? err.message : errorMessage(err));
+      }
+      setAppleBusy(false);
+    }
+  };
 
   return (
     <main className="pt-safe pb-safe flex min-h-dvh flex-col items-center px-6">
@@ -33,6 +62,17 @@ export default function LoginPage() {
           <KakaoSymbol />
           카카오로 시작하기
         </button>
+        {showApple && (
+          <button
+            onClick={loginWithApple}
+            disabled={appleBusy}
+            className="mt-3 flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-black text-[15px] font-semibold text-white transition active:scale-[0.98] disabled:opacity-60"
+          >
+            <AppleSymbol />
+            Apple로 계속하기
+          </button>
+        )}
+        {appleError && <p className="mt-2 text-center text-xs text-[#d6404e]">{appleError}</p>}
         {IS_DEV && <DevLogin />}
         <p className="mt-4 text-center text-xs leading-relaxed text-sub">
           로그인하면{" "}
@@ -45,7 +85,7 @@ export default function LoginPage() {
           </a>
           에 동의하는 것으로 봐요.
           <br />
-          카카오에서는 회원 식별값만 받아요.
+          카카오·Apple에서는 회원 식별값만 받아요.
         </p>
       </div>
     </main>
@@ -66,10 +106,7 @@ function DevLogin() {
     try {
       const t = await api<{ accessToken: string; refreshToken: string }>("/dev/login", { method: "POST", body: { name } });
       setTokens(t.accessToken, t.refreshToken);
-      const { status } = await api<{ status: OnboardingStatus }>("/users/me/onboarding-status");
-      if (status === "NEED_PROFILE") router.replace("/onboarding/profile");
-      else if (status === "CONNECTED") router.replace(takeReturnTo() ?? "/");
-      else router.replace("/onboarding/couple");
+      await goAfterLogin(router);
     } catch (err) {
       setError(errorMessage(err));
       setBusy(false);
