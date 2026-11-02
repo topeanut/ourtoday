@@ -1,5 +1,7 @@
 package com.ourtoday.api.auth;
 
+import com.ourtoday.api.auth.apple.AppleLoginService;
+import com.ourtoday.api.auth.dto.AppleLoginRequest;
 import com.ourtoday.api.auth.dto.TokenRefreshRequest;
 import com.ourtoday.api.auth.dto.TokenResponse;
 import com.ourtoday.api.common.error.BusinessException;
@@ -16,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.util.UUID;
 
-@Tag(name = "Auth", description = "토큰 재발급")
+@Tag(name = "Auth", description = "Apple 로그인 / 토큰 재발급")
 @RestController
 @RequestMapping("/api/v1/auth")
 @RequiredArgsConstructor
@@ -24,6 +26,13 @@ public class AuthController {
 
     private final JwtTokenProvider tokenProvider;
     private final UserRepository userRepository;
+    private final AppleLoginService appleLoginService;
+
+    @Operation(summary = "Apple 로그인", description = "iOS 앱·웹에서 받은 Apple identity token 으로 로그인(없으면 가입). 검증 실패면 401")
+    @PostMapping("/apple")
+    public TokenResponse appleLogin(@Valid @RequestBody AppleLoginRequest request) {
+        return appleLoginService.login(request);
+    }
 
     @Operation(summary = "액세스 토큰 재발급", description = "리프레시 토큰도 새로 발급(회전). 만료·위조·탈퇴 유저면 401")
     @PostMapping("/refresh")

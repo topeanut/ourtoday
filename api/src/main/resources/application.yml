@@ -54,6 +54,14 @@ app:
     secret-key: ${STORAGE_SECRET_KEY:}
     upload-url-ttl: 10m
     download-url-ttl: 1h
+  apple:
+    # Sign in with Apple. 키(.p8)가 없어도 로그인은 되지만, 탈퇴 때 Apple 연결 철회가 안 됨
+    team-id: ${APPLE_TEAM_ID:NRJ8TYHKJM}
+    key-id: ${APPLE_KEY_ID:}
+    private-key: ${APPLE_PRIVATE_KEY:}
+    client-ids: ${APPLE_CLIENT_IDS:app.ourtoday,app.ourtoday.web}
+    web-client-id: ${APPLE_WEB_CLIENT_ID:app.ourtoday.web}
+    web-redirect-uri: ${APPLE_WEB_REDIRECT_URI:https://ourtoday.vercel.app/login/oauth2/code/apple}
   oauth2:
     # 로그인 성공 후 프론트 주소 (예: https://ourtoday.vercel.app/auth/callback). 비우면 JSON 응답
     success-redirect-uri: ${OAUTH2_SUCCESS_REDIRECT_URI:}

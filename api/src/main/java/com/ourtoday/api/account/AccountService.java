@@ -1,15 +1,19 @@
 package com.ourtoday.api.account;
 
+import com.ourtoday.api.auth.apple.AppleAuthClient;
 import com.ourtoday.api.calendar.CalendarMemoRepository;
 import com.ourtoday.api.couple.CoupleService;
 import com.ourtoday.api.image.ImageService;
 import com.ourtoday.api.post.PostService;
 import com.ourtoday.api.reaction.ReactionRepository;
+import com.ourtoday.api.user.User;
 import com.ourtoday.api.user.UserRepository;
 import com.ourtoday.api.user.UserSettingsRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.UUID;
 
@@ -27,6 +31,7 @@ public class AccountService {
     private final UserSettingsRepository userSettingsRepository;
     private final UserRepository userRepository;
     private final ImageService imageService;
+    private final AppleAuthClient appleAuthClient;
 
     /**
      * 커플은 해제(상대는 커플 없음 상태), 내가 쓴 글·사진·반응·메모와 계정 삭제.
@@ -34,6 +39,7 @@ public class AccountService {
      */
     @Transactional
     public void withdraw(UUID userId) {
+        userRepository.findById(userId).ifPresent(this::revokeAppleAfterCommit);
         coupleService.leaveAny(userId);
         postService.deleteAllWrittenBy(userId);
         reactionRepository.deleteByUserId(userId);
@@ -42,5 +48,18 @@ public class AccountService {
         userRepository.deleteById(userId);
         // 내보내기 zip 에는 상대 기록도 들어 있어서 탈퇴 시 함께 삭제
         imageService.deletePrefixAfterCommit("exports/" + userId + "/");
+    }
+
+    /** Apple 로그인 사용자는 탈퇴가 확정된 뒤 Apple 연결도 끊음 (심사 지침 5.1.1(v)) */
+    private void revokeAppleAfterCommit(User user) {
+        String refreshToken = user.getAppleRefreshToken();
+        String clientId = user.getAppleClientId();
+        if (refreshToken == null) return;
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                appleAuthClient.revoke(refreshToken, clientId);
+            }
+        });
     }
 }

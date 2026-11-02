@@ -48,5 +48,12 @@ app:
     bucket: test-bucket
     upload-url-ttl: 10m
     download-url-ttl: 1h
+  apple:
+    team-id: TESTTEAM00
+    key-id:
+    private-key:
+    client-ids: app.ourtoday,app.ourtoday.web
+    web-client-id: app.ourtoday.web
+    web-redirect-uri: https://ourtoday.vercel.app/login/oauth2/code/apple
   oauth2:
     success-redirect-uri:

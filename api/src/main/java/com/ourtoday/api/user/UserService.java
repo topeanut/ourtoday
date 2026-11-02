@@ -24,6 +24,8 @@ public class UserService {
     private final UserSettingsRepository userSettingsRepository;
     private final CoupleRepository coupleRepository;
 
+    static final String APPLE_ID_PREFIX = "apple:";
+
     @Transactional
     public User findOrCreateByKakaoId(String kakaoId) {
         return userRepository.findByKakaoId(kakaoId)
@@ -32,6 +34,19 @@ public class UserService {
                 userSettingsRepository.save(UserSettings.createDefault(user));
                 return user;
             });
+    }
+
+    /**
+     * Apple 회원은 kakao_id 컬럼에 "apple:{sub}" 로 저장 (카카오 회원번호는 숫자라 겹치지 않음).
+     * refresh token 을 새로 받았으면 교체 (재로그인 때마다 Apple 이 새로 줌)
+     */
+    @Transactional
+    public User findOrCreateByApple(String appleSubject, String appleRefreshToken, String appleClientId) {
+        User user = findOrCreateByKakaoId(APPLE_ID_PREFIX + appleSubject);
+        if (appleRefreshToken != null) {
+            user.updateAppleToken(appleRefreshToken, appleClientId);
+        }
+        return user;
     }
 
     @Transactional(readOnly = true)
