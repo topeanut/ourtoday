@@ -12,10 +12,12 @@
 		176E0B36FDD36EE45BB42324 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6235B812BF467A7CE23B3A0F /* AppDelegate.swift */; };
 		20B4A55CFB9AD7E130A10A6F /* AppConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9A091163BECAFB264243F0E /* AppConfig.swift */; };
 		2B1B60EC72AB702DFB58DFF3 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 896D549969436A1EAB400088 /* SceneDelegate.swift */; };
+		46B2DF78AE481FC59B167E1F /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = C590C1D02376E370F72673E2 /* PrivacyInfo.xcprivacy */; };
 		943327EC75370C40B60707D2 /* ErrorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 23C9D2708A2FFAE7D1DFDB5F /* ErrorView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		1B19AE1F15B324D1373F5EC8 /* OurToday.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = OurToday.entitlements; sourceTree = "<group>"; };
 		23C9D2708A2FFAE7D1DFDB5F /* ErrorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorView.swift; sourceTree = "<group>"; };
 		2F05580CA324E5B36898F832 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		324869AF3534BE5E76E0028B /* WebViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebViewController.swift; sourceTree = "<group>"; };
@@ -23,6 +25,7 @@
 		896D549969436A1EAB400088 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
 		95F39C6F0CF9838B77F887EE /* OurToday.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = OurToday.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B9A091163BECAFB264243F0E /* AppConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppConfig.swift; sourceTree = "<group>"; };
+		C590C1D02376E370F72673E2 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		FFF1CC32561C36996EAE1A36 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -51,6 +54,8 @@
 				2F05580CA324E5B36898F832 /* Assets.xcassets */,
 				23C9D2708A2FFAE7D1DFDB5F /* ErrorView.swift */,
 				FFF1CC32561C36996EAE1A36 /* Info.plist */,
+				1B19AE1F15B324D1373F5EC8 /* OurToday.entitlements */,
+				C590C1D02376E370F72673E2 /* PrivacyInfo.xcprivacy */,
 				896D549969436A1EAB400088 /* SceneDelegate.swift */,
 				324869AF3534BE5E76E0028B /* WebViewController.swift */,
 			);
@@ -88,6 +93,7 @@
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
 					A817EAD5F326EF9C906F89A1 = {
+						DevelopmentTeam = NRJ8TYHKJM;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -117,6 +123,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				00B9C699E526EF4A3E2A0E8F /* Assets.xcassets in Resources */,
+				46B2DF78AE481FC59B167E1F /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -201,8 +208,10 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = OurToday/OurToday.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = NRJ8TYHKJM;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = OurToday/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -213,7 +222,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = app.ourtoday;
 				PRODUCT_NAME = OurToday;
 				SDKROOT = iphoneos;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -222,8 +231,10 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = OurToday/OurToday.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
+				DEVELOPMENT_TEAM = NRJ8TYHKJM;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = OurToday/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -234,7 +245,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = app.ourtoday;
 				PRODUCT_NAME = OurToday;
 				SDKROOT = iphoneos;
-				TARGETED_DEVICE_FAMILY = "1,2";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};

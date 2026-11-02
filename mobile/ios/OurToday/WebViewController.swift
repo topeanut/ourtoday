@@ -1,3 +1,4 @@
+import AuthenticationServices
 import UIKit
 import WebKit
 
@@ -103,6 +104,8 @@ final class WebViewController: UIViewController {
             openExternally(url)
         case "haptic":
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        case "appleLogin":
+            startAppleLogin()
         default:
             break
         }
@@ -125,6 +128,51 @@ final class WebViewController: UIViewController {
 
     private func openExternally(_ url: URL) {
         UIApplication.shared.open(url, options: [:], completionHandler: nil)
+    }
+}
+
+// MARK: - Sign in with Apple
+
+extension WebViewController: ASAuthorizationControllerDelegate, ASAuthorizationControllerPresentationContextProviding {
+
+    /// 이름·이메일은 요청하지 않음 (회원 식별값만 사용). 결과는 웹의 ourtoday:appleLogin 이벤트로 전달
+    fileprivate func startAppleLogin() {
+        let request = ASAuthorizationAppleIDProvider().createRequest()
+        request.requestedScopes = []
+        let controller = ASAuthorizationController(authorizationRequests: [request])
+        controller.delegate = self
+        controller.presentationContextProvider = self
+        controller.performRequests()
+    }
+
+    func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
+        view.window ?? ASPresentationAnchor()
+    }
+
+    func authorizationController(controller: ASAuthorizationController,
+                                 didCompleteWithAuthorization authorization: ASAuthorization) {
+        guard let credential = authorization.credential as? ASAuthorizationAppleIDCredential,
+              let tokenData = credential.identityToken,
+              let identityToken = String(data: tokenData, encoding: .utf8) else {
+            sendAppleLoginResult(["error": "failed"])
+            return
+        }
+        var detail: [String: String] = ["identityToken": identityToken]
+        if let codeData = credential.authorizationCode, let code = String(data: codeData, encoding: .utf8) {
+            detail["authorizationCode"] = code
+        }
+        sendAppleLoginResult(detail)
+    }
+
+    func authorizationController(controller: ASAuthorizationController, didCompleteWithError error: Error) {
+        let cancelled = (error as? ASAuthorizationError)?.code == .canceled
+        sendAppleLoginResult(["error": cancelled ? "cancelled" : "failed"])
+    }
+
+    private func sendAppleLoginResult(_ detail: [String: String]) {
+        guard let data = try? JSONSerialization.data(withJSONObject: detail),
+              let json = String(data: data, encoding: .utf8) else { return }
+        webView.evaluateJavaScript("window.dispatchEvent(new CustomEvent('ourtoday:appleLogin', { detail: \(json) }))")
     }
 }
 
