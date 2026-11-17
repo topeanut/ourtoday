@@ -10,7 +10,7 @@ import { PageHeader } from "@/components/AppShell";
 import { ChevronLeft, ChevronRight, PlusIcon } from "@/components/Icons";
 import { useSession } from "@/components/Session";
 import { useToast } from "@/components/Toast";
-import { Button, Confirm, Field, inputClass, Sheet, Spinner } from "@/components/ui";
+import { Button, Confirm, Field, inputClass, Sheet, Spinner, SheetActions } from "@/components/ui";
 
 const COLORS = ["#FF7A8A", "#FFA36C", "#F6C445", "#7CC69A", "#6FB3E8", "#A68EE8"];
 
@@ -137,7 +137,13 @@ export default function CalendarPage() {
               <span className="h-1.5 w-1.5 rounded-full bg-ink/70" /> 기록
             </span>
             <span className="flex items-center gap-1">
-              <span className="h-1.5 w-1.5 rounded-full bg-brand" /> 메모·일정
+              {/* 메모 점은 메모마다 고른 색이라 대표 색 몇 개를 같이 보여 줌 */}
+              <span className="flex -space-x-0.5">
+                {COLORS.slice(0, 3).map((c) => (
+                  <span key={c} className="h-1.5 w-1.5 rounded-full ring-1 ring-white" style={{ background: c }} />
+                ))}
+              </span>{" "}
+              메모·일정
             </span>
           </div>
         </div>
@@ -323,9 +329,11 @@ function MemoEditor({
                 ))}
               </div>
             </div>
-            <Button type="submit" full loading={saving} disabled={!form.title.trim()}>
-              {memo ? "저장" : "추가"}
-            </Button>
+            <SheetActions>
+              <Button type="submit" full loading={saving} disabled={!form.title.trim()}>
+                {memo ? "저장" : "추가"}
+              </Button>
+            </SheetActions>
             {memo && (
               <Button type="button" variant="danger" full onClick={() => setConfirmDelete(true)}>
                 삭제

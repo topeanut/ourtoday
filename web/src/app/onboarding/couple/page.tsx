@@ -5,10 +5,12 @@ import { useRouter } from "next/navigation";
 import useSWR, { mutate } from "swr";
 import { api, errorMessage, fetcher } from "@/lib/api";
 import { getToken, logout, takeReturnTo } from "@/lib/auth";
-import { share } from "@/lib/native";
+import { copyText, share } from "@/lib/native";
 import type { InviteResponse, OnboardingStatus } from "@/lib/types";
 import { Button, Card, Field, inputClass } from "@/components/ui";
 import { useToast } from "@/components/Toast";
+
+const APP_STORE_URL = "https://apps.apple.com/kr/app/id6830693170";
 
 export default function CoupleOnboardingPage() {
   const router = useRouter();
@@ -57,11 +59,24 @@ export default function CoupleOnboardingPage() {
     }
   };
 
+  const copyCode = async () => {
+    if (!invite) return;
+    toast((await copyText(invite.inviteCode)) ? "초대코드를 복사했어요" : "복사하지 못했어요. 코드를 직접 알려 주세요");
+  };
+
   const shareCode = async () => {
     if (!invite) return;
     const result = await share({
       title: "오늘의 우리 초대",
-      text: `오늘의 우리에서 같이 기록해요! 초대코드: ${invite.inviteCode}`,
+      // 받는 사람이 앱 설치 → 로그인 → 코드 입력까지 혼자 할 수 있게 순서를 같이 보냄
+      text: [
+        "오늘의 우리에서 같이 기록해요!",
+        `초대코드: ${invite.inviteCode}`,
+        "",
+        "1. 앱 설치 (아이폰) " + APP_STORE_URL,
+        "   다른 기기는 아래 링크에서 바로 써도 돼요",
+        "2. 로그인하고 '초대코드 입력하기'에 코드를 넣어 주세요",
+      ].join("\n"),
       url: window.location.origin,
     });
     if (result === "copied") toast("초대 메시지를 복사했어요");
@@ -97,13 +112,23 @@ export default function CoupleOnboardingPage() {
       {mode === "invite" && invite && (
         <Card className="mt-10 text-center">
           <p className="text-sm text-sub">초대코드</p>
-          <p className="mt-2 font-mono text-4xl font-bold tracking-[0.3em] text-brand-strong">{invite.inviteCode}</p>
-          <p className="mt-3 text-xs text-sub">
+          <button
+            type="button"
+            onClick={copyCode}
+            className="mt-2 rounded-2xl px-3 py-1 text-brand-strong transition active:scale-95 active:bg-brand/10"
+            aria-label={`초대코드 ${invite.inviteCode} 복사`}
+          >
+            {/* 전역 button { font: inherit } 이 버튼의 글자 크기를 덮어쓰므로 글자 스타일은 span 에.
+                글자 간격이 마지막 글자 뒤에도 붙어서 오른쪽으로 치우치므로 같은 만큼 왼쪽을 띄움 */}
+            <span className="block pl-[0.3em] font-mono text-4xl font-bold tracking-[0.3em]">{invite.inviteCode}</span>
+          </button>
+          <p className="text-xs text-sub">코드를 누르면 복사돼요</p>
+          <p className="mt-1 text-xs text-sub">
             {new Date(invite.expiresAt).toLocaleString("ko-KR", { month: "long", day: "numeric", hour: "numeric", minute: "2-digit" })}
             까지 유효
           </p>
           <Button full className="mt-6" onClick={shareCode}>
-            상대에게 보내기
+            상대에게 공유하기
           </Button>
           <p className="mt-4 flex items-center justify-center gap-2 text-sm text-sub">
             <span className="h-2 w-2 animate-pulse rounded-full bg-brand" />

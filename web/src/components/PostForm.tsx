@@ -91,10 +91,11 @@ export function PostForm({
   const lines = content.split("\n").length;
 
   return (
-    <form onSubmit={submit} className="flex flex-col gap-4">
-      <div className="rounded-3xl bg-white p-4 shadow-sm">
+    // 모바일: 본문 칸이 남는 높이를 채우고, 키보드가 열리면 사진·날짜 줄을 잠시 숨겨 버튼이 키보드 위에 보이게 함
+    <form onSubmit={submit} className="flex flex-col gap-4 max-md:min-h-0 max-md:flex-1 group-data-[keyboard=open]:gap-3">
+      <div className="flex flex-col rounded-3xl bg-white p-4 shadow-sm max-md:min-h-0 max-md:flex-1">
         <textarea
-          className="min-h-[160px] w-full resize-none bg-transparent text-[16px] leading-relaxed outline-none placeholder:text-sub/60"
+          className="min-h-[160px] w-full flex-1 resize-none max-md:min-h-[72px] bg-transparent text-[16px] leading-relaxed outline-none placeholder:text-sub/60"
           value={content}
           onChange={(e) => setContent(e.target.value.slice(0, MAX_LEN))}
           placeholder={"오늘 우리에게 있었던 일,\n세 줄이면 충분해요."}
@@ -109,7 +110,7 @@ export function PostForm({
         </div>
       </div>
 
-      <div className="flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-2 group-data-[keyboard=open]:hidden">
         {slots.map((s) => (
           <div key={s.key} className="relative h-20 w-20 overflow-hidden rounded-2xl bg-line">
             <img src={s.preview} alt="" className="h-full w-full object-cover" />
@@ -136,7 +137,7 @@ export function PostForm({
         <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={(e) => addFiles(e.target.files)} />
       </div>
 
-      <label className="flex items-center justify-between rounded-2xl bg-white px-4 py-2 shadow-sm">
+      <label className="flex items-center justify-between rounded-2xl bg-white px-4 py-2 shadow-sm group-data-[keyboard=open]:hidden">
         <span className="shrink-0 whitespace-nowrap text-sm font-medium text-sub">날짜</span>
         <input
           type="date"

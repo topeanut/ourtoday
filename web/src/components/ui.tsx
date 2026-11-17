@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import { useKeyboardViewport } from "@/lib/useKeyboardViewport";
 import { CloseIcon } from "./Icons";
 
 const PALETTE = ["#ff7a8a", "#ffa36c", "#f6c445", "#7cc69a", "#6fb3e8", "#a68ee8"];
@@ -88,6 +89,14 @@ export function Field({ label, hint, children }: { label: string; hint?: React.R
 export const inputClass =
   "w-full rounded-2xl border border-line bg-white px-4 py-3 outline-none transition placeholder:text-sub/60 focus:border-brand focus:ring-4 focus:ring-brand/15";
 
+/**
+ * 시트 안 저장 버튼 자리. 입력칸이 많은 시트는 키보드가 열리면 보이는 높이에 다 안 들어가서
+ * 버튼이 아래로 숨으므로, 시트 아래쪽에 붙여 두고 입력칸만 시트 안에서 스크롤되게 함
+ */
+export function SheetActions({ children }: { children: React.ReactNode }) {
+  return <div className="sticky -bottom-px z-10 -mx-5 flex flex-col gap-2 bg-white px-5 pb-1 pt-2">{children}</div>;
+}
+
 /** 모바일 하단 시트 / PC 가운데 모달 */
 export function Sheet({
   open,
@@ -100,6 +109,10 @@ export function Sheet({
   title?: string;
   children: React.ReactNode;
 }) {
+  const ref = useRef<HTMLDivElement>(null);
+  // iOS 는 키보드가 열려도 화면 높이를 줄이지 않아서, 화면 아래에 붙은 시트의 버튼이 키보드에 가려짐 → 보이는 영역에 맞춤
+  useKeyboardViewport(ref, open);
+
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
@@ -114,9 +127,15 @@ export function Sheet({
 
   if (!open) return null;
   return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center md:items-center" role="dialog" aria-modal aria-label={title}>
+    <div
+      ref={ref}
+      className="group fixed inset-x-0 top-0 z-50 flex h-dvh items-end justify-center md:items-center"
+      role="dialog"
+      aria-modal
+      aria-label={title}
+    >
       <button className="animate-fade absolute inset-0 bg-black/35" onClick={onClose} aria-label="닫기" />
-      <div className="animate-sheet relative max-h-[88dvh] w-full overflow-y-auto rounded-t-3xl bg-white px-5 pb-[calc(20px+var(--safe-bottom))] pt-4 shadow-xl md:max-w-md md:rounded-3xl md:pb-6">
+      <div className="animate-sheet relative max-h-[88%] w-full overflow-y-auto overscroll-contain rounded-t-3xl bg-white px-5 pb-[calc(20px+var(--safe-bottom))] pt-4 shadow-xl group-data-[keyboard=open]:max-h-[calc(100%-12px)] group-data-[keyboard=open]:pb-4 md:max-w-md md:rounded-3xl md:pb-6">
         <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-line md:hidden" />
         {title && (
           <div className="mb-4 flex items-center justify-between">

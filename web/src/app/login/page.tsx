@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AppleSymbol, KakaoSymbol } from "@/components/Icons";
+import { KeyboardSafeScreen } from "@/components/KeyboardSafeScreen";
 import { Spinner } from "@/components/ui";
 import { api, ApiError, errorMessage } from "@/lib/api";
 import { AppleLoginCancelled, canUseAppleLogin, preloadAppleSdk, signInWithApple } from "@/lib/apple";
@@ -49,16 +50,17 @@ export default function LoginPage() {
   };
 
   return (
-    <main className="pt-safe pb-safe flex min-h-dvh flex-col items-center px-6">
-      <div className="flex flex-1 flex-col items-center justify-center text-center">
-        <img src="/icon.svg" alt="" className="mb-6 h-20 w-20 drop-shadow-sm" />
+    // 키보드가 열려도 화면이 밀리지 않게 보이는 영역에 맞추고, 열린 동안은 아이콘·소개 문구를 접음
+    <KeyboardSafeScreen className="pt-safe pb-safe flex flex-col items-center px-6">
+      <div className="flex flex-1 flex-col items-center justify-center text-center group-data-[keyboard=open]:flex-none group-data-[keyboard=open]:py-4">
+        <img src="/icon.svg" alt="" className="mb-6 h-20 w-20 drop-shadow-sm group-data-[keyboard=open]:hidden" />
         <h1 className="text-3xl font-bold tracking-tight">오늘의 우리</h1>
-        <p className="mt-3 leading-relaxed text-sub">
+        <p className="mt-3 leading-relaxed text-sub group-data-[keyboard=open]:hidden">
           길게 쓰지 않아도 괜찮아요.
           <br />세 줄이면 충분한 우리 둘만의 일기장
         </p>
       </div>
-      <div className="w-full max-w-sm pb-10">
+      <div className="w-full max-w-sm pb-10 group-data-[keyboard=open]:pb-3">
         <button
           onClick={startKakaoLogin}
           className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[#FEE500] text-[15px] font-semibold text-black/85 transition active:scale-[0.98]"
@@ -103,7 +105,7 @@ export default function LoginPage() {
           카카오·Apple에서는 회원 식별값만 받아요.
         </p>
       </div>
-    </main>
+    </KeyboardSafeScreen>
   );
 }
 
@@ -134,6 +136,8 @@ function DevLogin() {
       <div className="flex gap-2">
         <input
           aria-label="개발 계정 이름"
+          autoCapitalize="none"
+          autoCorrect="off"
           className="min-w-0 flex-1 rounded-xl border border-line px-3 py-2"
           value={name}
           onChange={(e) => setName(e.target.value.replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 20))}

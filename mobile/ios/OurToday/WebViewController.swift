@@ -7,6 +7,8 @@ final class WebViewController: UIViewController {
     private var webView: WKWebView!
     private let refreshControl = UIRefreshControl()
     private let errorView = ErrorView()
+    /// 키보드가 올라오면 웹뷰 아래쪽을 키보드 위까지 줄임 (Android adjustResize 와 같은 방식)
+    private var webViewBottom: NSLayoutConstraint!
 
     override var preferredStatusBarStyle: UIStatusBarStyle { .darkContent }
 
@@ -15,6 +17,7 @@ final class WebViewController: UIViewController {
         view.backgroundColor = AppConfig.background
         setUpWebView()
         setUpErrorView()
+        observeKeyboard()
         webView.load(URLRequest(url: AppConfig.startURL))
     }
 
@@ -51,9 +54,10 @@ final class WebViewController: UIViewController {
 
         webView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(webView)
+        webViewBottom = webView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         NSLayoutConstraint.activate([
             webView.topAnchor.constraint(equalTo: view.topAnchor),
-            webView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            webViewBottom,
             webView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             webView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
         ])
@@ -128,6 +132,42 @@ final class WebViewController: UIViewController {
 
     private func openExternally(_ url: URL) {
         UIApplication.shared.open(url, options: [:], completionHandler: nil)
+    }
+}
+
+// MARK: - 키보드
+
+extension WebViewController {
+
+    /// 기본 동작: 웹뷰는 키보드 뒤에 그대로 있고 iOS 가 입력칸을 보이려고 페이지 전체를 위로 밀어 올림.
+    /// → 웹뷰 높이를 키보드 위까지 줄여서 밀 필요가 없게 하고, 웹에 열림/닫힘을 알려 화면을 맞추게 함
+    fileprivate func observeKeyboard() {
+        let center = NotificationCenter.default
+        center.addObserver(self, selector: #selector(keyboardWillChange(_:)),
+                           name: UIResponder.keyboardWillChangeFrameNotification, object: nil)
+        center.addObserver(self, selector: #selector(keyboardWillChange(_:)),
+                           name: UIResponder.keyboardWillHideNotification, object: nil)
+    }
+
+    @objc private func keyboardWillChange(_ note: Notification) {
+        guard let info = note.userInfo,
+              let endFrame = (info[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue)?.cgRectValue else { return }
+        let hiding = note.name == UIResponder.keyboardWillHideNotification
+        let frameInView = view.convert(endFrame, from: nil)
+        let overlap = hiding ? 0 : max(0, view.bounds.maxY - frameInView.minY)
+        guard webViewBottom.constant != -overlap else { return }
+
+        webViewBottom.constant = -overlap
+        let duration = (info[UIResponder.keyboardAnimationDurationUserInfoKey] as? Double) ?? 0.25
+        let curveRaw = (info[UIResponder.keyboardAnimationCurveUserInfoKey] as? UInt) ?? 7
+        UIView.animate(withDuration: duration, delay: 0,
+                       options: UIView.AnimationOptions(rawValue: curveRaw << 16)) {
+            self.view.layoutIfNeeded()
+        }
+        let state = overlap > 0 ? "open" : "closed"
+        webView.evaluateJavaScript(
+            "window.__ourtodayKeyboard='\(state)';window.dispatchEvent(new CustomEvent('ourtoday:keyboard',{detail:'\(state)'}))"
+        )
     }
 }
 

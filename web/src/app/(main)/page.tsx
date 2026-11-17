@@ -27,6 +27,7 @@ export default function HomePage() {
     { revalidateFirstPage: true },
   );
   const memories = useSWR<Memories>("/posts/memories/today", fetcher);
+  const fabHidden = useHideOnScrollDown();
 
   // 작성·수정·삭제 후 돌아왔을 때 항상 최신으로. SWR 기본 재검증은 requestAnimationFrame 이라
   // 숨김 상태(웹뷰 백그라운드 복귀 직후 등)에서 안 돌 수 있어 직접 호출
@@ -125,7 +126,9 @@ export default function HomePage() {
 
       <Link
         href="/posts/new"
-        className="fixed right-5 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-brand text-white shadow-lg shadow-brand/30 transition active:scale-95 md:hidden"
+        className={`fixed right-5 z-30 flex h-14 w-14 items-center justify-center rounded-full bg-brand text-white shadow-lg shadow-brand/30 transition duration-200 active:scale-95 md:hidden ${
+          fabHidden ? "pointer-events-none translate-y-6 opacity-0" : ""
+        }`}
         style={{ bottom: "calc(84px + var(--safe-bottom))" }}
         aria-label="오늘 기록하기"
       >
@@ -163,7 +166,7 @@ function MemoriesCard({ data }: { data: Memories }) {
         </div>
         {cover && <img src={cover} alt="" className="h-20 w-20 shrink-0 rounded-2xl object-cover" />}
       </button>
-      <Sheet open={open} onClose={() => setOpen(false)} title="작년 오늘">
+      <Sheet open={open} onClose={() => setOpen(false)} title="지난 오늘">
         <div className="flex flex-col gap-6">
           {data.memories.map((m) => (
             <section key={m.year}>
@@ -186,4 +189,21 @@ function MemoriesCard({ data }: { data: Memories }) {
       </Sheet>
     </>
   );
+}
+
+/** 아래로 스크롤하는 동안은 떠 있는 + 버튼이 카드 메뉴(⋯)를 가리지 않게 숨기고, 위로 올리면 다시 보여 줌 */
+function useHideOnScrollDown() {
+  const [hidden, setHidden] = useState(false);
+  useEffect(() => {
+    let last = window.scrollY;
+    const onScroll = () => {
+      const y = window.scrollY;
+      if (Math.abs(y - last) < 8) return;
+      setHidden(y > last && y > 80);
+      last = y;
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+  return hidden;
 }

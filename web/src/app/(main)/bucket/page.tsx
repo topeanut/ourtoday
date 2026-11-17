@@ -11,7 +11,7 @@ import type { BucketItem } from "@/lib/types";
 import { PageHeader } from "@/components/AppShell";
 import { CheckIcon, PlusIcon } from "@/components/Icons";
 import { useToast } from "@/components/Toast";
-import { Button, Confirm, Empty, Field, inputClass, PageSpinner, Sheet } from "@/components/ui";
+import { Button, Confirm, Empty, Field, inputClass, PageSpinner, Sheet, SheetActions } from "@/components/ui";
 
 type Status = "ALL" | "TODO" | "DONE";
 
@@ -247,9 +247,11 @@ function BucketEditor({
           <Field label="목표 날짜 (선택)">
             <input type="date" className={inputClass} value={form.targetDate} onChange={(e) => setForm({ ...form, targetDate: e.target.value })} />
           </Field>
-          <Button type="submit" full loading={saving} disabled={!form.title.trim()}>
-            {item ? "저장" : "추가"}
-          </Button>
+          <SheetActions>
+            <Button type="submit" full loading={saving} disabled={!form.title.trim()}>
+              {item ? "저장" : "추가"}
+            </Button>
+          </SheetActions>
           {item && (
             <Button type="button" variant="danger" full onClick={() => setConfirmDelete(true)}>
               삭제
