@@ -30,3 +30,6 @@ API.md
 API-CONVENTIONS.md
 PLAN.md
 todo.md
+
+# 테스터 이메일 등 개인정보 상태 파일
+*.local.csv
