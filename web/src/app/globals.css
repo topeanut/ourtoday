@@ -54,6 +54,10 @@ select {
 .pb-safe {
   padding-bottom: var(--safe-bottom);
 }
+/* 키보드가 열리면 홈 인디케이터가 가려지므로 아래 안전 여백 불필요 (KeyboardSafeScreen) */
+.keyboard-safe[data-keyboard="open"].pb-safe {
+  padding-bottom: 0;
+}
 
 @keyframes sheet-up {
   from {

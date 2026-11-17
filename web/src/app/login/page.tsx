@@ -3,8 +3,9 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AppleSymbol, KakaoSymbol } from "@/components/Icons";
+import { Spinner } from "@/components/ui";
 import { api, ApiError, errorMessage } from "@/lib/api";
-import { AppleLoginCancelled, canUseAppleLogin, signInWithApple } from "@/lib/apple";
+import { AppleLoginCancelled, canUseAppleLogin, preloadAppleSdk, signInWithApple } from "@/lib/apple";
 import { getToken, setTokens, startKakaoLogin, takeReturnTo } from "@/lib/auth";
 import { IS_DEV } from "@/lib/env";
 import type { OnboardingStatus } from "@/lib/types";
@@ -25,7 +26,10 @@ export default function LoginPage() {
 
   useEffect(() => {
     if (getToken()) router.replace("/");
-    setShowApple(canUseAppleLogin());
+    const apple = canUseAppleLogin();
+    setShowApple(apple);
+    // 웹 브라우저는 버튼을 누른 뒤 SDK 를 받으면 그만큼 늦어지므로 미리 받아 둠 (iOS 앱은 네이티브라 불필요)
+    if (apple) preloadAppleSdk();
   }, [router]);
 
   const loginWithApple = async () => {
@@ -66,10 +70,21 @@ export default function LoginPage() {
           <button
             onClick={loginWithApple}
             disabled={appleBusy}
-            className="mt-3 flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-black text-[15px] font-semibold text-white transition active:scale-[0.98] disabled:opacity-60"
+            aria-busy={appleBusy}
+            className="mt-3 flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-black text-[15px] font-semibold text-white transition active:scale-[0.98] disabled:opacity-80"
           >
-            <AppleSymbol />
-            Apple로 계속하기
+            {/* iOS 시스템 Apple 로그인 창은 뜨기까지 몇 초 걸릴 수 있어서, 누르자마자 진행 중임을 보여 줌 */}
+            {appleBusy ? (
+              <>
+                <Spinner className="h-4 w-4 border-white/30 border-t-white" />
+                Apple 로그인 여는 중…
+              </>
+            ) : (
+              <>
+                <AppleSymbol />
+                Apple로 계속하기
+              </>
+            )}
           </button>
         )}
         {appleError && <p className="mt-2 text-center text-xs text-[#d6404e]">{appleError}</p>}

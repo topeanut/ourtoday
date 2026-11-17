@@ -69,7 +69,7 @@ export default function CoupleOnboardingPage() {
   };
 
   return (
-    <div className="flex flex-1 flex-col pt-16">
+    <div className="flex flex-1 flex-col pt-16 group-data-[keyboard=open]:pt-6">
       <p className="text-sm font-semibold text-brand-strong">2 / 2</p>
       <h1 className="mt-2 text-2xl font-bold leading-snug">
         우리 둘을

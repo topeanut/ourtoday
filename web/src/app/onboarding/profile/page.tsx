@@ -34,7 +34,7 @@ export default function ProfileOnboardingPage() {
 
   return (
     <form onSubmit={submit} className="flex flex-1 flex-col">
-      <div className="flex-1 pt-16">
+      <div className="flex-1 pt-16 group-data-[keyboard=open]:pt-6">
         <p className="text-sm font-semibold text-brand-strong">1 / 2</p>
         <h1 className="mt-2 text-2xl font-bold leading-snug">
           상대에게 보일
@@ -55,7 +55,7 @@ export default function ProfileOnboardingPage() {
           </Field>
         </div>
       </div>
-      <div className="pb-8">
+      <div className="pb-8 group-data-[keyboard=open]:pb-3">
         <Button type="submit" full loading={saving} disabled={!nickname.trim()}>
           다음
         </Button>

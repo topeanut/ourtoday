@@ -60,6 +60,12 @@ function nativeSignIn(): Promise<AppleCredential> {
 
 let sdkPromise: Promise<void> | null = null;
 
+/** 웹 브라우저에서만 Apple JS SDK 를 미리 받아 둠. 실패해도 누를 때 다시 시도하므로 무시 */
+export function preloadAppleSdk(): void {
+  if (isIOSApp()) return;
+  loadSdk().catch(() => {});
+}
+
 function loadSdk(): Promise<void> {
   if (window.AppleID) return Promise.resolve();
   sdkPromise ??= new Promise<void>((resolve, reject) => {
