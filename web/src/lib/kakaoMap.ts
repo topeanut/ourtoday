@@ -6,6 +6,12 @@
 const JS_KEY = "95aace48dcc318ab3bdb557f5c910ec3";
 const SDK_URL = `//dapi.kakao.com/v2/maps/sdk.js?appkey=${JS_KEY}&libraries=services&autoload=false`;
 
+export interface PickedLocation {
+  lat: number;
+  lng: number;
+  placeName: string;
+}
+
 export interface KakaoLatLng {
   getLat(): number;
   getLng(): number;

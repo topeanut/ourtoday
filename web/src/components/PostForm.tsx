@@ -5,7 +5,8 @@ import { errorMessage } from "@/lib/api";
 import { todayKst } from "@/lib/date";
 import { uploadImage } from "@/lib/image";
 import { CloseIcon, ImageIcon } from "./Icons";
-import { LocationPicker, type PickedLocation } from "./LocationPicker";
+import { LocationPicker } from "./LocationPicker";
+import type { PickedLocation } from "@/lib/kakaoMap";
 import { useToast } from "./Toast";
 import { Button, DateField } from "./ui";
 

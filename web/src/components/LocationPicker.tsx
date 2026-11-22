@@ -2,13 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { MapPin, CloseIcon } from "./Icons";
-import { loadKakaoMap, type KakaoMapInstance, type KakaoMarkerInstance, type KakaoMaps } from "@/lib/kakaoMap";
+import { loadKakaoMap, type PickedLocation, type KakaoMapInstance, type KakaoMarkerInstance, type KakaoMaps } from "@/lib/kakaoMap";
 
-export interface PickedLocation {
-  lat: number;
-  lng: number;
-  placeName: string;
-}
+export type { PickedLocation };
 
 interface Props {
   value: PickedLocation | null;
