@@ -33,3 +33,7 @@ todo.md
 
 # 테스터 이메일 등 개인정보 상태 파일
 *.local.csv
+
+# Firebase 클라이언트 설정 (API 키 포함, 원본은 ~/.secrets/ourtoday/firebase/)
+mobile/android/app/google-services.json
+mobile/ios/OurToday/GoogleService-Info.plist
