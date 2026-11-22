@@ -6,6 +6,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -22,18 +23,25 @@ public class PushDispatcher {
 
     @Async(PushConfig.EXECUTOR)
     public void sendToUsers(Collection<UUID> userIds, PushMessage message) {
+        if (userIds == null || userIds.isEmpty()) {
+            return;
+        }
+        List<PushToken> tokens;
         try {
-            if (userIds == null || userIds.isEmpty()) {
-                return;
-            }
-            for (PushToken t : tokenRepository.findByUserIdIn(userIds)) {
-                SendResult result = sender.send(t.getToken(), message);
-                if (result == SendResult.INVALID_TOKEN) {
+            tokens = tokenRepository.findByUserIdIn(userIds);
+        } catch (RuntimeException e) {
+            log.warn("푸시 토큰 조회 실패 type={}", message.type(), e);
+            return;
+        }
+        // 토큰 하나가 실패해도 나머지 발송은 계속
+        for (PushToken t : tokens) {
+            try {
+                if (sender.send(t.getToken(), message) == SendResult.INVALID_TOKEN) {
                     tokenRepository.deleteByToken(t.getToken());
                 }
+            } catch (RuntimeException e) {
+                log.warn("푸시 발송 실패 type={}", message.type(), e);
             }
-        } catch (RuntimeException e) {
-            log.warn("푸시 발송 실패 type={}", message.type(), e);
         }
     }
 }

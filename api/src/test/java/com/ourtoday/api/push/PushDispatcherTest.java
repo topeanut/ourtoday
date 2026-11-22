@@ -76,6 +76,18 @@ class PushDispatcherTest {
     }
 
     @Test
+    void 한_토큰이_예외를_던져도_나머지_토큰에는_보낸다() {
+        UUID a = newUser();
+        String t1 = addToken(a);
+        String t2 = addToken(a);
+        fake.failFor(t1);
+
+        dispatcher.sendToUsers(List.of(a), message);
+
+        assertThat(fake.sent()).extracting(FakePushSender.Sent::token).containsExactly(t2);
+    }
+
+    @Test
     void 서비스계정이_없으면_Noop_발송기가_만들어진다() {
         assertThat(new PushConfig().pushSender("")).isInstanceOf(NoopPushSender.class);
         assertThat(new PushConfig().pushSender("   ")).isInstanceOf(NoopPushSender.class);

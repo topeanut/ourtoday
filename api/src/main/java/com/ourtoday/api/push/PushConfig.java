@@ -59,6 +59,8 @@ public class PushConfig {
             ex.setMaxPoolSize(2);
             ex.setQueueCapacity(100);
             ex.setThreadNamePrefix("push-");
+            // 큐가 차도 호출자(커밋 후 리스너·스케줄러)에게 예외를 던지지 않고 버림
+            ex.setRejectedExecutionHandler((r, executor) -> log.warn("푸시 큐가 가득 차 발송을 건너뜁니다."));
             return ex;
         }
     }

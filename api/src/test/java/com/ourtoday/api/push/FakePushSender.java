@@ -4,7 +4,6 @@ import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -23,12 +22,16 @@ public class FakePushSender implements PushSender {
 
     private final List<Sent> sent = new CopyOnWriteArrayList<>();
     private final Set<String> invalidTokens = new CopyOnWriteArraySet<>();
+    private final Set<String> throwingTokens = new CopyOnWriteArraySet<>();
     private volatile RuntimeException failure;
 
     @Override
     public SendResult send(String token, PushMessage message) {
         if (failure != null) {
             throw failure;
+        }
+        if (throwingTokens.contains(token)) {
+            throw new IllegalStateException("fake failure for " + token);
         }
         sent.add(new Sent(token, message));
         return invalidTokens.contains(token) ? SendResult.INVALID_TOKEN : SendResult.OK;
@@ -42,6 +45,10 @@ public class FakePushSender implements PushSender {
         invalidTokens.add(token);
     }
 
+    public void failFor(String token) {
+        throwingTokens.add(token);
+    }
+
     public void failWith(RuntimeException e) {
         this.failure = e;
     }
@@ -49,6 +56,7 @@ public class FakePushSender implements PushSender {
     public void reset() {
         sent.clear();
         invalidTokens.clear();
+        throwingTokens.clear();
         failure = null;
     }
 }
