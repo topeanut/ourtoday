@@ -34,6 +34,7 @@ public class SecurityConfig {
                     "/api/v1/health",
                     "/api/v1/auth/refresh",
                     "/api/v1/auth/apple",
+                    "/api/v1/auth/kakao/prepare",
                     "/api/v1/dev/login",
                     "/swagger-ui/**",
                     "/swagger-ui.html",
