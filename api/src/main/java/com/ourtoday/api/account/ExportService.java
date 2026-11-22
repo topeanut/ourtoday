@@ -7,6 +7,8 @@ import com.ourtoday.api.bucket.BucketItem;
 import com.ourtoday.api.bucket.BucketItemRepository;
 import com.ourtoday.api.calendar.CalendarMemo;
 import com.ourtoday.api.calendar.CalendarMemoRepository;
+import com.ourtoday.api.comment.Comment;
+import com.ourtoday.api.comment.CommentRepository;
 import com.ourtoday.api.common.error.BusinessException;
 import com.ourtoday.api.common.error.ErrorCode;
 import com.ourtoday.api.couple.Couple;
@@ -66,6 +68,7 @@ public class ExportService {
     private final PostRepository postRepository;
     private final PostImageRepository postImageRepository;
     private final ReactionRepository reactionRepository;
+    private final CommentRepository commentRepository;
     private final CalendarMemoRepository calendarMemoRepository;
     private final BucketItemRepository bucketItemRepository;
     private final ImageStorage storage;
@@ -159,6 +162,10 @@ public class ExportService {
             : reactionRepository.countByPostIds(postIds, UUID.randomUUID()).stream()
                 .collect(Collectors.groupingBy(ReactionCount::postId));
 
+        Map<UUID, List<Comment>> comments = postIds.isEmpty() ? Map.of()
+            : commentRepository.findByPostIdInOrderByCreatedAtAsc(postIds).stream()
+                .collect(Collectors.groupingBy(Comment::getPostId));
+
         List<Map<String, Object>> postData = new ArrayList<>();
         for (Post post : posts) {
             List<String> files = new ArrayList<>();
@@ -178,6 +185,10 @@ public class ExportService {
             row.put("reactions", reactions.getOrDefault(post.getId(), List.of()).stream()
                 .collect(Collectors.toMap(r -> r.emojiType().name(), ReactionCount::count,
                     (a, b) -> a, LinkedHashMap::new)));
+            row.put("comments", comments.getOrDefault(post.getId(), List.of()).stream()
+                .map(c -> Map.of("author", name.apply(c.getAuthorId()), "content", c.getContent(),
+                    "createdAt", c.getCreatedAt()))
+                .toList());
             row.put("createdAt", post.getCreatedAt());
             postData.add(row);
         }

@@ -4,6 +4,9 @@ import com.ourtoday.api.common.error.BusinessException;
 import com.ourtoday.api.common.error.ErrorCode;
 import com.ourtoday.api.couple.Couple;
 import com.ourtoday.api.couple.CoupleRepository;
+import com.ourtoday.api.image.ImageService;
+import com.ourtoday.api.image.dto.PresignedUrlRequest;
+import com.ourtoday.api.image.dto.PresignedUrlResponse;
 import com.ourtoday.api.user.dto.OnboardingStatusResponse;
 import com.ourtoday.api.user.dto.UserResponse;
 import com.ourtoday.api.user.dto.UserSettingsResponse;
@@ -13,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -23,6 +27,8 @@ public class UserService {
     private final UserRepository userRepository;
     private final UserSettingsRepository userSettingsRepository;
     private final CoupleRepository coupleRepository;
+    private final ImageService imageService;
+    private final ProfileImageResolver profileImages;
 
     static final String APPLE_ID_PREFIX = "apple:";
 
@@ -62,11 +68,42 @@ public class UserService {
         User user = getUser(userId);
         String nickname = request.nickname().trim();
         if (user.isProfileCompleted()) {
-            user.updateProfile(nickname, request.profileImageUrl());
+            user.updateNickname(nickname);
         } else {
-            user.completeProfile(nickname, request.profileImageUrl());
+            user.completeProfile(nickname);
+        }
+        if (request.profileImageKey() != null) {
+            imageService.verifyProfileKey(userId, request.profileImageKey());
+            replaceProfileImageKey(user, request.profileImageKey());
         }
         return toResponse(user);
+    }
+
+    @Transactional(readOnly = true)
+    public PresignedUrlResponse createProfileImageUploadUrl(UUID userId, PresignedUrlRequest request) {
+        getUser(userId);
+        return imageService.createProfileUploadUrl(userId, request);
+    }
+
+    /** 직접 올린 사진만 지움 → 카카오 사진(있으면)이나 이름 첫 글자로 돌아감 */
+    @Transactional
+    public UserResponse removeProfileImage(UUID userId) {
+        User user = getUser(userId);
+        replaceProfileImageKey(user, null);
+        return toResponse(user);
+    }
+
+    /** 카카오 로그인 때마다 최신 카카오 프로필 사진으로 갱신 (없으면 null) */
+    @Transactional
+    public void syncKakaoProfileImage(UUID userId, String kakaoProfileImageUrl) {
+        getUser(userId).updateKakaoProfileImageUrl(kakaoProfileImageUrl);
+    }
+
+    private void replaceProfileImageKey(User user, String key) {
+        String old = user.changeProfileImageKey(key);
+        if (old != null) {
+            imageService.deleteAfterCommit(List.of(old));
+        }
     }
 
     @Transactional(readOnly = true)
@@ -115,7 +152,8 @@ public class UserService {
         return new UserResponse(
             user.getId(),
             user.getNickname(),
-            user.getProfileImageUrl(),
+            profileImages.urlOf(user),
+            user.getProfileImageKey() != null,
             user.getKakaoId(),
             user.isProfileCompleted(),
             user.getCreatedAt(),

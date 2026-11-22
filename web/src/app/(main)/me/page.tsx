@@ -5,11 +5,13 @@ import useSWR from "swr";
 import { api, errorMessage, fetcher } from "@/lib/api";
 import { clearToken, logout } from "@/lib/auth";
 import { formatDay, todayKst } from "@/lib/date";
+import { uploadProfileImage } from "@/lib/image";
 import { isApp, openExternal } from "@/lib/native";
 import { getPushState, openNotificationSettings, requestPushPermission, type PushState } from "@/lib/push";
-import type { CoupleStats, MemberStats, Settings } from "@/lib/types";
+import type { CoupleStats, MemberStats, Settings, User } from "@/lib/types";
 import { PageHeader } from "@/components/AppShell";
-import { ChevronRight } from "@/components/Icons";
+import { CameraIcon, ChevronRight } from "@/components/Icons";
+import { ProfilePhotoPicker } from "@/components/ProfilePhotoPicker";
 import { useSession } from "@/components/Session";
 import { useToast } from "@/components/Toast";
 import { Avatar, Button, Card, Confirm, DateField, Field, inputClass, Sheet, Spinner, Toggle } from "@/components/ui";
@@ -21,6 +23,7 @@ export default function MyPage() {
   const settings = useSWR<Settings>("/users/me/settings", fetcher);
 
   const [editName, setEditName] = useState(false);
+  const [editPhoto, setEditPhoto] = useState(false);
   const [editDate, setEditDate] = useState(false);
   const [confirm, setConfirm] = useState<"break" | "withdraw" | null>(null);
   const [busy, setBusy] = useState(false);
@@ -90,8 +93,13 @@ export default function MyPage() {
         <Card>
           <div className="flex items-center gap-4">
             <div className="flex -space-x-3">
-              <Avatar name={me.nickname} seed={me.id} size={52} />
-              {partner && <Avatar name={partner.nickname} seed={partner.id} size={52} />}
+              <button onClick={() => setEditPhoto(true)} className="relative z-10 rounded-full" aria-label="프로필 사진 변경">
+                <Avatar name={me.nickname} seed={me.id} src={me.profileImageUrl} size={52} />
+                <span className="absolute -bottom-0.5 -left-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-white text-sub shadow-sm ring-1 ring-line">
+                  <CameraIcon className="h-3 w-3" />
+                </span>
+              </button>
+              {partner && <Avatar name={partner.nickname} seed={partner.id} src={partner.profileImageUrl} size={52} />}
             </div>
             <div className="min-w-0 flex-1">
               <p className="truncate text-lg font-bold">
@@ -196,6 +204,7 @@ export default function MyPage() {
         <p className="pb-4 text-center text-xs text-sub">오늘의 우리 {isApp() ? "앱" : "웹"} · v1.0</p>
       </div>
 
+      <PhotoSheet open={editPhoto} me={me} onClose={() => setEditPhoto(false)} onSaved={() => { setEditPhoto(false); refresh(); }} />
       <NicknameSheet open={editName} current={me.nickname} onClose={() => setEditName(false)} onSaved={() => { setEditName(false); refresh(); }} />
       <StartDateSheet
         open={editDate}
@@ -226,7 +235,7 @@ export default function MyPage() {
         title="정말 탈퇴할까요?"
         desc={
           <>
-            커플 연결이 해제되고, 내가 쓴 기록·사진·반응·메모와 계정이 <b>모두 삭제돼요.</b> 되돌릴 수 없어요.
+            커플 연결이 해제되고, 내가 쓴 기록·사진·반응·댓글·메모와 계정이 <b>모두 삭제돼요.</b> 되돌릴 수 없어요.
           </>
         }
         confirmText="탈퇴"
@@ -280,6 +289,52 @@ function MenuRow({ label, desc, onClick, danger, right }: { label: string; desc?
   );
 }
 
+function PhotoSheet({ open, me, onClose, onSaved }: { open: boolean; me: User; onClose: () => void; onSaved: () => void }) {
+  const toast = useToast();
+  const [file, setFile] = useState<File | null>(null);
+  const [busy, setBusy] = useState<"save" | "reset" | null>(null);
+  const [wasOpen, setWasOpen] = useState(false);
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (open) setFile(null);
+  }
+  const run = async (kind: "save" | "reset", task: () => Promise<unknown>) => {
+    setBusy(kind);
+    try {
+      await task();
+      onSaved();
+    } catch (err) {
+      toast(errorMessage(err));
+    } finally {
+      setBusy(null);
+    }
+  };
+  const save = () =>
+    run("save", async () => {
+      const profileImageKey = await uploadProfileImage(file!);
+      await api("/users/me", { method: "PATCH", body: { nickname: me.nickname, profileImageKey } });
+    });
+  const reset = () => run("reset", () => api("/users/me/profile-image", { method: "DELETE" }));
+  return (
+    <Sheet open={open} onClose={onClose} title="프로필 사진">
+      <div className="flex flex-col items-center gap-3 pb-2">
+        <ProfilePhotoPicker name={me.nickname} seed={me.id} currentSrc={me.profileImageUrl} file={file} onChange={setFile} />
+        <p className="text-sm text-sub">사진을 눌러 앨범에서 골라 주세요.</p>
+      </div>
+      <div className="mt-4 flex flex-col gap-2">
+        <Button full loading={busy === "save"} disabled={!file || busy !== null} onClick={save}>
+          저장
+        </Button>
+        {me.hasCustomProfileImage && !file && (
+          <Button variant="soft" full loading={busy === "reset"} disabled={busy !== null} onClick={reset}>
+            올린 사진 지우기
+          </Button>
+        )}
+      </div>
+    </Sheet>
+  );
+}
+
 function NicknameSheet({ open, current, onClose, onSaved }: { open: boolean; current: string; onClose: () => void; onSaved: () => void }) {
   const toast = useToast();
   const [value, setValue] = useState(current);
@@ -293,7 +348,7 @@ function NicknameSheet({ open, current, onClose, onSaved }: { open: boolean; cur
     e.preventDefault();
     setSaving(true);
     try {
-      await api("/users/me", { method: "PATCH", body: { nickname: value.trim(), profileImageUrl: null } });
+      await api("/users/me", { method: "PATCH", body: { nickname: value.trim() } });
       onSaved();
     } catch (err) {
       toast(errorMessage(err));

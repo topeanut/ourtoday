@@ -104,7 +104,7 @@ class PushNotifierTest {
     }
 
     private PostResponse post(UUID author, LocalDate date) {
-        return postService.create(author, new PostCreateRequest("비밀 일기 내용", date, List.of()));
+        return postService.create(author, new PostCreateRequest("비밀 일기 내용", date, List.of(), null));
     }
 
     private LocalDate today() {

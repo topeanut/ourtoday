@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useLayoutEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { markNavigation } from "@/lib/nav";
 import { formatDay } from "@/lib/date";
@@ -20,11 +20,49 @@ function isActive(pathname: string, href: string) {
   return href === "/" ? pathname === "/" || pathname.startsWith("/posts") : pathname.startsWith(href);
 }
 
+/**
+ * 화면 전환 모션
+ * - 탭 버튼: 탭 순서대로 옆에서 밀려 들어옴 (pendingDir)
+ * - 그 밖의 앞으로 이동(링크·router.push): 살짝 떠오르며 나타남
+ * - 뒤로가기·iOS 스와이프·Android 백버튼(popstate): 모션 없음 — iOS 스와이프 모션과 겹치지 않게
+ */
+let pendingDir: 1 | -1 | 0 = 0;
+let popNavigation = false;
+function markTabClick(from: number, to: number) {
+  pendingDir = to > from ? 1 : to < from ? -1 : 0;
+}
+
+function transitionClass() {
+  if (pendingDir) return pendingDir > 0 ? "animate-tab-right" : "animate-tab-left";
+  return popNavigation ? "" : "animate-page";
+}
+
 /** 모바일: 하단 탭바 / PC(md 이상): 좌측 사이드바 */
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { me, partner, couple } = useSession();
-  const hideTabs = /^\/posts\/(new|[^/]+\/edit)/.test(pathname);
+  const hideTabs = /^\/posts\/(new|[^/]+(\/edit)?\/?$)/.test(pathname);
+  const tabIndex = Math.max(0, TABS.findIndex((t) => isActive(pathname, t.href)));
+  // 첫 화면은 모션 없이
+  const [transition, setTransition] = useState({ path: pathname, cls: "" });
+
+  // popstate 는 Next 가 새 화면을 그리기 전에 먼저 발생하므로 여기서 뒤로가기 여부를 표시
+  useEffect(() => {
+    const onPop = () => {
+      popNavigation = true;
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
+
+  // 그리기 전에 모션을 정해서 새 화면이 제자리에 한 번 보였다가 튀는 일 없게
+  useLayoutEffect(() => {
+    if (transition.path === pathname) return;
+    setTransition({ path: pathname, cls: transitionClass() });
+    pendingDir = 0;
+    popNavigation = false;
+  }, [pathname, transition.path]);
+  const slideClass = transition.path === pathname ? transition.cls : "";
 
   useEffect(() => {
     markNavigation(pathname);
@@ -38,12 +76,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <span className="text-lg font-bold">오늘의 우리</span>
         </Link>
         <nav className="flex flex-col gap-1">
-          {TABS.map(({ href, label, Icon }) => {
+          {TABS.map(({ href, label, Icon }, i) => {
             const active = isActive(pathname, href);
             return (
               <Link
                 key={href}
                 href={href}
+                onClick={() => markTabClick(tabIndex, i)}
                 className={`flex items-center gap-3 rounded-2xl px-3 py-3 font-medium transition ${
                   active ? "bg-brand-soft text-brand-strong" : "text-sub hover:bg-black/5"
                 }`}
@@ -59,8 +98,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </Link>
         <div className="mt-auto flex items-center gap-3 rounded-2xl bg-white p-3">
           <div className="flex -space-x-2">
-            <Avatar name={me.nickname} seed={me.id} size={32} />
-            {partner && <Avatar name={partner.nickname} seed={partner.id} size={32} />}
+            <Avatar name={me.nickname} seed={me.id} src={me.profileImageUrl} size={32} />
+            {partner && <Avatar name={partner.nickname} seed={partner.id} src={partner.profileImageUrl} size={32} />}
           </div>
           <div className="min-w-0 text-sm">
             <p className="truncate font-semibold">
@@ -71,17 +110,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      <main className={`min-w-0 flex-1 ${hideTabs ? "" : "pb-[calc(76px+var(--safe-bottom))]"} md:pb-0`}>{children}</main>
+      <main className={`min-w-0 flex-1 overflow-x-clip ${hideTabs ? "" : "pb-[calc(76px+var(--safe-bottom))]"} md:pb-0`}>
+        <div key={pathname} className={slideClass}>
+          {children}
+        </div>
+      </main>
 
       {!hideTabs && (
         <nav className="pb-safe fixed inset-x-0 bottom-0 z-40 border-t border-line bg-white/95 backdrop-blur md:hidden">
           <div className="mx-auto grid max-w-md grid-cols-4">
-            {TABS.map(({ href, label, Icon }) => {
+            {TABS.map(({ href, label, Icon }, i) => {
               const active = isActive(pathname, href);
               return (
                 <Link
                   key={href}
                   href={href}
+                  onClick={() => markTabClick(tabIndex, i)}
                   className={`flex h-[60px] flex-col items-center justify-center gap-1 text-[11px] font-medium ${
                     active ? "text-brand-strong" : "text-sub"
                   }`}

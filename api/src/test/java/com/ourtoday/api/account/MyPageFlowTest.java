@@ -163,7 +163,10 @@ class MyPageFlowTest {
     void 내보내기_zip_에_글과_사진이_들어간다() throws Exception {
         String key = upload(me, 5);
         writePost(me, "사진 있는 글", List.of(key));
-        writePost(partner, "상대 글", List.of());
+        String partnerPostId = writePost(partner, "상대 글", List.of());
+        mvc.perform(post("/api/v1/posts/" + partnerPostId + "/comments").header("Authorization", me)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"content\":\"내보낼 댓글\"}"))
+            .andExpect(status().isCreated());
         mvc.perform(post("/api/v1/calendar/memos").header("Authorization", me)
             .contentType(MediaType.APPLICATION_JSON).content("{\"date\":\"2026-12-25\",\"title\":\"크리스마스\"}"));
 
@@ -179,6 +182,10 @@ class MyPageFlowTest {
         JsonNode data = objectMapper.readTree(entries.get("data.json"));
         assertThat(data.get("couple").get("members").toString()).contains("민지", "지호");
         assertThat(data.get("posts")).hasSize(2);
+        JsonNode exported = data.get("posts").findValues("comments").stream()
+            .filter(n -> !n.isEmpty()).findFirst().orElseThrow().get(0);
+        assertThat(exported.get("content").asText()).isEqualTo("내보낼 댓글");
+        assertThat(exported.get("author").asText()).isEqualTo("민지");
         assertThat(data.get("calendarMemos").get(0).get("title").asText()).isEqualTo("크리스마스");
         String imageEntry = data.get("posts").findValues("images").stream()
             .filter(n -> !n.isEmpty()).findFirst().orElseThrow().get(0).asText();

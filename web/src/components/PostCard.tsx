@@ -7,7 +7,7 @@ import { api, errorMessage, revalidateAll } from "@/lib/api";
 import { formatDay } from "@/lib/date";
 import { haptic, share } from "@/lib/native";
 import type { EmojiType, Post } from "@/lib/types";
-import { CloseIcon, EditIcon, MoreIcon, ShareIcon, TrashIcon } from "./Icons";
+import { CloseIcon, CommentIcon, EditIcon, MapPin, MoreIcon, ShareIcon, TrashIcon } from "./Icons";
 import { useSession } from "./Session";
 import { useToast } from "./Toast";
 import { Avatar, Confirm, Sheet } from "./ui";
@@ -65,7 +65,7 @@ export function PostCard({
   return (
     <article className="rounded-3xl bg-white p-5 shadow-[0_1px_2px_rgba(43,35,38,0.04),0_8px_24px_rgba(43,35,38,0.04)]">
       <header className="mb-3 flex items-center gap-3">
-        <Avatar name={post.author.nickname} seed={post.author.id} />
+        <Avatar name={post.author.nickname} seed={post.author.id} src={post.author.profileImageUrl} />
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold">{post.author.nickname}</p>
           <p className="text-xs text-sub">{formatDay(post.postedDate)}</p>
@@ -82,9 +82,18 @@ export function PostCard({
 
       {linkToDetail ? <Link href={`/posts/${post.id}`}>{body}</Link> : body}
 
+      {post.location && (
+        <p className="mt-2 flex items-center gap-1 text-xs text-sub">
+          <MapPin className="h-3.5 w-3.5 shrink-0" />
+          <span className="min-w-0 truncate">{post.location.placeName}</span>
+        </p>
+      )}
+
       {post.images.length > 0 && <ImageGrid images={post.images.map((i) => i.url)} onOpen={setViewer} />}
 
       <ReactionBar post={post} onChange={onChange} />
+
+      {linkToDetail && <CommentPreview post={post} />}
 
       <Sheet open={menu} onClose={() => setMenu(false)}>
         <div className="flex flex-col">
@@ -117,6 +126,28 @@ export function PostCard({
       />
       {viewer !== null && <ImageViewer images={post.images.map((i) => i.url)} index={viewer} onClose={() => setViewer(null)} />}
     </article>
+  );
+}
+
+function CommentPreview({ post }: { post: Post }) {
+  const count = post.commentCount;
+  return (
+    <div className="mt-4 border-t border-line pt-3">
+      {count > 0 && (
+        <ul className="mb-2 space-y-1">
+          {post.recentComments.map((c) => (
+            <li key={c.id} className="flex gap-2 text-sm">
+              <span className="shrink-0 font-semibold">{c.author.nickname}</span>
+              <span className="min-w-0 flex-1 truncate">{c.content}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+      <Link href={`/posts/${post.id}`} className="inline-flex items-center gap-1.5 text-xs text-sub hover:text-brand-strong">
+        <CommentIcon className="h-4 w-4" />
+        {count >= 3 ? `댓글 ${count}개 모두 보기` : "댓글 달기"}
+      </Link>
+    </div>
   );
 }
 

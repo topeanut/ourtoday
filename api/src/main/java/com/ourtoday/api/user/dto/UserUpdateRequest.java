@@ -8,6 +8,6 @@ public record UserUpdateRequest(
     @Schema(description = "닉네임", example = "민지")
     @NotBlank @Size(max = 20) String nickname,
 
-    @Schema(description = "프로필 이미지 URL (없으면 null)")
-    @Size(max = 500) String profileImageUrl
+    @Schema(description = "직접 올린 프로필 사진 키 (POST /users/me/profile-image/presigned-url 로 받은 key). null 이면 사진은 그대로")
+    @Size(max = 200) String profileImageKey
 ) {}

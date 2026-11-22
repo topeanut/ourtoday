@@ -68,6 +68,9 @@ Table posts {
   author_id uuid [not null]
   content varchar(300) [not null, note: '3줄 일기 본문']
   posted_date date [not null, note: '작년 오늘 조회의 핵심']
+  place_lat double [note: '위치 첨부(선택). place_lat/lng/name 은 함께 있거나 함께 null']
+  place_lng double
+  place_name varchar(100)
   created_at timestamp [not null, default: `now()`]
   updated_at timestamp [not null, default: `now()`]
 
@@ -97,6 +100,19 @@ Table reactions {
   }
 }
 
+Table comments {
+  id uuid [pk]
+  post_id uuid [not null]
+  author_id uuid [not null]
+  content varchar(200) [not null]
+  created_at timestamp [not null, default: `now()`]
+  updated_at timestamp [not null, default: `now()`]
+
+  Indexes {
+    (post_id, created_at)
+  }
+}
+
 Table calendar_memos {
   id uuid [pk]
   couple_id uuid [not null]
@@ -105,6 +121,9 @@ Table calendar_memos {
   title varchar(50) [not null]
   description text
   color varchar [note: '예: #FFB6C1']
+  place_lat double [note: '위치 첨부(선택). place_lat/lng/name 은 함께 있거나 함께 null']
+  place_lng double
+  place_name varchar(100)
   created_at timestamp [not null, default: `now()`]
   updated_at timestamp [not null, default: `now()`]
 
@@ -140,6 +159,9 @@ Ref: post_images.post_id > posts.id
 
 Ref: reactions.post_id > posts.id
 Ref: reactions.user_id > users.id
+
+Ref: comments.post_id > posts.id
+Ref: comments.author_id > users.id
 
 Ref: calendar_memos.couple_id > couples.id
 Ref: calendar_memos.author_id > users.id

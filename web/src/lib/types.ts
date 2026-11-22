@@ -1,3 +1,4 @@
+import type { PickedLocation } from "@/lib/kakaoMap";
 export type UUID = string;
 
 export type OnboardingStatus = "NEED_PROFILE" | "NO_COUPLE" | "PENDING_INVITE" | "CONNECTED";
@@ -7,7 +8,10 @@ export type EmojiType = "HEART" | "LAUGH" | "SURPRISE" | "SAD" | "FIRE";
 export interface User {
   id: UUID;
   nickname: string;
+  /** 직접 올린 사진 → 카카오 사진 → null 순 */
   profileImageUrl: string | null;
+  /** 직접 올린 사진이 있는지 (사진 삭제 버튼 표시용) */
+  hasCustomProfileImage: boolean;
   kakaoId: string;
   profileCompleted: boolean;
   createdAt: string;
@@ -50,7 +54,18 @@ export interface Post {
   content: string;
   postedDate: string;
   images: PostImage[];
+  location: PickedLocation | null;
   reactions: ReactionSummary[];
+  commentCount: number;
+  recentComments: Comment[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Comment {
+  id: UUID;
+  author: Post["author"];
+  content: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -71,6 +86,7 @@ export interface CalendarMemo {
   title: string;
   description: string | null;
   color: string | null;
+  location: PickedLocation | null;
   author: { id: UUID; nickname: string };
   createdAt: string;
   updatedAt: string;

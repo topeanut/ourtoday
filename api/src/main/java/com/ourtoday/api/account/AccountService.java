@@ -2,6 +2,7 @@ package com.ourtoday.api.account;
 
 import com.ourtoday.api.auth.apple.AppleAuthClient;
 import com.ourtoday.api.calendar.CalendarMemoRepository;
+import com.ourtoday.api.comment.CommentRepository;
 import com.ourtoday.api.couple.CoupleService;
 import com.ourtoday.api.image.ImageService;
 import com.ourtoday.api.post.PostService;
@@ -27,6 +28,7 @@ public class AccountService {
 
     private final CoupleService coupleService;
     private final PostService postService;
+    private final CommentRepository commentRepository;
     private final ReactionRepository reactionRepository;
     private final CalendarMemoRepository calendarMemoRepository;
     private final UserSettingsRepository userSettingsRepository;
@@ -36,7 +38,7 @@ public class AccountService {
     private final PushTokenService pushTokenService;
 
     /**
-     * 커플은 해제(상대는 커플 없음 상태), 내가 쓴 글·사진·반응·메모와 계정 삭제.
+     * 커플은 해제(상대는 커플 없음 상태), 내가 쓴 글·사진·반응·댓글·메모와 계정 삭제.
      * 상대가 쓴 기록은 상대 것이라 남김 (해제된 커플이라 조회는 불가)
      */
     @Transactional
@@ -44,6 +46,7 @@ public class AccountService {
         userRepository.findById(userId).ifPresent(this::revokeAppleAfterCommit);
         coupleService.leaveAny(userId);
         postService.deleteAllWrittenBy(userId);
+        commentRepository.deleteByAuthorId(userId);
         reactionRepository.deleteByUserId(userId);
         calendarMemoRepository.deleteByAuthorId(userId);
         pushTokenService.deleteAllOf(userId);
@@ -51,6 +54,8 @@ public class AccountService {
         userRepository.deleteById(userId);
         // 내보내기 zip 에는 상대 기록도 들어 있어서 탈퇴 시 함께 삭제
         imageService.deletePrefixAfterCommit("exports/" + userId + "/");
+        // 직접 올린 프로필 사진
+        imageService.deletePrefixAfterCommit(ImageService.userPrefixOf(userId));
     }
 
     /** Apple 로그인 사용자는 탈퇴가 확정된 뒤 Apple 연결도 끊음 (심사 지침 5.1.1(v)) */

@@ -2,6 +2,7 @@ package com.ourtoday.api.post.dto;
 
 import com.ourtoday.api.post.Post;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -17,5 +18,8 @@ public record PostCreateRequest(
     @NotNull LocalDate postedDate,
 
     @Schema(description = "업로드 완료한 imageKey 목록 (표시 순서대로, 최대 4개)")
-    @Size(max = Post.MAX_IMAGES) List<@NotBlank String> imageKeys
+    @Size(max = Post.MAX_IMAGES) List<@NotBlank String> imageKeys,
+
+    @Schema(description = "장소 (선택). 있으면 lat/lng/placeName 모두 필수")
+    @Valid PlaceLocation location
 ) {}

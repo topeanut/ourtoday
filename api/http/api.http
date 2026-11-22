@@ -42,6 +42,13 @@ Content-Type: application/json
 
 { "content": "오늘 처음 같이 본 영화", "postedDate": "2026-10-05" }
 
+### 작성 (위치 포함 — location 은 선택, 있으면 lat/lng/placeName 모두 필수)
+POST {{host}}/api/v1/posts
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "content": "성수동 데이트", "postedDate": "2026-10-05", "location": { "lat": 37.5447, "lng": 127.0558, "placeName": "성수동" } }
+
 ### 목록 (정렬: sort=postedDate,desc | postedDate,asc | createdAt,desc | createdAt,asc)
 GET {{host}}/api/v1/posts?sort=postedDate,desc&author=me&page=0&size=20
 Authorization: Bearer {{token}}
@@ -55,7 +62,7 @@ PATCH {{host}}/api/v1/posts/{{postId}}
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
-{ "content": "고친 내용", "postedDate": "2026-10-04" }
+{ "content": "고친 내용", "postedDate": "2026-10-04", "location": null }
 
 ### 삭제 (작성자만)
 DELETE {{host}}/api/v1/posts/{{postId}}
@@ -84,6 +91,29 @@ Content-Type: application/json
 
 { "emojiType": "HEART" }
 
+### ===== 댓글 =====
+### 목록 (오래된 순)
+GET {{host}}/api/v1/posts/{{postId}}/comments
+Authorization: Bearer {{token}}
+
+### 작성 (최대 200자)
+POST {{host}}/api/v1/posts/{{postId}}/comments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "content": "좋았어!" }
+
+### 수정 (작성자만)
+PATCH {{host}}/api/v1/posts/{{postId}}/comments/{{commentId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "content": "고친 댓글" }
+
+### 삭제 (작성자만)
+DELETE {{host}}/api/v1/posts/{{postId}}/comments/{{commentId}}
+Authorization: Bearer {{token}}
+
 ### 작년 오늘 (같은 월/일, 지난 연도별)
 GET {{host}}/api/v1/posts/memories/today
 Authorization: Bearer {{token}}
@@ -96,6 +126,13 @@ Content-Type: application/json
 
 { "date": "2026-06-14", "title": "1주년 기념일", "description": "OO 호텔 예약", "color": "#FFB6C1" }
 
+### 생성 (위치 포함 — location 은 선택, 있으면 lat/lng/placeName 모두 필수)
+POST {{host}}/api/v1/calendar/memos
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "date": "2026-06-14", "title": "성수동 데이트", "location": { "lat": 37.5447, "lng": 127.0558, "placeName": "성수동" } }
+
 ### 기간 조회 (최대 100일)
 GET {{host}}/api/v1/calendar/memos?from=2026-06-01&to=2026-06-30
 Authorization: Bearer {{token}}
@@ -105,7 +142,7 @@ PATCH {{host}}/api/v1/calendar/memos/여기에_메모ID
 Authorization: Bearer {{token}}
 Content-Type: application/json
 
-{ "date": "2026-06-15", "title": "1주년 기념일", "description": null, "color": null }
+{ "date": "2026-06-15", "title": "1주년 기념일", "description": null, "color": null, "location": null }
 
 ### 삭제 (작성자만)
 DELETE {{host}}/api/v1/calendar/memos/여기에_메모ID

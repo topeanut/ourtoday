@@ -1,14 +1,30 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useKeyboardViewport } from "@/lib/useKeyboardViewport";
 import { formatDay } from "@/lib/date";
 import { ChevronDown, CloseIcon } from "./Icons";
 
 const PALETTE = ["#ff7a8a", "#ffa36c", "#f6c445", "#7cc69a", "#6fb3e8", "#a68ee8"];
 
-/** 닉네임 첫 글자 아바타 (사진 업로드 대신) */
-export function Avatar({ name, seed, size = 36 }: { name: string; seed?: string; size?: number }) {
+/**
+ * 프로필 사진 아바타. 사진이 없거나(카카오·직접 업로드 모두 없음) 못 불러오면 닉네임 첫 글자로 표시
+ */
+export function Avatar({ name, seed, src, size = 36 }: { name: string; seed?: string; src?: string | null; size?: number }) {
+  // 만료·삭제된 링크면 첫 글자로 (src 가 바뀌면 다시 시도)
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+  if (src && src !== failedSrc) {
+    return (
+      <img
+        src={src}
+        alt=""
+        aria-hidden
+        onError={() => setFailedSrc(src)}
+        className="inline-block shrink-0 rounded-full bg-line object-cover"
+        style={{ width: size, height: size }}
+      />
+    );
+  }
   const key = seed ?? name;
   let h = 0;
   for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
@@ -23,27 +39,42 @@ export function Avatar({ name, seed, size = 36 }: { name: string; seed?: string;
   );
 }
 
-export function Spinner({ className = "" }: { className?: string }) {
+const DOT_SIZE = { sm: "h-1.5 w-1.5", md: "h-2 w-2", lg: "h-2.5 w-2.5" };
+
+/** 점 3개 로더. tone="current" 면 부모 글자색을 따라감 (버튼 안 등) */
+export function Spinner({
+  size = "md",
+  tone = "brand",
+  className = "",
+}: {
+  size?: keyof typeof DOT_SIZE;
+  tone?: "brand" | "current";
+  className?: string;
+}) {
   return (
     <span
-      className={`inline-block h-5 w-5 animate-spin rounded-full border-2 border-brand/30 border-t-brand ${className}`}
+      className={`inline-flex items-center gap-1 ${tone === "brand" ? "text-brand" : ""} ${className}`}
       role="status"
       aria-label="불러오는 중"
-    />
+    >
+      {[0, 1, 2].map((i) => (
+        <span key={i} className={`animate-dot rounded-full bg-current ${DOT_SIZE[size]}`} style={{ animationDelay: `${i * 0.16}s` }} />
+      ))}
+    </span>
   );
 }
 
 export function PageSpinner() {
   return (
-    <div className="flex min-h-[40vh] items-center justify-center">
-      <Spinner className="h-7 w-7" />
+    <div className="animate-delayed flex min-h-[40vh] items-center justify-center">
+      <Spinner size="lg" />
     </div>
   );
 }
 
 export function Empty({ title, desc, action }: { title: string; desc?: string; action?: React.ReactNode }) {
   return (
-    <div className="flex flex-col items-center gap-2 rounded-3xl border border-dashed border-line bg-card/60 px-6 py-12 text-center">
+    <div className="animate-fade flex flex-col items-center gap-2 rounded-3xl border border-dashed border-line bg-card/60 px-6 py-12 text-center">
       <p className="font-semibold">{title}</p>
       {desc && <p className="text-sm text-sub">{desc}</p>}
       {action && <div className="mt-3">{action}</div>}
@@ -70,7 +101,7 @@ export function Button({ variant = "primary", loading, full, className = "", chi
       disabled={disabled || loading}
       {...rest}
     >
-      {loading ? <Spinner className="h-4 w-4 border-current/30 border-t-current" /> : children}
+      {loading ? <Spinner size="sm" tone="current" /> : children}
     </button>
   );
 }

@@ -2,6 +2,6 @@
 #   docker compose -f docker-compose.prod.yml -f docker-compose.image.yml up -d
 services:
   api:
-    image: ghcr.io/buildup2026/ourtoday-api:latest
+    image: ghcr.io/topeanut/ourtoday-api:latest
     pull_policy: always
     build: !reset null

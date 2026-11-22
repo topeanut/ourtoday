@@ -96,7 +96,7 @@ class MemoryTodaySchedulerTest {
     }
 
     private void post(LocalDate date) {
-        postService.create(a, new PostCreateRequest("비밀 일기 내용", date, List.of()));
+        postService.create(a, new PostCreateRequest("비밀 일기 내용", date, List.of(), null));
     }
 
     private List<FakePushSender.Sent> sentTo(String token) {

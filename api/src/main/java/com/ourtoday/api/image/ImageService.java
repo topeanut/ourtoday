@@ -33,21 +33,58 @@ public class ImageService {
     );
     private static final Pattern KEY_PATTERN =
         Pattern.compile("^couples/[0-9a-f-]{36}/posts/[0-9a-f-]{36}\\.(jpg|png|webp|heic|heif)$");
+    private static final Pattern PROFILE_KEY_PATTERN =
+        Pattern.compile("^users/[0-9a-f-]{36}/profile/[0-9a-f-]{36}\\.(jpg|png|webp|heic|heif)$");
 
     private final ImageStorage storage;
     private final StorageProperties props;
     private final CoupleService coupleService;
 
     public PresignedUrlResponse createUploadUrl(UUID userId, PresignedUrlRequest request) {
+        UUID coupleId = coupleService.getConnectedCoupleId(userId);
+        return presign(prefixOf(coupleId), request);
+    }
+
+    /** 프로필 사진: 커플 연결 전(가입 중)에도 올릴 수 있게 사용자 경로에 저장 */
+    public PresignedUrlResponse createProfileUploadUrl(UUID userId, PresignedUrlRequest request) {
+        return presign(profilePrefixOf(userId), request);
+    }
+
+    /** 프로필로 지정하기 전 검증: 내 프로필 경로의 키인지, 실제 업로드됐는지, 크기 제한 이내인지 */
+    public void verifyProfileKey(UUID userId, String key) {
+        if (!PROFILE_KEY_PATTERN.matcher(key).matches() || !key.startsWith(profilePrefixOf(userId))) {
+            throw new BusinessException(ErrorCode.VALIDATION_FAILED, "사용할 수 없는 profileImageKey 입니다: " + key);
+        }
+        verifyUploaded(key);
+    }
+
+    public static String userPrefixOf(UUID userId) {
+        return "users/" + userId + "/";
+    }
+
+    private static String profilePrefixOf(UUID userId) {
+        return userPrefixOf(userId) + "profile/";
+    }
+
+    private PresignedUrlResponse presign(String prefix, PresignedUrlRequest request) {
         String contentType = request.contentType().strip().toLowerCase();
         String ext = EXTENSIONS.get(contentType);
         if (ext == null) {
             throw new BusinessException(ErrorCode.VALIDATION_FAILED, "지원하지 않는 이미지 형식입니다: " + contentType);
         }
-        UUID coupleId = coupleService.getConnectedCoupleId(userId);
-        String key = prefixOf(coupleId) + UUID.randomUUID() + "." + ext;
+        String key = prefix + UUID.randomUUID() + "." + ext;
         String url = storage.presignUpload(key, contentType, request.contentLength());
         return new PresignedUrlResponse(url, key, props.uploadUrlTtl().toSeconds());
+    }
+
+    private void verifyUploaded(String key) {
+        OptionalLong size = storage.size(key);
+        if (size.isEmpty()) {
+            throw new BusinessException(ErrorCode.VALIDATION_FAILED, "업로드되지 않은 이미지입니다: " + key);
+        }
+        if (size.getAsLong() > MAX_BYTES) {
+            throw new BusinessException(ErrorCode.VALIDATION_FAILED, "이미지는 10MB 이하만 가능합니다: " + key);
+        }
     }
 
     /**
@@ -59,13 +96,7 @@ public class ImageService {
             if (!KEY_PATTERN.matcher(key).matches() || !key.startsWith(prefix)) {
                 throw new BusinessException(ErrorCode.VALIDATION_FAILED, "사용할 수 없는 imageKey 입니다: " + key);
             }
-            OptionalLong size = storage.size(key);
-            if (size.isEmpty()) {
-                throw new BusinessException(ErrorCode.VALIDATION_FAILED, "업로드되지 않은 이미지입니다: " + key);
-            }
-            if (size.getAsLong() > MAX_BYTES) {
-                throw new BusinessException(ErrorCode.VALIDATION_FAILED, "이미지는 10MB 이하만 가능합니다: " + key);
-            }
+            verifyUploaded(key);
         }
     }
 

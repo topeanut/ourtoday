@@ -1,5 +1,7 @@
 package com.ourtoday.api.user;
 
+import com.ourtoday.api.image.dto.PresignedUrlRequest;
+import com.ourtoday.api.image.dto.PresignedUrlResponse;
 import com.ourtoday.api.user.dto.OnboardingStatusResponse;
 import com.ourtoday.api.user.dto.UserResponse;
 import com.ourtoday.api.user.dto.UserSettingsResponse;
@@ -10,8 +12,10 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -36,6 +40,20 @@ public class UserController {
     @PatchMapping
     public UserResponse update(@AuthenticationPrincipal UUID userId, @Valid @RequestBody UserUpdateRequest request) {
         return userService.updateMe(userId, request);
+    }
+
+    @Operation(summary = "프로필 사진 업로드 URL 발급",
+        description = "커플 연결 전(가입 중)에도 사용 가능. 받은 url 로 PUT 업로드 후 key 를 PATCH /users/me 의 profileImageKey 로 보냄")
+    @PostMapping("/profile-image/presigned-url")
+    public PresignedUrlResponse profileImageUploadUrl(@AuthenticationPrincipal UUID userId,
+                                                      @Valid @RequestBody PresignedUrlRequest request) {
+        return userService.createProfileImageUploadUrl(userId, request);
+    }
+
+    @Operation(summary = "직접 올린 프로필 사진 삭제", description = "카카오 프로필 사진이 있으면 그것으로, 없으면 이름 첫 글자로 돌아감")
+    @DeleteMapping("/profile-image")
+    public UserResponse removeProfileImage(@AuthenticationPrincipal UUID userId) {
+        return userService.removeProfileImage(userId);
     }
 
     @Operation(summary = "온보딩 단계")
