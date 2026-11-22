@@ -19,6 +19,7 @@ final class WebViewController: UIViewController {
         setUpErrorView()
         observeKeyboard()
         webView.load(URLRequest(url: AppConfig.startURL))
+        observePush()
     }
 
     private func setUpWebView() {
@@ -110,6 +111,12 @@ final class WebViewController: UIViewController {
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
         case "appleLogin":
             startAppleLogin()
+        case "pushStatus":
+            PushManager.shared.currentState { [weak self] in self?.sendPushState($0) }
+        case "pushPermission":
+            PushManager.shared.requestPermission { [weak self] in self?.sendPushState($0) }
+        case "openNotificationSettings":
+            PushManager.shared.openSettings()
         default:
             break
         }
@@ -168,6 +175,31 @@ extension WebViewController {
         webView.evaluateJavaScript(
             "window.__ourtodayKeyboard='\(state)';window.dispatchEvent(new CustomEvent('ourtoday:keyboard',{detail:'\(state)'}))"
         )
+    }
+}
+
+// MARK: - 푸시 알림
+
+extension WebViewController {
+
+    /// 토큰 변경은 웹에 알리고, 탭한 알림의 경로는 웹뷰에서 엶 (콜드 스타트면 대기 중이던 경로가 여기서 바로 옴)
+    fileprivate func observePush() {
+        PushManager.shared.onTokenChange = { [weak self] in self?.sendPushState($0) }
+        PushManager.shared.onOpenPath = { [weak self] in self?.openPushPath($0) }
+    }
+
+    private func sendPushState(_ state: PushState) {
+        guard let data = try? JSONSerialization.data(withJSONObject: state.detail),
+              let json = String(data: data, encoding: .utf8) else { return }
+        webView.evaluateJavaScript("window.dispatchEvent(new CustomEvent('ourtoday:push', { detail: \(json) }))")
+    }
+
+    /// path 는 PushManager 에서 "/" 로 시작("//" 제외)하는지 확인됨. 합친 결과도 시작 URL 과 같은 출처일 때만 이동
+    private func openPushPath(_ path: String) {
+        let start = AppConfig.startURL
+        guard let url = URL(string: path, relativeTo: start)?.absoluteURL,
+              url.scheme == start.scheme, url.host == start.host, url.port == start.port else { return }
+        webView.load(URLRequest(url: url))
     }
 }
 
