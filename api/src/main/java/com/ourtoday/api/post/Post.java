@@ -31,6 +31,7 @@ public class Post {
 
     public static final int CONTENT_MAX_LENGTH = 300;
     public static final int MAX_IMAGES = 4;
+    public static final int PLACE_NAME_MAX_LENGTH = 100;
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -49,6 +50,15 @@ public class Post {
     @Column(name = "posted_date", nullable = false)
     private LocalDate postedDate;
 
+    @Column(name = "place_lat")
+    private Double placeLat;
+
+    @Column(name = "place_lng")
+    private Double placeLng;
+
+    @Column(name = "place_name", length = PLACE_NAME_MAX_LENGTH)
+    private String placeName;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -57,18 +67,26 @@ public class Post {
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
 
-    public static Post create(UUID coupleId, UUID authorId, String content, LocalDate postedDate) {
+    public static Post create(UUID coupleId, UUID authorId, String content, LocalDate postedDate,
+                              Double placeLat, Double placeLng, String placeName) {
         Post post = new Post();
         post.coupleId = coupleId;
         post.authorId = authorId;
         post.content = content;
         post.postedDate = postedDate;
+        post.updateLocation(placeLat, placeLng, placeName);
         return post;
     }
 
     public void update(String content, LocalDate postedDate) {
         this.content = content;
         this.postedDate = postedDate;
+    }
+
+    public void updateLocation(Double placeLat, Double placeLng, String placeName) {
+        this.placeLat = placeLat;
+        this.placeLng = placeLng;
+        this.placeName = placeName;
     }
 
     public boolean isWrittenBy(UUID userId) {

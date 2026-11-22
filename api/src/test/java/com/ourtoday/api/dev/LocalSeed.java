@@ -72,7 +72,7 @@ class LocalSeed implements CommandLineRunner {
         UUID firstPost = null;
         for (String[] p : posts) {
             UUID author = p[1].equals("a") ? a : b;
-            var res = postService.create(author, new PostCreateRequest(p[2], today().minusDays(Long.parseLong(p[0])), List.of()));
+            var res = postService.create(author, new PostCreateRequest(p[2], today().minusDays(Long.parseLong(p[0])), List.of(), null));
             if (firstPost == null) firstPost = res.id();
         }
         reactionService.toggle(b, firstPost, EmojiType.HEART);

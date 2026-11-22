@@ -10,6 +10,7 @@ import com.ourtoday.api.couple.CoupleService;
 import com.ourtoday.api.image.ImageService;
 import com.ourtoday.api.post.dto.PostCreateRequest;
 import com.ourtoday.api.post.dto.PostMemoriesResponse;
+import com.ourtoday.api.post.dto.PlaceLocation;
 import com.ourtoday.api.post.dto.PostResponse;
 import com.ourtoday.api.post.dto.PostUpdateRequest;
 import com.ourtoday.api.reaction.ReactionCount;
@@ -65,7 +66,8 @@ public class PostService {
         List<String> imageKeys = normalizeImageKeys(request.imageKeys());
         imageService.verifyAttachable(coupleId, imageKeys);
 
-        Post post = postRepository.saveAndFlush(Post.create(coupleId, userId, request.content().strip(), request.postedDate()));
+        Post post = postRepository.saveAndFlush(Post.create(coupleId, userId, request.content().strip(), request.postedDate(),
+            lat(request.location()), lng(request.location()), name(request.location())));
         saveImages(post.getId(), imageKeys);
         return toResponse(post, userId);
     }
@@ -107,6 +109,7 @@ public class PostService {
         validatePostedDate(request.postedDate());
         Post post = getMyPost(userId, postId);
         post.update(request.content().strip(), request.postedDate());
+        post.updateLocation(lat(request.location()), lng(request.location()), name(request.location()));
 
         if (request.imageKeys() != null) {
             List<String> newKeys = normalizeImageKeys(request.imageKeys());
@@ -290,6 +293,19 @@ public class PostService {
         return comments.subList(Math.max(0, comments.size() - 2), comments.size());
     }
 
+    private static Double lat(PlaceLocation l) { return l == null ? null : l.lat(); }
+
+    private static Double lng(PlaceLocation l) { return l == null ? null : l.lng(); }
+
+    private static String name(PlaceLocation l) { return l == null ? null : l.placeName().strip(); }
+
+    private static PlaceLocation toLocation(Post post) {
+        if (post.getPlaceLat() == null || post.getPlaceLng() == null || post.getPlaceName() == null) {
+            return null;
+        }
+        return new PlaceLocation(post.getPlaceLat(), post.getPlaceLng(), post.getPlaceName());
+    }
+
     private PostResponse toResponse(Post post, UUID viewerId) {
         Set<UUID> ids = Set.of(post.getId());
         Map<UUID, List<Comment>> comments = loadComments(ids);
@@ -318,6 +334,7 @@ public class PostService {
             post.getContent(),
             post.getPostedDate(),
             imageResponses,
+            toLocation(post),
             reactionResponses,
             postComments.size(),
             recentComments,
