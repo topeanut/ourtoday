@@ -2,7 +2,8 @@
 
 import { useEffect, useRef } from "react";
 import { useKeyboardViewport } from "@/lib/useKeyboardViewport";
-import { CloseIcon } from "./Icons";
+import { formatDay } from "@/lib/date";
+import { ChevronDown, CloseIcon } from "./Icons";
 
 const PALETTE = ["#ff7a8a", "#ffa36c", "#f6c445", "#7cc69a", "#6fb3e8", "#a68ee8"];
 
@@ -87,7 +88,76 @@ export function Field({ label, hint, children }: { label: string; hint?: React.R
 }
 
 export const inputClass =
-  "w-full rounded-2xl border border-line bg-white px-4 py-3 outline-none transition placeholder:text-sub/60 focus:border-brand focus:ring-4 focus:ring-brand/15";
+  "w-full rounded-2xl border border-line bg-white px-4 py-3 outline-none transition placeholder:text-sub focus:border-brand focus:ring-4 focus:ring-brand/15";
+
+/**
+ * 날짜 입력. 브라우저 기본 date 입력은 기기마다 글자 형식("09/11/2025", "2025. 9. 11.")과 화살표 위치가 달라서
+ * 보이는 부분은 직접 그리고("2025년 9월 11일 (목)" + 오른쪽 화살표), 투명한 기본 입력을 위에 덮어 누르면 기기 달력이 열리게 함
+ * @param variant field: 테두리 있는 입력칸 / inline: 줄 안에서 오른쪽 정렬(글쓰기 날짜 줄)
+ */
+export function DateField({
+  value,
+  onChange,
+  min,
+  max,
+  placeholder = "날짜 선택",
+  clearable = false,
+  variant = "field",
+  label,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  min?: string;
+  max?: string;
+  placeholder?: string;
+  clearable?: boolean;
+  variant?: "field" | "inline";
+  label?: string;
+}) {
+  const ref = useRef<HTMLInputElement>(null);
+  // PC 브라우저는 입력칸 글자 부분을 눌러도 달력이 안 열려서 직접 엶 (휴대폰은 누르면 바로 열림)
+  const openPicker = () => {
+    try {
+      ref.current?.showPicker?.();
+    } catch {
+      // showPicker 미지원·제한 → 기본 동작
+    }
+  };
+  const box =
+    variant === "field"
+      ? "w-full rounded-2xl border border-line bg-white px-4 py-3 transition focus-within:border-brand focus-within:ring-4 focus-within:ring-brand/15"
+      : "rounded-xl py-2 pl-2 focus-within:bg-brand-soft/60";
+  return (
+    <div className={`relative flex items-center gap-2 ${box}`}>
+      <span className={`${variant === "inline" ? "ml-auto" : ""} ${value ? "text-ink" : "text-sub"} tabular-nums`}>
+        {value ? formatDay(value, true) : placeholder}
+      </span>
+      <input
+        ref={ref}
+        type="date"
+        aria-label={label}
+        value={value}
+        min={min}
+        max={max}
+        onClick={openPicker}
+        onChange={(e) => (e.target.value || clearable) && onChange(e.target.value)}
+        className="absolute inset-0 h-full w-full cursor-pointer appearance-none opacity-0"
+      />
+      {clearable && value && (
+        <button
+          type="button"
+          onClick={() => onChange("")}
+          className="relative z-10 -my-1 ml-auto rounded-lg px-2 py-1 text-sm text-sub active:bg-black/5"
+        >
+          지우기
+        </button>
+      )}
+      <ChevronDown
+        className={`h-5 w-5 shrink-0 text-sub ${variant === "field" && !(clearable && value) ? "ml-auto" : ""}`}
+      />
+    </div>
+  );
+}
 
 /**
  * 시트 안 저장 버튼 자리. 입력칸이 많은 시트는 키보드가 열리면 보이는 높이에 다 안 들어가서

@@ -11,7 +11,7 @@ import type { BucketItem } from "@/lib/types";
 import { PageHeader } from "@/components/AppShell";
 import { CheckIcon, PlusIcon } from "@/components/Icons";
 import { useToast } from "@/components/Toast";
-import { Button, Confirm, Empty, Field, inputClass, PageSpinner, Sheet, SheetActions } from "@/components/ui";
+import { Button, Confirm, DateField, Empty, Field, inputClass, PageSpinner, Sheet, SheetActions } from "@/components/ui";
 
 type Status = "ALL" | "TODO" | "DONE";
 
@@ -72,7 +72,7 @@ export default function BucketPage() {
                 <b className="text-lg text-brand-strong">{done}</b> / {total}
               </p>
             </div>
-            <div className="mt-3 h-2 overflow-hidden rounded-full bg-cream">
+            <div className="mt-3 h-2 overflow-hidden rounded-full bg-brand-soft">
               <div className="h-full rounded-full bg-brand transition-all" style={{ width: `${(done / total) * 100}%` }} />
             </div>
           </div>
@@ -113,7 +113,7 @@ export default function BucketPage() {
                 <button
                   onClick={() => (item.completed ? uncomplete(item) : setCompleting(item))}
                   className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 transition ${
-                    item.completed ? "border-brand bg-brand text-white" : "border-line text-transparent hover:border-brand/50"
+                    item.completed ? "border-brand bg-brand text-white" : "border-sub/40 text-transparent hover:border-brand/60"
                   }`}
                   aria-label={item.completed ? "완료 취소" : "완료"}
                 >
@@ -245,7 +245,7 @@ function BucketEditor({
             />
           </Field>
           <Field label="목표 날짜 (선택)">
-            <input type="date" className={inputClass} value={form.targetDate} onChange={(e) => setForm({ ...form, targetDate: e.target.value })} />
+            <DateField label="목표 날짜" value={form.targetDate} clearable placeholder="정하지 않음" onChange={(v) => setForm({ ...form, targetDate: v })} />
           </Field>
           <SheetActions>
             <Button type="submit" full loading={saving} disabled={!form.title.trim()}>

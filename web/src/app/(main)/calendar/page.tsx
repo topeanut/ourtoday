@@ -7,10 +7,10 @@ import { api, errorMessage, fetcher } from "@/lib/api";
 import { formatDay, parseDate, todayKst, toYmd, weekdayLabels } from "@/lib/date";
 import type { CalendarMemo, Page, Post } from "@/lib/types";
 import { PageHeader } from "@/components/AppShell";
-import { ChevronLeft, ChevronRight, PlusIcon } from "@/components/Icons";
+import { ChevronLeft, ChevronRight, EditIcon, PlusIcon } from "@/components/Icons";
 import { useSession } from "@/components/Session";
 import { useToast } from "@/components/Toast";
-import { Button, Confirm, Field, inputClass, Sheet, Spinner, SheetActions } from "@/components/ui";
+import { Button, Confirm, DateField, Field, inputClass, Sheet, Spinner, SheetActions } from "@/components/ui";
 
 const COLORS = ["#FF7A8A", "#FFA36C", "#F6C445", "#7CC69A", "#6FB3E8", "#A68EE8"];
 
@@ -182,7 +182,9 @@ export default function CalendarPage() {
                   {p.images[0] ? (
                     <img src={p.images[0].url} alt="" className="h-12 w-12 shrink-0 rounded-xl object-cover" />
                   ) : (
-                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-cream text-lg">📝</span>
+                    <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand-strong">
+                      <EditIcon className="h-5 w-5" />
+                    </span>
                   )}
                   <span className="min-w-0 flex-1">
                     <span className="block text-xs text-sub">{p.author.nickname}의 기록</span>
@@ -303,7 +305,7 @@ function MemoEditor({
               />
             </Field>
             <Field label="날짜">
-              <input type="date" className={inputClass} value={form.date} onChange={(e) => e.target.value && setForm({ ...form, date: e.target.value })} />
+              <DateField label="날짜" value={form.date} onChange={(v) => setForm({ ...form, date: v })} />
             </Field>
             <Field label="내용 (선택)">
               <textarea

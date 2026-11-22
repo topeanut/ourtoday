@@ -30,6 +30,7 @@ export const MoreIcon = ({ className }: P) =>
   svg(className, <><circle cx="5" cy="12" r="1.4" /><circle cx="12" cy="12" r="1.4" /><circle cx="19" cy="12" r="1.4" /></>, true);
 export const BackIcon = ({ className }: P) => svg(className, <path d="M15 18l-6-6 6-6" />);
 export const ChevronLeft = BackIcon;
+export const ChevronDown = ({ className }: P) => svg(className, <path d="M6 9l6 6 6-6" />);
 export const ChevronRight = ({ className }: P) => svg(className, <path d="M9 18l6-6-6-6" />);
 export const CloseIcon = ({ className }: P) => svg(className, <path d="M18 6 6 18M6 6l12 12" />);
 export const ImageIcon = ({ className }: P) =>

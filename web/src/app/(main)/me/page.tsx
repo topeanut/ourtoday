@@ -11,7 +11,7 @@ import { PageHeader } from "@/components/AppShell";
 import { ChevronRight } from "@/components/Icons";
 import { useSession } from "@/components/Session";
 import { useToast } from "@/components/Toast";
-import { Avatar, Button, Card, Confirm, Field, inputClass, Sheet, Spinner, Toggle } from "@/components/ui";
+import { Avatar, Button, Card, Confirm, DateField, Field, inputClass, Sheet, Spinner, Toggle } from "@/components/ui";
 
 export default function MyPage() {
   const { me, partner, couple, refresh } = useSession();
@@ -297,7 +297,7 @@ function StartDateSheet({ open, current, onClose, onSaved }: { open: boolean; cu
     <Sheet open={open} onClose={onClose} title="사귄 날짜">
       <form onSubmit={save} className="flex flex-col gap-4">
         <Field label="처음 만난 날">
-          <input type="date" className={inputClass} value={value} max={todayKst()} onChange={(e) => e.target.value && setValue(e.target.value)} />
+          <DateField label="처음 만난 날" value={value} max={todayKst()} onChange={setValue} />
         </Field>
         <Button type="submit" full loading={saving} disabled={value === current}>
           저장

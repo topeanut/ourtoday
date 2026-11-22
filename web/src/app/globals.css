@@ -6,7 +6,7 @@
   --color-brand-soft: #ffe3e7;
   --color-cream: #fff8f5;
   --color-ink: #2b2326;
-  --color-sub: #8a7e82;
+  --color-sub: #746a6e;
   --color-line: #f1e6e3;
   --color-card: #ffffff;
   --font-sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, "Apple SD Gothic Neo",
@@ -39,6 +39,16 @@ textarea,
 select,
 button {
   font: inherit;
+}
+
+/* 브라우저 기본 선택·커서 색 대신 브랜드 색 */
+::selection {
+  background: var(--color-brand-soft);
+  color: var(--color-ink);
+}
+input,
+textarea {
+  caret-color: var(--color-brand-strong);
 }
 
 /* iOS 입력 시 확대 방지 */

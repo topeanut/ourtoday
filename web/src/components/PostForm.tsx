@@ -6,7 +6,7 @@ import { todayKst } from "@/lib/date";
 import { uploadImage } from "@/lib/image";
 import { CloseIcon, ImageIcon } from "./Icons";
 import { useToast } from "./Toast";
-import { Button, inputClass } from "./ui";
+import { Button, DateField } from "./ui";
 
 const MAX_LEN = 300;
 const MAX_IMAGES = 4;
@@ -95,7 +95,7 @@ export function PostForm({
     <form onSubmit={submit} className="flex flex-col gap-4 max-md:min-h-0 max-md:flex-1 group-data-[keyboard=open]:gap-3">
       <div className="flex flex-col rounded-3xl bg-white p-4 shadow-sm max-md:min-h-0 max-md:flex-1">
         <textarea
-          className="min-h-[160px] w-full flex-1 resize-none max-md:min-h-[72px] bg-transparent text-[16px] leading-relaxed outline-none placeholder:text-sub/60"
+          className="min-h-[160px] w-full flex-1 resize-none max-md:min-h-[72px] bg-transparent text-[16px] leading-relaxed outline-none placeholder:text-sub"
           value={content}
           onChange={(e) => setContent(e.target.value.slice(0, MAX_LEN))}
           placeholder={"오늘 우리에게 있었던 일,\n세 줄이면 충분해요."}
@@ -137,16 +137,12 @@ export function PostForm({
         <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={(e) => addFiles(e.target.files)} />
       </div>
 
-      <label className="flex items-center justify-between rounded-2xl bg-white px-4 py-2 shadow-sm group-data-[keyboard=open]:hidden">
+      <div className="flex items-center justify-between gap-3 rounded-2xl bg-white py-2 pl-4 pr-3 shadow-sm group-data-[keyboard=open]:hidden">
         <span className="shrink-0 whitespace-nowrap text-sm font-medium text-sub">날짜</span>
-        <input
-          type="date"
-          className={`${inputClass} w-auto border-0 bg-transparent px-0 py-2 text-right focus:ring-0`}
-          value={postedDate}
-          max={todayKst()}
-          onChange={(e) => e.target.value && setPostedDate(e.target.value)}
-        />
-      </label>
+        <div className="min-w-0 flex-1">
+          <DateField label="기록 날짜" variant="inline" value={postedDate} max={todayKst()} onChange={setPostedDate} />
+        </div>
+      </div>
 
       <Button type="submit" full loading={saving} disabled={!content.trim()}>
         {submitLabel}
