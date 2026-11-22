@@ -84,6 +84,29 @@ Content-Type: application/json
 
 { "emojiType": "HEART" }
 
+### ===== 댓글 =====
+### 목록 (오래된 순)
+GET {{host}}/api/v1/posts/{{postId}}/comments
+Authorization: Bearer {{token}}
+
+### 작성 (최대 200자)
+POST {{host}}/api/v1/posts/{{postId}}/comments
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "content": "좋았어!" }
+
+### 수정 (작성자만)
+PATCH {{host}}/api/v1/posts/{{postId}}/comments/{{commentId}}
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "content": "고친 댓글" }
+
+### 삭제 (작성자만)
+DELETE {{host}}/api/v1/posts/{{postId}}/comments/{{commentId}}
+Authorization: Bearer {{token}}
+
 ### 작년 오늘 (같은 월/일, 지난 연도별)
 GET {{host}}/api/v1/posts/memories/today
 Authorization: Bearer {{token}}
