@@ -30,7 +30,7 @@ final class PushManager: NSObject {
 
     private var fcmToken: String?
     private var pendingPath: String?
-    private var tokenWaiters: [(String?) -> Void] = []
+    private var tokenWaiters: [UUID: (String?) -> Void] = [:]
 
     /// didFinishLaunching 안에서 FirebaseApp.configure() 다음에 호출
     /// (콜드 스타트 탭을 받으려면 실행이 끝나기 전에 delegate 를 지정해야 함)
@@ -115,24 +115,37 @@ final class PushManager: NSObject {
             completion(fcmToken)
             return
         }
-        var finished = false
-        let finish: (String?) -> Void = { token in
-            guard !finished else { return }
-            finished = true
-            completion(token)
+        let id = UUID()
+        tokenWaiters[id] = completion
+        DispatchQueue.main.asyncAfter(deadline: .now() + Self.tokenWaitSeconds) {
+            // 아직 남아 있으면 시간 초과 → 지금 가진 토큰(없으면 nil)으로 응답
+            self.tokenWaiters.removeValue(forKey: id)?(self.fcmToken)
         }
-        tokenWaiters.append(finish)
-        DispatchQueue.main.asyncAfter(deadline: .now() + Self.tokenWaitSeconds) { finish(self.fcmToken) }
+    }
+
+    /// 대기 중인 요청에 한꺼번에 응답 (토큰 발급 또는 APNs 등록 실패)
+    private func finishTokenWaiters(_ token: String?) {
+        let waiters = tokenWaiters.values
+        tokenWaiters.removeAll()
+        waiters.forEach { $0(token) }
+    }
+
+    /// AppDelegate 의 didFailToRegisterForRemoteNotificationsWithError 에서 호출
+    func apnsRegistrationFailed(_ error: Error) {
+        NSLog("[Push] APNs 등록 실패: %@", error.localizedDescription)
+        finishTokenWaiters(nil)
     }
 
     private func tokenDidChange(_ token: String) {
         let changed = token != fcmToken
         fcmToken = token
-        let waiters = tokenWaiters
-        tokenWaiters.removeAll()
-        waiters.forEach { $0(token) }
-        if changed {
-            onTokenChange?(PushState(permission: "granted", token: token))
+        finishTokenWaiters(token)
+        guard changed else { return }
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            let permission = Self.permission(for: settings.authorizationStatus)
+            DispatchQueue.main.async {
+                self.onTokenChange?(PushState(permission: permission, token: token))
+            }
         }
     }
 

@@ -188,7 +188,13 @@ extension WebViewController {
         PushManager.shared.onOpenPath = { [weak self] in self?.openPushPath($0) }
     }
 
+    /// 토큰은 우리 페이지에만 전달 (카카오 로그인 화면 등 앱 안에서 연 다른 출처에는 보내지 않음)
     private func sendPushState(_ state: PushState) {
+        let start = AppConfig.startURL
+        guard let current = webView.url,
+              current.scheme?.lowercased() == start.scheme?.lowercased(),
+              current.host?.lowercased() == start.host?.lowercased(),
+              current.port == start.port else { return }
         guard let data = try? JSONSerialization.data(withJSONObject: state.detail),
               let json = String(data: data, encoding: .utf8) else { return }
         webView.evaluateJavaScript("window.dispatchEvent(new CustomEvent('ourtoday:push', { detail: \(json) }))")

@@ -21,4 +21,9 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
                      didRegisterForRemoteNotificationsWithDeviceToken deviceToken: Data) {
         PushManager.shared.setAPNsToken(deviceToken)
     }
+
+    func application(_ application: UIApplication,
+                     didFailToRegisterForRemoteNotificationsWithError error: Error) {
+        PushManager.shared.apnsRegistrationFailed(error)
+    }
 }
