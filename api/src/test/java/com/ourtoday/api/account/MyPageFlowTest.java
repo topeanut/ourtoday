@@ -84,9 +84,42 @@ class MyPageFlowTest {
         mvc.perform(get("/api/v1/users/me/settings").header("Authorization", me))
             .andExpect(jsonPath("$.notifyMemoryToday").value(false));
 
+    }
+
+    @Test
+    void 기본값은_반응_알림_켜짐() throws Exception {
+        mvc.perform(get("/api/v1/users/me/settings").header("Authorization", me))
+            .andExpect(jsonPath("$.notifyReaction").value(true));
+    }
+
+    @Test
+    void notifyReaction_만_보내면_나머지는_그대로() throws Exception {
         mvc.perform(patch("/api/v1/users/me/settings").header("Authorization", me)
-                .contentType(MediaType.APPLICATION_JSON).content("{\"notifyMemoryToday\":false}"))
-            .andExpect(status().isBadRequest());
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"notifyMemoryToday\":false,\"notifyPartnerPost\":false}"))
+            .andExpect(status().isOk());
+
+        mvc.perform(patch("/api/v1/users/me/settings").header("Authorization", me)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"notifyReaction\":false}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.notifyMemoryToday").value(false))
+            .andExpect(jsonPath("$.notifyPartnerPost").value(false))
+            .andExpect(jsonPath("$.notifyReaction").value(false));
+    }
+
+    @Test
+    void 기존_클라이언트처럼_두_필드만_보내도_된다() throws Exception {
+        mvc.perform(patch("/api/v1/users/me/settings").header("Authorization", me)
+                .contentType(MediaType.APPLICATION_JSON).content("{\"notifyReaction\":false}"))
+            .andExpect(status().isOk());
+
+        mvc.perform(patch("/api/v1/users/me/settings").header("Authorization", me)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"notifyMemoryToday\":false,\"notifyPartnerPost\":true}"))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.notifyMemoryToday").value(false))
+            .andExpect(jsonPath("$.notifyPartnerPost").value(true))
+            .andExpect(jsonPath("$.notifyReaction").value(false));
     }
 
     @Test
