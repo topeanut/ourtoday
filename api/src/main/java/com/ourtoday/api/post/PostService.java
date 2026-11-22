@@ -14,6 +14,8 @@ import com.ourtoday.api.reaction.ReactionRepository;
 import com.ourtoday.api.user.User;
 import com.ourtoday.api.user.UserRepository;
 import lombok.RequiredArgsConstructor;
+import com.ourtoday.api.push.event.PostCreatedEvent;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -53,6 +55,7 @@ public class PostService {
     private final CoupleService coupleService;
     private final ImageService imageService;
     private final Clock clock;
+    private final ApplicationEventPublisher publisher;
 
     @Transactional
     public PostResponse create(UUID userId, PostCreateRequest request) {
@@ -63,6 +66,7 @@ public class PostService {
 
         Post post = postRepository.saveAndFlush(Post.create(coupleId, userId, request.content().strip(), request.postedDate()));
         saveImages(post.getId(), imageKeys);
+        publisher.publishEvent(new PostCreatedEvent(post.getId(), userId, coupleId, post.getPostedDate()));
         return toResponse(post, userId);
     }
 
