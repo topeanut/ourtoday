@@ -83,6 +83,7 @@ export interface CalendarMemo {
   title: string;
   description: string | null;
   color: string | null;
+  location: PickedLocation | null;
   author: { id: UUID; nickname: string };
   createdAt: string;
   updatedAt: string;
