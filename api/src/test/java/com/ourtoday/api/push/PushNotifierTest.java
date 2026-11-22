@@ -17,20 +17,14 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.Primary;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import java.time.Clock;
 import java.time.Duration;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -39,47 +33,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 /** 이벤트는 커밋 후에 처리되므로 @Transactional 없이 서비스를 직접 호출한다. 만든 데이터는 직접 지운다 */
 @SpringBootTest
-@Import(PushNotifierTest.MutableClockConfig.class)
+@Import(MutableClock.Config.class)
 class PushNotifierTest {
 
     private static final ZoneId KST = ZoneId.of("Asia/Seoul");
-
-    /** 10분 중복 방지 검증용으로 시간을 옮길 수 있는 테스트 전용 Clock */
-    static class MutableClock extends Clock {
-        private volatile Instant now = Instant.now();
-
-        void advance(Duration d) {
-            now = now.plus(d);
-        }
-
-        void reset() {
-            now = Instant.now();
-        }
-
-        @Override
-        public ZoneId getZone() {
-            return ZoneOffset.UTC;
-        }
-
-        @Override
-        public Clock withZone(ZoneId zone) {
-            return Clock.fixed(now, zone);
-        }
-
-        @Override
-        public Instant instant() {
-            return now;
-        }
-    }
-
-    @TestConfiguration
-    static class MutableClockConfig {
-        @Bean
-        @Primary
-        MutableClock mutableClock() {
-            return new MutableClock();
-        }
-    }
 
     @Autowired FakePushSender fake;
     @Autowired MutableClock clock;

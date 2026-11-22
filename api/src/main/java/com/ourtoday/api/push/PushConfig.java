@@ -10,6 +10,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.util.StringUtils;
 
@@ -63,5 +64,12 @@ public class PushConfig {
             ex.setRejectedExecutionHandler((r, executor) -> log.warn("푸시 큐가 가득 차 발송을 건너뜁니다."));
             return ex;
         }
+    }
+
+    /** 스케줄 등록만 끈다 (테스트는 app.push.schedule=false, 메서드는 직접 호출 가능) */
+    @Configuration
+    @EnableScheduling
+    @ConditionalOnProperty(name = "app.push.schedule", havingValue = "true")
+    static class ScheduleConfig {
     }
 }

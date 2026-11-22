@@ -60,3 +60,4 @@ app:
   push:
     firebase-service-account:
     async: false
+    schedule: false

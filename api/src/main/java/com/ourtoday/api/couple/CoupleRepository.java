@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -23,4 +24,6 @@ public interface CoupleRepository extends JpaRepository<Couple, UUID> {
         where c.id in (select m.coupleId from CoupleMember m where m.userId = :userId)
         """)
     Optional<Couple> findByMemberUserId(@Param("userId") UUID userId);
+
+    List<Couple> findByStatus(CoupleStatus status);
 }
