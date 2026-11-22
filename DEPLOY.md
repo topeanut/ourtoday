@@ -13,6 +13,7 @@
 | 네트워크 | `ourtoday-vcn` / `ourtoday-subnet` / 기본 보안 목록: 22 = 개발자 IP /32, 8080 = 전체 |
 | SSH | `ssh -i ~/.ssh/ourtoday-key ubuntu@129.225.158.235` |
 | 앱 경로 | `/home/ubuntu/ourtoday` (`.env` 는 서버에만) |
+| GitHub | `topeanut/ourtoday` (2026-11-22 조직 저장소 `BuildUp2026/build-up-be` 에서 이관), 이미지 `ghcr.io/topeanut/ourtoday-api` |
 | Vercel | 계정 `ljhh1648@g.hongik.ac.kr` (CLI 사용자 topeanut), 프로젝트 `topeanuts-projects/ourtoday` |
 | 카카오 | 앱 `오늘의 우리` (ID 1467289), Redirect URI `https://ourtoday.vercel.app/login/oauth2/code/kakao` |
 
@@ -22,7 +23,7 @@
 
 | 무엇 | 어떻게 | 확인 |
 |------|--------|------|
-| **자동 배포** | `main` 에 `api/**` push → GitHub Actions(`.github/workflows/deploy.yml`) 가 test·bootJar 후 `ghcr.io/buildup2026/ourtoday-api:latest` 푸시 → 서버 타이머 `ourtoday-deploy-pull`(2분) 가 새 이미지면 교체 | `journalctl -u ourtoday-deploy-pull -n 20` |
+| **자동 배포** | `main` 에 `api/**` push → GitHub Actions(`.github/workflows/deploy.yml`) 가 test·bootJar 후 `ghcr.io/topeanut/ourtoday-api:latest` 푸시 → 서버 타이머 `ourtoday-deploy-pull`(2분) 가 새 이미지면 교체 | `journalctl -u ourtoday-deploy-pull -n 20` |
 | **DB 백업** | 타이머 `ourtoday-backup` 매일 04:00 KST → 서버 `~/backups`(7일) + Object Storage `ourtoday-backup/db/`(30일) | `journalctl -u ourtoday-backup -n 5` |
 | **ARM 재시도** | 타이머 `ourtoday-arm-retry` 10분마다 무료 A1(1코어/6GB — 작게 요청할수록 잘 잡힘) `ourtoday-arm` 생성 시도, 성공 시 `~/ARM_CREATED` 기록 후 타이머 자동 해제 → 이관은 수동 | `journalctl -u ourtoday-arm-retry -n 5`, `cat ~/ARM_CREATED` |
 

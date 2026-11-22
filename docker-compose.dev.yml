@@ -2,7 +2,7 @@
 # 운영과 같은 서버·같은 Postgres 를 쓰되 DB(ourtoday_dev)와 JWT 키는 분리, 메모리는 최소
 services:
   api-dev:
-    image: ghcr.io/buildup2026/ourtoday-api:develop
+    image: ghcr.io/topeanut/ourtoday-api:develop
     pull_policy: always
     container_name: ourtoday-api-dev
     restart: "no"

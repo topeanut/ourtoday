@@ -16,7 +16,7 @@ permissions:
   packages: write
 
 env:
-  IMAGE: ghcr.io/buildup2026/ourtoday-api
+  IMAGE: ghcr.io/topeanut/ourtoday-api
 
 jobs:
   build:
