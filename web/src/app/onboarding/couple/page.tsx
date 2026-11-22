@@ -9,6 +9,7 @@ import { inviteUrl, normalizeInviteCode, takeInviteCode } from "@/lib/invite";
 import { copyText, share } from "@/lib/native";
 import type { InviteResponse, OnboardingStatus } from "@/lib/types";
 import { Button, Card, Field, inputClass } from "@/components/ui";
+import { PushInviteNudge } from "@/components/PushPrompt";
 import { useToast } from "@/components/Toast";
 
 export default function CoupleOnboardingPage() {
@@ -117,6 +118,7 @@ export default function CoupleOnboardingPage() {
       )}
 
       {mode === "invite" && invite && (
+        <>
         <Card className="mt-10 text-center">
           <p className="text-sm text-sub">초대코드</p>
           <button
@@ -145,6 +147,8 @@ export default function CoupleOnboardingPage() {
             뒤로
           </button>
         </Card>
+        <PushInviteNudge />
+        </>
       )}
 
       {mode === "join" && (
