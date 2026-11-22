@@ -103,7 +103,7 @@ export function CommentSection({ postId }: { postId: string }) {
             const pending = c.id.startsWith(PENDING_PREFIX);
             return (
             <li key={c.id} className={`flex gap-3 px-1 py-3.5 ${pending ? "animate-fade opacity-60" : ""}`} aria-busy={pending || undefined}>
-              <Avatar name={c.author.nickname} seed={c.author.id} size={32} />
+              <Avatar name={c.author.nickname} seed={c.author.id} src={c.author.profileImageUrl} size={32} />
               <div className="min-w-0 flex-1">
                 <p className="flex items-baseline gap-2">
                   <span className="text-sm font-semibold">{c.author.nickname}</span>

@@ -35,6 +35,8 @@ export const ChevronRight = ({ className }: P) => svg(className, <path d="M9 18l
 export const CloseIcon = ({ className }: P) => svg(className, <path d="M18 6 6 18M6 6l12 12" />);
 export const ImageIcon = ({ className }: P) =>
   svg(className, <><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="m21 15-5-5L5 21" /></>);
+export const CameraIcon = ({ className }: P) =>
+  svg(className, <><path d="M4 8a2 2 0 0 1 2-2h1.6l1.4-2h6l1.4 2H18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z" /><circle cx="12" cy="13" r="3.5" /></>);
 export const CheckIcon = ({ className }: P) => svg(className, <path d="M5 12l5 5L20 7" />);
 export const SparkIcon = ({ className }: P) =>
   svg(className, <path d="M12 3l1.9 5.8L20 10l-6.1 1.2L12 17l-1.9-5.8L4 10l6.1-1.2z" />, true);

@@ -65,7 +65,7 @@ export function PostCard({
   return (
     <article className="rounded-3xl bg-white p-5 shadow-[0_1px_2px_rgba(43,35,38,0.04),0_8px_24px_rgba(43,35,38,0.04)]">
       <header className="mb-3 flex items-center gap-3">
-        <Avatar name={post.author.nickname} seed={post.author.id} />
+        <Avatar name={post.author.nickname} seed={post.author.id} src={post.author.profileImageUrl} />
         <div className="min-w-0 flex-1">
           <p className="text-sm font-semibold">{post.author.nickname}</p>
           <p className="text-xs text-sub">{formatDay(post.postedDate)}</p>

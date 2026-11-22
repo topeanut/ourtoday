@@ -7,7 +7,10 @@ export type EmojiType = "HEART" | "LAUGH" | "SURPRISE" | "SAD" | "FIRE";
 export interface User {
   id: UUID;
   nickname: string;
+  /** 직접 올린 사진 → 카카오 사진 → null 순 */
   profileImageUrl: string | null;
+  /** 직접 올린 사진이 있는지 (사진 삭제 버튼 표시용) */
+  hasCustomProfileImage: boolean;
   kakaoId: string;
   profileCompleted: boolean;
   createdAt: string;

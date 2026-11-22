@@ -98,8 +98,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </Link>
         <div className="mt-auto flex items-center gap-3 rounded-2xl bg-white p-3">
           <div className="flex -space-x-2">
-            <Avatar name={me.nickname} seed={me.id} size={32} />
-            {partner && <Avatar name={partner.nickname} seed={partner.id} size={32} />}
+            <Avatar name={me.nickname} seed={me.id} src={me.profileImageUrl} size={32} />
+            {partner && <Avatar name={partner.nickname} seed={partner.id} src={partner.profileImageUrl} size={32} />}
           </div>
           <div className="min-w-0 text-sm">
             <p className="truncate font-semibold">
