@@ -79,9 +79,9 @@ class LocalSeed implements CommandLineRunner {
         reactionService.toggle(b, firstPost, EmojiType.LAUGH);
         reactionService.toggle(a, firstPost, EmojiType.HEART);
 
-        calendarMemoService.create(a, new CalendarMemoCreateRequest(today().plusDays(5), "1주년 기념일 🎂", "레스토랑 7시 예약", "#FF7A8A"));
-        calendarMemoService.create(b, new CalendarMemoCreateRequest(today().plusDays(12), "부산 여행", null, "#6FB3E8"));
-        calendarMemoService.create(a, new CalendarMemoCreateRequest(today(), "치과 예약", null, "#7CC69A"));
+        calendarMemoService.create(a, new CalendarMemoCreateRequest(today().plusDays(5), "1주년 기념일 🎂", "레스토랑 7시 예약", "#FF7A8A", null));
+        calendarMemoService.create(b, new CalendarMemoCreateRequest(today().plusDays(12), "부산 여행", null, "#6FB3E8", null));
+        calendarMemoService.create(a, new CalendarMemoCreateRequest(today(), "치과 예약", null, "#7CC69A", null));
 
         bucketItemService.create(a, new BucketItemCreateRequest("오로라 보러 가기", "아이슬란드 겨울", LocalDate.of(2027, 1, 15)));
         bucketItemService.create(b, new BucketItemCreateRequest("같이 마라톤 10km 완주", null, null));

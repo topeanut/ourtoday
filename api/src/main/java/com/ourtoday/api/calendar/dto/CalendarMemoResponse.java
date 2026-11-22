@@ -12,6 +12,7 @@ public record CalendarMemoResponse(
     @Schema(description = "제목") String title,
     @Schema(description = "추가 설명") String description,
     @Schema(description = "표시 색상") String color,
+    @Schema(description = "첨부 장소 (없으면 null)") PlaceLocation location,
     @Schema(description = "작성자") Author author,
     Instant createdAt,
     Instant updatedAt

@@ -4,6 +4,7 @@ import com.ourtoday.api.calendar.dto.CalendarMemoCreateRequest;
 import com.ourtoday.api.calendar.dto.CalendarMemoListResponse;
 import com.ourtoday.api.calendar.dto.CalendarMemoResponse;
 import com.ourtoday.api.calendar.dto.CalendarMemoUpdateRequest;
+import com.ourtoday.api.calendar.dto.PlaceLocation;
 import com.ourtoday.api.common.error.BusinessException;
 import com.ourtoday.api.common.error.ErrorCode;
 import com.ourtoday.api.couple.CoupleService;
@@ -38,7 +39,8 @@ public class CalendarMemoService {
     public CalendarMemoResponse create(UUID userId, CalendarMemoCreateRequest request) {
         UUID coupleId = coupleService.getConnectedCoupleId(userId);
         CalendarMemo memo = calendarMemoRepository.saveAndFlush(CalendarMemo.create(coupleId, userId, request.date(),
-            request.title().strip(), blankToNull(request.description()), normalizeColor(request.color())));
+            request.title().strip(), blankToNull(request.description()), normalizeColor(request.color()),
+            lat(request.location()), lng(request.location()), name(request.location())));
         return toResponse(memo, loadUsers(List.of(userId)));
     }
 
@@ -67,7 +69,7 @@ public class CalendarMemoService {
     public CalendarMemoResponse update(UUID userId, UUID memoId, CalendarMemoUpdateRequest request) {
         CalendarMemo memo = getMyMemo(userId, memoId);
         memo.update(request.date(), request.title().strip(), blankToNull(request.description()),
-            normalizeColor(request.color()));
+            normalizeColor(request.color()), lat(request.location()), lng(request.location()), name(request.location()));
         calendarMemoRepository.flush();
         return toResponse(memo, loadUsers(List.of(userId)));
     }
@@ -99,6 +101,19 @@ public class CalendarMemoService {
         return StringUtils.hasText(value) ? value.strip() : null;
     }
 
+    private static Double lat(PlaceLocation l) { return l == null ? null : l.lat(); }
+
+    private static Double lng(PlaceLocation l) { return l == null ? null : l.lng(); }
+
+    private static String name(PlaceLocation l) { return l == null ? null : l.placeName().strip(); }
+
+    private static PlaceLocation toLocation(CalendarMemo memo) {
+        if (memo.getPlaceLat() == null || memo.getPlaceLng() == null || memo.getPlaceName() == null) {
+            return null;
+        }
+        return new PlaceLocation(memo.getPlaceLat(), memo.getPlaceLng(), memo.getPlaceName());
+    }
+
     private static String normalizeColor(String color) {
         return StringUtils.hasText(color) ? color.toUpperCase() : null;
     }
@@ -116,6 +131,7 @@ public class CalendarMemoService {
             memo.getTitle(),
             memo.getDescription(),
             memo.getColor(),
+            toLocation(memo),
             new CalendarMemoResponse.Author(author.getId(), author.getNickname()),
             memo.getCreatedAt(),
             memo.getUpdatedAt()
