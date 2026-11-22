@@ -24,7 +24,7 @@ function isActive(pathname: string, href: string) {
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { me, partner, couple } = useSession();
-  const hideTabs = /^\/posts\/(new|[^/]+\/edit)/.test(pathname);
+  const hideTabs = /^\/posts\/(new|[^/]+(\/edit)?\/?$)/.test(pathname);
 
   useEffect(() => {
     markNavigation(pathname);
