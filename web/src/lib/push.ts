@@ -72,14 +72,30 @@ export function getPushState(timeoutMs = 1500): Promise<PushState> {
   return ask("pushStatus", timeoutMs);
 }
 
-async function register(state: PushState) {
-  if (state.permission !== "granted" || !state.token || !state.platform) return;
-  try {
-    await api("/push-tokens", { method: "POST", body: { token: state.token, platform: state.platform } });
-    writeStored(state.token);
-  } catch {
-    // 다음 실행 때 다시 시도
-  }
+/** 같은 토큰 등록이 동시에 여러 번 나가지 않게 진행 중인 요청을 공유 */
+const pending = new Map<string, Promise<void>>();
+/** 이 페이지 세션에서 서버 등록을 마친 토큰. 새로 실행하면 비어 있어 한 번은 다시 등록(계정 이동 반영) */
+let registered: string | null = null;
+
+function register(state: PushState): Promise<void> {
+  const { token, platform } = state;
+  if (state.permission !== "granted" || !token || !platform) return Promise.resolve();
+  if (token === registered && token === readStored()) return Promise.resolve();
+  const inFlight = pending.get(token);
+  if (inFlight) return inFlight;
+  const p = (async () => {
+    try {
+      await api("/push-tokens", { method: "POST", body: { token, platform } });
+      writeStored(token);
+      registered = token;
+    } catch {
+      // 다음 실행 때 다시 시도
+    } finally {
+      pending.delete(token);
+    }
+  })();
+  pending.set(token, p);
+  return p;
 }
 
 /** 시스템 권한 요청 (사용자가 대화상자에 답할 시간이 있어 길게 기다림). 허용되면 서버 등록까지 */
@@ -114,6 +130,7 @@ export async function unregisterPush(): Promise<void> {
     // 무시
   }
   writeStored(null);
+  registered = null;
 }
 
 export function openNotificationSettings(): void {

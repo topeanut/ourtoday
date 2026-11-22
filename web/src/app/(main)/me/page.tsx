@@ -30,8 +30,13 @@ export default function MyPage() {
     void getPushState().then(setPush);
   }, []);
 
+  const [pushBusy, setPushBusy] = useState(false);
+
   const askPush = async () => {
+    if (pushBusy) return;
+    setPushBusy(true);
     const s = await requestPushPermission();
+    setPushBusy(false);
     setPush(s);
     if (s.permission === "granted") toast("알림을 켰어요");
   };
@@ -138,7 +143,9 @@ export default function MyPage() {
           {push && !(push.supported && push.permission === "granted") && (
             <div className="mb-3 flex items-center justify-between gap-3 rounded-2xl bg-cream px-4 py-3">
               {!push.supported ? (
-                <p className="text-sm text-sub">알림은 앱에서 받을 수 있어요</p>
+                <p className="text-sm text-sub">
+                  {isApp() ? "앱을 최신 버전으로 업데이트하면 알림을 받을 수 있어요" : "알림은 앱에서 받을 수 있어요"}
+                </p>
               ) : push.permission === "denied" ? (
                 <>
                   <p className="text-sm text-sub">휴대폰 설정에서 알림이 꺼져 있어요</p>
@@ -147,7 +154,7 @@ export default function MyPage() {
                   </Button>
                 </>
               ) : (
-                <Button variant="soft" className="h-9 px-4 text-sm" onClick={askPush}>
+                <Button variant="soft" className="h-9 px-4 text-sm" loading={pushBusy} onClick={askPush}>
                   알림 받기
                 </Button>
               )}
