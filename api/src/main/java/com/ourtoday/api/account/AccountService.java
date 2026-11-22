@@ -51,6 +51,8 @@ public class AccountService {
         userRepository.deleteById(userId);
         // 내보내기 zip 에는 상대 기록도 들어 있어서 탈퇴 시 함께 삭제
         imageService.deletePrefixAfterCommit("exports/" + userId + "/");
+        // 직접 올린 프로필 사진
+        imageService.deletePrefixAfterCommit(ImageService.userPrefixOf(userId));
     }
 
     /** Apple 로그인 사용자는 탈퇴가 확정된 뒤 Apple 연결도 끊음 (심사 지침 5.1.1(v)) */

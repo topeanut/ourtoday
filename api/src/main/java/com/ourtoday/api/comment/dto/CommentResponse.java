@@ -16,10 +16,10 @@ public record CommentResponse(
     @Schema(description = "수정 시각") Instant updatedAt
 ) {
 
-    public static CommentResponse of(Comment comment, User author) {
+    public static CommentResponse of(Comment comment, User author, String authorProfileImageUrl) {
         return new CommentResponse(
             comment.getId(),
-            new PostResponse.Author(author.getId(), author.getNickname(), author.getProfileImageUrl()),
+            new PostResponse.Author(author.getId(), author.getNickname(), authorProfileImageUrl),
             comment.getContent(),
             comment.getCreatedAt(),
             comment.getUpdatedAt()

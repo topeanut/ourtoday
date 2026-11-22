@@ -5,6 +5,7 @@ import com.ourtoday.api.common.error.ErrorCode;
 import com.ourtoday.api.couple.dto.CoupleInviteResponse;
 import com.ourtoday.api.couple.dto.CoupleResponse;
 import com.ourtoday.api.couple.dto.CoupleResponse.CoupleMemberResponse;
+import com.ourtoday.api.user.ProfileImageResolver;
 import com.ourtoday.api.user.User;
 import com.ourtoday.api.user.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +38,7 @@ public class CoupleService {
     private final UserRepository userRepository;
     private final InviteCodeGenerator inviteCodeGenerator;
     private final Clock clock;
+    private final ProfileImageResolver profileImages;
 
     /**
      * 커플 없음 → 새 PENDING 커플 생성. 이미 내 PENDING 커플이 있으면 코드만 재발급
@@ -168,7 +170,7 @@ public class CoupleService {
 
         List<CoupleMemberResponse> members = memberIds.stream()
             .map(users::get)
-            .map(u -> new CoupleMemberResponse(u.getId(), u.getNickname(), u.getProfileImageUrl()))
+            .map(u -> new CoupleMemberResponse(u.getId(), u.getNickname(), profileImages.urlOf(u)))
             .toList();
         return new CoupleResponse(couple.getId(), couple.getStartedAt(), couple.getStatus(), members);
     }

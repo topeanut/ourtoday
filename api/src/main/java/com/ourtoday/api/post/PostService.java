@@ -14,6 +14,7 @@ import com.ourtoday.api.post.dto.PostResponse;
 import com.ourtoday.api.post.dto.PostUpdateRequest;
 import com.ourtoday.api.reaction.ReactionCount;
 import com.ourtoday.api.reaction.ReactionRepository;
+import com.ourtoday.api.user.ProfileImageResolver;
 import com.ourtoday.api.user.User;
 import com.ourtoday.api.user.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -57,6 +58,7 @@ public class PostService {
     private final CoupleService coupleService;
     private final ImageService imageService;
     private final Clock clock;
+    private final ProfileImageResolver profileImages;
 
     @Transactional
     public PostResponse create(UUID userId, PostCreateRequest request) {
@@ -310,11 +312,11 @@ public class PostService {
             .toList();
         List<Comment> postComments = comments.getOrDefault(post.getId(), List.of());
         List<CommentResponse> recentComments = recent(postComments).stream()
-            .map(c -> CommentResponse.of(c, users.get(c.getAuthorId())))
+            .map(c -> commentResponse(c, users.get(c.getAuthorId())))
             .toList();
         return new PostResponse(
             post.getId(),
-            new PostResponse.Author(author.getId(), author.getNickname(), author.getProfileImageUrl()),
+            new PostResponse.Author(author.getId(), author.getNickname(), profileImages.urlOf(author)),
             post.getContent(),
             post.getPostedDate(),
             imageResponses,
@@ -324,5 +326,9 @@ public class PostService {
             post.getCreatedAt(),
             post.getUpdatedAt()
         );
+    }
+
+    private CommentResponse commentResponse(Comment comment, User author) {
+        return CommentResponse.of(comment, author, profileImages.urlOf(author));
     }
 }

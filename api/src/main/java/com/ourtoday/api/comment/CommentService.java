@@ -4,6 +4,7 @@ import com.ourtoday.api.comment.dto.CommentResponse;
 import com.ourtoday.api.common.error.BusinessException;
 import com.ourtoday.api.common.error.ErrorCode;
 import com.ourtoday.api.post.PostService;
+import com.ourtoday.api.user.ProfileImageResolver;
 import com.ourtoday.api.user.User;
 import com.ourtoday.api.user.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +24,7 @@ public class CommentService {
     private final CommentRepository commentRepository;
     private final PostService postService;
     private final UserRepository userRepository;
+    private final ProfileImageResolver profileImages;
 
     @Transactional(readOnly = true)
     public List<CommentResponse> list(UUID userId, UUID postId) {
@@ -70,6 +72,7 @@ public class CommentService {
     }
 
     private CommentResponse toResponse(Comment comment, Map<UUID, User> users) {
-        return CommentResponse.of(comment, users.get(comment.getAuthorId()));
+        User author = users.get(comment.getAuthorId());
+        return CommentResponse.of(comment, author, profileImages.urlOf(author));
     }
 }

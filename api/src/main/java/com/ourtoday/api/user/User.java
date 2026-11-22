@@ -42,8 +42,13 @@ public class User {
     @Column(nullable = false)
     private String nickname;
 
-    @Column(name = "profile_image_url")
-    private String profileImageUrl;
+    /** 직접 올린 프로필 사진 (저장소 키). 카카오 사진보다 우선 */
+    @Column(name = "profile_image_key", length = 200)
+    private String profileImageKey;
+
+    /** 카카오 프로필 사진 URL. 카카오 로그인 때마다 갱신 */
+    @Column(name = "kakao_profile_image_url", length = 500)
+    private String kakaoProfileImageUrl;
 
     @Column(name = "profile_completed", nullable = false)
     private boolean profileCompleted;
@@ -65,14 +70,23 @@ public class User {
         this.appleClientId = clientId;
     }
 
-    public void completeProfile(String nickname, String profileImageUrl) {
+    public void completeProfile(String nickname) {
         this.nickname = nickname;
-        this.profileImageUrl = profileImageUrl;
         this.profileCompleted = true;
     }
 
-    public void updateProfile(String nickname, String profileImageUrl) {
+    public void updateNickname(String nickname) {
         this.nickname = nickname;
-        this.profileImageUrl = profileImageUrl;
+    }
+
+    /** @return 교체되어 더 이상 쓰지 않는 이전 키 (없으면 null) */
+    public String changeProfileImageKey(String key) {
+        String old = this.profileImageKey;
+        this.profileImageKey = key;
+        return old != null && !old.equals(key) ? old : null;
+    }
+
+    public void updateKakaoProfileImageUrl(String url) {
+        this.kakaoProfileImageUrl = url;
     }
 }
