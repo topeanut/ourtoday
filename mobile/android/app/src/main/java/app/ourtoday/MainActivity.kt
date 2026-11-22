@@ -51,9 +51,21 @@ class MainActivity : AppCompatActivity(), NativeBridge.Handler {
         fileCallback = null
     }
 
-    /** Android 13+ 알림 권한. 결과(허용/거부)를 그대로 웹에 알림 */
+    /** 권한 요청 직전의 shouldShowRequestPermissionRationale (결과가 "결정" 인지 "그냥 닫음" 인지 가르는 데 씀) */
+    private var rationaleBeforeRequest = false
+
+    /**
+     * Android 13+ 알림 권한. 사용자가 실제로 허용/거부했을 때만 "물어봤음" 을 기록하고 웹에 알림.
+     * 뒤로가기·바깥 탭으로 닫으면 기록하지 않아 웹에는 계속 "default"(다시 물어볼 수 있음)로 보임
+     */
     private val requestNotificationPermission =
-        registerForActivityResult(ActivityResultContracts.RequestPermission()) { sendPushState() }
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            val rationaleAfter = shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS)
+            if (PushBridge.isRealDecision(granted, rationaleBeforeRequest, rationaleAfter)) {
+                PushBridge.markAsked(this)
+            }
+            sendPushState()
+        }
 
     private val onPushTokenChanged: (String) -> Unit = { sendPushState() }
 
@@ -211,7 +223,7 @@ class MainActivity : AppCompatActivity(), NativeBridge.Handler {
 
     override fun onPushPermission() {
         if (PushBridge.needsRuntimePermission(this)) {
-            PushBridge.markAsked(this)
+            rationaleBeforeRequest = shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS)
             requestNotificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
         } else {
             sendPushState()
@@ -228,12 +240,22 @@ class MainActivity : AppCompatActivity(), NativeBridge.Handler {
         }
     }
 
-    /** 현재 권한·토큰을 웹에 "ourtoday:push" 이벤트로 전달 (우리 웹 페이지일 때만) */
+    /**
+     * 현재 권한·토큰을 웹에 "ourtoday:push" 이벤트로 전달 (우리 웹 페이지일 때만).
+     * 허용 상태가 아니면 토큰이 필요 없으니 FCM 조회 없이 바로 응답 (느린 네트워크에서 웹 1.5초 타임아웃 방지)
+     */
     private fun sendPushState() {
-        PushBridge.token(this) { token ->
-            if (isDestroyed || !NavigationPolicy.isAppPage(currentMainUrl)) return@token
-            webView.evaluateJavascript(PushBridge.eventScript(PushBridge.permission(this), token), null)
+        val permission = PushBridge.permission(this)
+        if (permission != "granted") {
+            dispatchPushState(permission, null)
+            return
         }
+        PushBridge.token(this) { token -> dispatchPushState(PushBridge.permission(this), token) }
+    }
+
+    private fun dispatchPushState(permission: String, token: String?) {
+        if (isDestroyed || !NavigationPolicy.isAppPage(currentMainUrl)) return
+        webView.evaluateJavascript(PushBridge.eventScript(permission, token), null)
     }
 
     // ===== 외부 이동 =====

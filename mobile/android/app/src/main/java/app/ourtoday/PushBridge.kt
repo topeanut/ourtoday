@@ -53,6 +53,14 @@ object PushBridge {
             ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) !=
             PackageManager.PERMISSION_GRANTED
 
+    /**
+     * 권한 대화상자 결과가 사용자의 실제 결정인지.
+     * 허용 → 결정. 처음 거부하면 이후 rationale 이 true, 두 번째 거부(다시 묻지 않음)는 요청 전 rationale 이 true.
+     * 요청 전·후 모두 false 인 거부는 뒤로가기·바깥 탭으로 닫은 것 → 결정 아님
+     */
+    fun isRealDecision(granted: Boolean, rationaleBefore: Boolean, rationaleAfter: Boolean): Boolean =
+        granted || rationaleAfter || rationaleBefore
+
     fun markAsked(context: Context) {
         prefs(context).edit { putBoolean(KEY_ASKED, true) }
     }
