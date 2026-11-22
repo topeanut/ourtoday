@@ -4,6 +4,7 @@ import { createContext, useContext, useEffect } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import useSWR from "swr";
 import { fetcher } from "@/lib/api";
+import { syncPushToken } from "@/lib/push";
 import { getToken, rememberReturnTo } from "@/lib/auth";
 import type { Couple, CoupleMember, OnboardingStatus, User } from "@/lib/types";
 import { PageSpinner } from "./ui";
@@ -47,6 +48,10 @@ export function SessionGate({ children }: { children: React.ReactNode }) {
     if (s === "NEED_PROFILE") router.replace("/onboarding/profile");
     else if (s === "NO_COUPLE" || s === "PENDING_INVITE") router.replace("/onboarding/couple");
   }, [status.data, status.isValidating, pathname, router]);
+
+  useEffect(() => {
+    if (connected && getToken()) void syncPushToken();
+  }, [connected]);
 
   if (!connected || !me.data || !couple.data) return <PageSpinner />;
 

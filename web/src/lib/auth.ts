@@ -1,3 +1,5 @@
+import { unregisterPush } from "./push";
+
 const TOKEN_KEY = "ourtoday.token";
 const REFRESH_KEY = "ourtoday.refresh";
 const RETURN_KEY = "ourtoday.returnTo";
@@ -41,7 +43,13 @@ export function takeReturnTo(): string | null {
   }, null);
 }
 
-export function logout() {
+export async function logout() {
+  // 이 기기로 푸시가 가지 않게 토큰 해제 (최대 1.5초, 실패해도 로그아웃은 진행)
+  try {
+    await Promise.race([unregisterPush(), new Promise((r) => setTimeout(r, 1500))]);
+  } catch {
+    // 무시
+  }
   clearToken();
   window.location.replace("/login");
 }
