@@ -144,3 +144,12 @@ gunzip -c <백업파일> | ssh -i ~/.ssh/ourtoday-key ubuntu@129.225.158.235 \
 - Oracle 상시 무료(AMD Micro VM, 부트 볼륨 50GB/200GB, 네트워크). **유료 업그레이드만 안 하면 청구 없음.** 30일 체험 크레딧이 끝나도 상시 무료 자원은 유지.
 - Vercel Hobby, 카카오 무료. AWS 는 2026-10-25 전부 삭제.
 - 놀고 있는 무료 VM 은 Oracle 이 회수할 수 있음 → 정기 백업 권장.
+
+## 푸시 알림 (Firebase)
+
+- Firebase 프로젝트: `ourtoday-15d98` (FCM). 앱 설정 파일은 각 앱 프로젝트에 포함.
+- 서버 환경변수 `FIREBASE_SERVICE_ACCOUNT` = 서비스 계정 JSON 의 **base64**. 발급: Firebase 콘솔 › 프로젝트 설정 › 서비스 계정 › 새 비공개 키. 비어 있으면 푸시 비활성(Noop sender, 서버는 정상 기동).
+- 설정: Oracle VM 의 `.env` 에 `FIREBASE_SERVICE_ACCOUNT=<base64>` 추가(값은 사용자가 서버에서 직접 입력, 저장소에 커밋 금지) → `docker compose -f docker-compose.prod.yml up -d` 로 재기동.
+- iOS: APNs 인증 키 ID `P9M8VW552J` 를 Firebase 에 업로드(개발+운영). .p8 파일은 `~/.secrets/ourtoday/` 에만 보관, 커밋 금지.
+- 작년 오늘 알림: 서버 cron 매일 20:00 KST.
+- 앱 버전: Android 1.1.0 (versionCode 2), iOS 1.0.2 (빌드 3).
