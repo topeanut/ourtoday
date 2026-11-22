@@ -62,7 +62,7 @@ export function CommentSection({ postId }: { postId: string }) {
         댓글 {data && data.length > 0 && <span className="text-brand-strong">{data.length}</span>}
       </h2>
 
-      {error ? (
+      {error && !data ? (
         <p className="py-8 text-center text-sm text-sub">댓글을 불러오지 못했어요</p>
       ) : !data ? (
         <div className="flex justify-center py-8">

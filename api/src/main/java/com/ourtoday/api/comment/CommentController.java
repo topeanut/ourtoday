@@ -1,6 +1,7 @@
 package com.ourtoday.api.comment;
 
-import com.ourtoday.api.comment.dto.CommentRequest;
+import com.ourtoday.api.comment.dto.CommentCreateRequest;
+import com.ourtoday.api.comment.dto.CommentUpdateRequest;
 import com.ourtoday.api.comment.dto.CommentResponse;
 import com.ourtoday.api.common.guard.RequireCouple;
 import io.swagger.v3.oas.annotations.Operation;
@@ -43,7 +44,7 @@ public class CommentController {
     public CommentResponse create(
         @AuthenticationPrincipal UUID userId,
         @PathVariable UUID postId,
-        @Valid @RequestBody CommentRequest request
+        @Valid @RequestBody CommentCreateRequest request
     ) {
         return commentService.create(userId, postId, request.content());
     }
@@ -54,7 +55,7 @@ public class CommentController {
         @AuthenticationPrincipal UUID userId,
         @PathVariable UUID postId,
         @PathVariable UUID commentId,
-        @Valid @RequestBody CommentRequest request
+        @Valid @RequestBody CommentUpdateRequest request
     ) {
         return commentService.update(userId, postId, commentId, request.content());
     }

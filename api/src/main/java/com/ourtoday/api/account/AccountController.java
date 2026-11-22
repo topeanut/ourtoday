@@ -31,7 +31,7 @@ public class AccountController {
         return exportService.export(userId);
     }
 
-    @Operation(summary = "회원 탈퇴", description = "커플 해제 + 내가 쓴 글·사진·반응·메모·계정 삭제. 되돌릴 수 없음")
+    @Operation(summary = "회원 탈퇴", description = "커플 해제 + 내가 쓴 글·사진·반응·댓글·메모·계정 삭제. 되돌릴 수 없음")
     @DeleteMapping
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void withdraw(@AuthenticationPrincipal UUID userId) {

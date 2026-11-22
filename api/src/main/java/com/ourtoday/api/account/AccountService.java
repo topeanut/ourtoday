@@ -36,7 +36,7 @@ public class AccountService {
     private final AppleAuthClient appleAuthClient;
 
     /**
-     * 커플은 해제(상대는 커플 없음 상태), 내가 쓴 글·사진·반응·메모와 계정 삭제.
+     * 커플은 해제(상대는 커플 없음 상태), 내가 쓴 글·사진·반응·댓글·메모와 계정 삭제.
      * 상대가 쓴 기록은 상대 것이라 남김 (해제된 커플이라 조회는 불가)
      */
     @Transactional
