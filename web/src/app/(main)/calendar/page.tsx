@@ -7,7 +7,9 @@ import { api, errorMessage, fetcher } from "@/lib/api";
 import { formatDay, parseDate, todayKst, toYmd, weekdayLabels } from "@/lib/date";
 import type { CalendarMemo, Page, Post } from "@/lib/types";
 import { PageHeader } from "@/components/AppShell";
-import { ChevronLeft, ChevronRight, EditIcon, PlusIcon } from "@/components/Icons";
+import { ChevronLeft, ChevronRight, EditIcon, MapPin, PlusIcon } from "@/components/Icons";
+import { LocationPicker } from "@/components/LocationPicker";
+import type { PickedLocation } from "@/lib/kakaoMap";
 import { useSession } from "@/components/Session";
 import { useToast } from "@/components/Toast";
 import { Button, Confirm, DateField, Field, inputClass, Sheet, Spinner, SheetActions } from "@/components/ui";
@@ -171,6 +173,12 @@ export default function CalendarPage() {
                   <span className="min-w-0 flex-1">
                     <span className="block font-medium">{m.title}</span>
                     {m.description && <span className="mt-0.5 block whitespace-pre-line text-sm text-sub">{m.description}</span>}
+                    {m.location && (
+                      <span className="mt-1 flex items-center gap-1 text-xs text-sub">
+                        <MapPin className="h-3.5 w-3.5 shrink-0" />
+                        <span className="truncate">{m.location.placeName}</span>
+                      </span>
+                    )}
                     <span className="mt-1 block text-xs text-sub">{m.author.nickname}</span>
                   </span>
                 </button>
@@ -240,6 +248,7 @@ function MemoEditor({
   const memo = target && target !== "new" ? target : null;
   const readOnly = !!memo && memo.author.id !== me.id;
   const [form, setForm] = useState({ date, title: "", description: "", color: COLORS[0] });
+  const [location, setLocation] = useState<PickedLocation | null>(null);
   const [loadedFor, setLoadedFor] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -253,12 +262,13 @@ function MemoEditor({
       description: memo?.description ?? "",
       color: memo?.color ?? COLORS[0],
     });
+    setLocation(memo?.location ?? null);
   }
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
-    const body = { date: form.date, title: form.title.trim(), description: form.description.trim() || null, color: form.color };
+    const body = { date: form.date, title: form.title.trim(), description: form.description.trim() || null, color: form.color, location };
     try {
       if (memo) await api(`/calendar/memos/${memo.id}`, { method: "PATCH", body });
       else await api("/calendar/memos", { method: "POST", body });
@@ -291,6 +301,12 @@ function MemoEditor({
           <div className="text-[15px]">
             <p className="text-sm text-sub">{formatDay(memo!.date)} · {memo!.author.nickname}</p>
             {memo!.description && <p className="mt-3 whitespace-pre-line">{memo!.description}</p>}
+            {memo!.location && (
+              <p className="mt-3 flex items-center gap-1.5 text-sm text-sub">
+                <MapPin className="h-4 w-4 shrink-0" />
+                <span className="truncate">{memo!.location.placeName}</span>
+              </p>
+            )}
             <p className="mt-6 text-xs text-sub">상대가 쓴 메모는 상대만 고칠 수 있어요.</p>
           </div>
         ) : (
@@ -315,6 +331,7 @@ function MemoEditor({
                 placeholder="장소, 시간, 준비할 것"
               />
             </Field>
+            <LocationPicker value={location} onChange={setLocation} />
             <div>
               <p className="mb-2 text-sm font-medium text-sub">색상</p>
               <div className="flex gap-3">

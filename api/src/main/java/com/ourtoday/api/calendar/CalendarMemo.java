@@ -28,6 +28,7 @@ public class CalendarMemo {
 
     public static final int TITLE_MAX_LENGTH = 50;
     public static final int DESCRIPTION_MAX_LENGTH = 1000;
+    public static final int PLACE_NAME_MAX_LENGTH = 100;
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -53,6 +54,15 @@ public class CalendarMemo {
     @Column(length = 7)
     private String color;
 
+    @Column(name = "place_lat")
+    private Double placeLat;
+
+    @Column(name = "place_lng")
+    private Double placeLng;
+
+    @Column(name = "place_name", length = PLACE_NAME_MAX_LENGTH)
+    private String placeName;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
@@ -62,19 +72,24 @@ public class CalendarMemo {
     private Instant updatedAt;
 
     public static CalendarMemo create(UUID coupleId, UUID authorId, LocalDate date, String title,
-                                      String description, String color) {
+                                      String description, String color,
+                                      Double placeLat, Double placeLng, String placeName) {
         CalendarMemo memo = new CalendarMemo();
         memo.coupleId = coupleId;
         memo.authorId = authorId;
-        memo.update(date, title, description, color);
+        memo.update(date, title, description, color, placeLat, placeLng, placeName);
         return memo;
     }
 
-    public void update(LocalDate date, String title, String description, String color) {
+    public void update(LocalDate date, String title, String description, String color,
+                       Double placeLat, Double placeLng, String placeName) {
         this.date = date;
         this.title = title;
         this.description = description;
         this.color = color;
+        this.placeLat = placeLat;
+        this.placeLng = placeLng;
+        this.placeName = placeName;
     }
 
     public boolean isWrittenBy(UUID userId) {

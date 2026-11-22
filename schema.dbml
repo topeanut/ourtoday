@@ -68,6 +68,9 @@ Table posts {
   author_id uuid [not null]
   content varchar(300) [not null, note: '3줄 일기 본문']
   posted_date date [not null, note: '작년 오늘 조회의 핵심']
+  place_lat double [note: '위치 첨부(선택). place_lat/lng/name 은 함께 있거나 함께 null']
+  place_lng double
+  place_name varchar(100)
   created_at timestamp [not null, default: `now()`]
   updated_at timestamp [not null, default: `now()`]
 
@@ -118,6 +121,9 @@ Table calendar_memos {
   title varchar(50) [not null]
   description text
   color varchar [note: '예: #FFB6C1']
+  place_lat double [note: '위치 첨부(선택). place_lat/lng/name 은 함께 있거나 함께 null']
+  place_lng double
+  place_name varchar(100)
   created_at timestamp [not null, default: `now()`]
   updated_at timestamp [not null, default: `now()`]
 

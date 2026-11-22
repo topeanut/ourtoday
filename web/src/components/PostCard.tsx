@@ -7,7 +7,7 @@ import { api, errorMessage, revalidateAll } from "@/lib/api";
 import { formatDay } from "@/lib/date";
 import { haptic, share } from "@/lib/native";
 import type { EmojiType, Post } from "@/lib/types";
-import { CloseIcon, CommentIcon, EditIcon, MoreIcon, ShareIcon, TrashIcon } from "./Icons";
+import { CloseIcon, CommentIcon, EditIcon, MapPin, MoreIcon, ShareIcon, TrashIcon } from "./Icons";
 import { useSession } from "./Session";
 import { useToast } from "./Toast";
 import { Avatar, Confirm, Sheet } from "./ui";
@@ -81,6 +81,13 @@ export function PostCard({
       </header>
 
       {linkToDetail ? <Link href={`/posts/${post.id}`}>{body}</Link> : body}
+
+      {post.location && (
+        <p className="mt-2 flex items-center gap-1 text-xs text-sub">
+          <MapPin className="h-3.5 w-3.5 shrink-0" />
+          <span className="min-w-0 truncate">{post.location.placeName}</span>
+        </p>
+      )}
 
       {post.images.length > 0 && <ImageGrid images={post.images.map((i) => i.url)} onOpen={setViewer} />}
 

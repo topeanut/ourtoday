@@ -2,6 +2,7 @@ package com.ourtoday.api.calendar.dto;
 
 import com.ourtoday.api.calendar.CalendarMemo;
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
@@ -20,7 +21,10 @@ public record CalendarMemoCreateRequest(
     @Size(max = CalendarMemo.DESCRIPTION_MAX_LENGTH) String description,
 
     @Schema(description = "표시 색상 #RRGGBB (선택)", example = "#FFB6C1")
-    @Pattern(regexp = CalendarMemoCreateRequest.COLOR_PATTERN) String color
+    @Pattern(regexp = CalendarMemoCreateRequest.COLOR_PATTERN) String color,
+
+    @Schema(description = "장소 (선택). 있으면 lat/lng/placeName 모두 필수")
+    @Valid PlaceLocation location
 ) {
     public static final String COLOR_PATTERN = "^#[0-9A-Fa-f]{6}$";
 }

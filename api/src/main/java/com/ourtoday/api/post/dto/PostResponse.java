@@ -15,6 +15,7 @@ public record PostResponse(
     @Schema(description = "본문") String content,
     @Schema(description = "기록 날짜") LocalDate postedDate,
     @Schema(description = "이미지 (표시 순서)") List<Image> images,
+    @Schema(description = "첨부 장소 (없으면 null)") PlaceLocation location,
     @Schema(description = "반응 집계 (1개 이상인 이모지만, HEART→FIRE 순)") List<Reaction> reactions,
     @Schema(description = "댓글 총 개수") long commentCount,
     @Schema(description = "최근 댓글 최대 2개 (오래된 순)") List<CommentResponse> recentComments,
