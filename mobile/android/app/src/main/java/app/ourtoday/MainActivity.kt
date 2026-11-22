@@ -1,11 +1,13 @@
 package app.ourtoday
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
+import android.provider.Settings
 import android.view.HapticFeedbackConstants
 import android.view.View
 import android.view.ViewGroup
@@ -21,6 +23,7 @@ import android.widget.Button
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.net.toUri
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
@@ -48,6 +51,12 @@ class MainActivity : AppCompatActivity(), NativeBridge.Handler {
         fileCallback = null
     }
 
+    /** Android 13+ 알림 권한. 결과(허용/거부)를 그대로 웹에 알림 */
+    private val requestNotificationPermission =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { sendPushState() }
+
+    private val onPushTokenChanged: (String) -> Unit = { sendPushState() }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -66,9 +75,25 @@ class MainActivity : AppCompatActivity(), NativeBridge.Handler {
             if (webView.url.isNullOrEmpty()) webView.loadUrl(BuildConfig.START_URL) else webView.reload()
         }
 
-        if (savedInstanceState == null || webView.restoreState(savedInstanceState) == null) {
+        PushBridge.ensureChannel(this)
+        PushBridge.tokenListener = onPushTokenChanged
+
+        // 알림 탭으로 새로 켜진 경우 그 경로 (최근 앱에서 다시 연 경우엔 예전 intent 이므로 무시)
+        val fromHistory = (intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) != 0
+        val pushUrl = if (savedInstanceState == null && !fromHistory) notificationUrl(intent) else null
+        if (pushUrl != null) {
+            webView.loadUrl(pushUrl)
+        } else if (savedInstanceState == null || webView.restoreState(savedInstanceState) == null) {
             webView.loadUrl(intent?.data?.takeIf { isAppUrl(it) }?.toString() ?: BuildConfig.START_URL)
         }
+    }
+
+    /** 알림 탭 intent extra "path" → 우리 앱 URL (검증 실패 시 null) */
+    private fun notificationUrl(intent: Intent?): String? {
+        val path = PushBridge.safePath(intent?.getStringExtra(PushBridge.EXTRA_PATH)) ?: return null
+        val start = BuildConfig.START_URL.toUri()
+        val url = "${start.scheme}://${start.encodedAuthority}$path".toUri()
+        return url.takeIf { isAppUrl(it) && it.host == start.host }?.toString()
     }
 
     /** targetSdk 35 는 Android 15 에서 edge-to-edge 강제 → 시스템 바·키보드 영역만큼 여백 */
@@ -129,7 +154,9 @@ class MainActivity : AppCompatActivity(), NativeBridge.Handler {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        intent.data?.takeIf { isAppUrl(it) }?.let { webView.loadUrl(it.toString()) }
+        setIntent(intent)
+        val url = notificationUrl(intent) ?: intent.data?.takeIf { isAppUrl(it) }?.toString()
+        url?.let { webView.loadUrl(it) }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -149,6 +176,7 @@ class MainActivity : AppCompatActivity(), NativeBridge.Handler {
     }
 
     override fun onDestroy() {
+        if (PushBridge.tokenListener === onPushTokenChanged) PushBridge.tokenListener = null
         fileCallback?.onReceiveValue(null)
         fileCallback = null
         webView.destroy()
@@ -175,6 +203,37 @@ class MainActivity : AppCompatActivity(), NativeBridge.Handler {
 
     override fun onHaptic() {
         webView.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+    }
+
+    override fun onPushStatus() {
+        sendPushState()
+    }
+
+    override fun onPushPermission() {
+        if (PushBridge.needsRuntimePermission(this)) {
+            PushBridge.markAsked(this)
+            requestNotificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            sendPushState()
+        }
+    }
+
+    override fun onOpenNotificationSettings() {
+        val settings = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+            .putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+        try {
+            startActivity(settings)
+        } catch (_: ActivityNotFoundException) {
+            // 설정 화면 없음 → 무시
+        }
+    }
+
+    /** 현재 권한·토큰을 웹에 "ourtoday:push" 이벤트로 전달 (우리 웹 페이지일 때만) */
+    private fun sendPushState() {
+        PushBridge.token(this) { token ->
+            if (isDestroyed || !NavigationPolicy.isAppPage(currentMainUrl)) return@token
+            webView.evaluateJavascript(PushBridge.eventScript(PushBridge.permission(this), token), null)
+        }
     }
 
     // ===== 외부 이동 =====
