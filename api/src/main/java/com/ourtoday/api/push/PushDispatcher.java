@@ -21,8 +21,17 @@ public class PushDispatcher {
     private final PushTokenRepository tokenRepository;
     private final PushSender sender;
 
+    /** 요청 처리 후 이벤트 알림용. 요청 스레드를 막지 않게 푸시 전용 실행기에서 보낸다 */
     @Async(PushConfig.EXECUTOR)
     public void sendToUsers(Collection<UUID> userIds, PushMessage message) {
+        sendToUsersNow(userIds, message);
+    }
+
+    /**
+     * 호출한 스레드에서 바로 보낸다. 커플 수만큼 한꺼번에 보내는 스케줄러용 —
+     * 비동기 큐(100건)를 넘쳐 버려지거나 실시간 알림을 밀어내지 않도록
+     */
+    public void sendToUsersNow(Collection<UUID> userIds, PushMessage message) {
         if (userIds == null || userIds.isEmpty()) {
             return;
         }

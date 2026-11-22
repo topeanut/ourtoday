@@ -21,7 +21,8 @@ import java.util.UUID;
 
 /**
  * 매일 20:00(KST) 같은 월·일에 지난 해 기록이 있는 연결된 커플에게 알린다 (홈 "작년 오늘" 카드와 같은 기준).
- * 본문에 기록 내용은 넣지 않으며, 한 커플의 실패가 다른 커플 처리를 막지 않는다
+ * 본문에 기록 내용은 넣지 않으며, 한 커플의 실패가 다른 커플 처리를 막지 않는다.
+ * 발송은 스케줄러 스레드에서 커플 단위로 차례로 한다
  */
 @Slf4j
 @Component
@@ -79,7 +80,8 @@ public class MemoryTodayScheduler {
         }
         // findMemories 는 최신순이라 첫 항목이 가장 최근 연도
         int yearsAgo = today.getYear() - memories.get(0).getPostedDate().getYear();
-        dispatcher.sendToUsers(recipients, new PushMessage(
+        // 스케줄러 스레드에서 동기로 보냄 (비동기 큐로 넣으면 커플이 많을 때 버려짐)
+        dispatcher.sendToUsersNow(recipients, new PushMessage(
             yearsAgo + "년 전 오늘, 둘이 남긴 기록이 있어요", "/", "memory_today"));
         return true;
     }

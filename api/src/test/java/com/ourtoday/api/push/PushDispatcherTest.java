@@ -7,6 +7,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.List;
 import java.util.UUID;
 
@@ -91,5 +93,19 @@ class PushDispatcherTest {
     void 서비스계정이_없으면_Noop_발송기가_만들어진다() {
         assertThat(new PushConfig().pushSender("")).isInstanceOf(NoopPushSender.class);
         assertThat(new PushConfig().pushSender("   ")).isInstanceOf(NoopPushSender.class);
+    }
+
+    @Test
+    void 서비스계정_base64가_깨져도_기동은_막지_않고_Noop_발송기가_된다() {
+        assertThat(new PushConfig().pushSender("%%% not base64 %%%")).isInstanceOf(NoopPushSender.class);
+    }
+
+    @Test
+    void 서비스계정_JSON이_잘못돼도_기동은_막지_않고_Noop_발송기가_된다() {
+        String notJson = Base64.getEncoder().encodeToString("this is not json".getBytes(StandardCharsets.UTF_8));
+        String wrongJson = Base64.getEncoder().encodeToString("{\"type\":\"service_account\"}".getBytes(StandardCharsets.UTF_8));
+
+        assertThat(new PushConfig().pushSender(notJson)).isInstanceOf(NoopPushSender.class);
+        assertThat(new PushConfig().pushSender(wrongJson)).isInstanceOf(NoopPushSender.class);
     }
 }

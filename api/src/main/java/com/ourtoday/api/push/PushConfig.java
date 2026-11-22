@@ -16,7 +16,6 @@ import org.springframework.util.StringUtils;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.util.Base64;
 import java.util.concurrent.Executor;
 
@@ -42,8 +41,12 @@ public class PushConfig {
                 ? FirebaseApp.initializeApp(options)
                 : FirebaseApp.getInstance();
             return new FcmPushSender(FirebaseMessaging.getInstance(app));
-        } catch (IOException e) {
-            throw new UncheckedIOException("Firebase 서비스 계정을 읽지 못했습니다.", e);
+        } catch (IOException | IllegalArgumentException e) {
+            // 값이 깨져 있어도(잘못된 base64·JSON) 기동은 계속하고 푸시만 끔.
+            // 예외 메시지·스택에 서비스 계정 일부가 섞일 수 있어 예외 종류만 남김
+            log.error("app.push.firebase-service-account 를 읽지 못함({}) → 푸시 발송 비활성",
+                e.getClass().getSimpleName());
+            return new NoopPushSender();
         }
     }
 

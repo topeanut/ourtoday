@@ -14,6 +14,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.bean.override.mockito.MockitoSpyBean;
 
 import java.time.LocalDate;
 import java.time.ZoneId;
@@ -22,6 +23,10 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.clearInvocations;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 
 /** 현재 시각을 2026-11-22 20:00 KST 로 고정. 이 테스트가 만든 행만 지운다 */
 @SpringBootTest
@@ -38,6 +43,7 @@ class MemoryTodaySchedulerTest {
     @Autowired PostService postService;
     @Autowired PushTokenService tokenService;
     @Autowired JdbcTemplate jdbc;
+    @MockitoSpyBean PushDispatcher dispatcher;
 
     private final List<UUID> userIds = new ArrayList<>();
     private UUID a;
@@ -157,5 +163,18 @@ class MemoryTodaySchedulerTest {
         assertThat(scheduler.sendMemoryToday()).isZero();
 
         assertThat(fake.sent()).isEmpty();
+    }
+
+    @Test
+    void 스케줄러는_비동기_큐를_거치지_않고_스케줄러_스레드에서_바로_보낸다() {
+        // 커플마다 @Async 로 넣으면 큐(100)가 넘쳐 버려지고 실시간 알림도 밀림
+        post(LocalDate.of(2025, 11, 22));
+        fake.reset();
+        clearInvocations(dispatcher); // 커플 연결·기록 작성 알림(이벤트 경로)은 제외
+
+        scheduler.sendMemoryToday();
+
+        verify(dispatcher).sendToUsersNow(any(), any());
+        verify(dispatcher, never()).sendToUsers(any(), any());
     }
 }
