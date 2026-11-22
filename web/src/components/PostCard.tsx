@@ -7,7 +7,7 @@ import { api, errorMessage, revalidateAll } from "@/lib/api";
 import { formatDay } from "@/lib/date";
 import { haptic, share } from "@/lib/native";
 import type { EmojiType, Post } from "@/lib/types";
-import { CloseIcon, EditIcon, MoreIcon, ShareIcon, TrashIcon } from "./Icons";
+import { CloseIcon, CommentIcon, EditIcon, MoreIcon, ShareIcon, TrashIcon } from "./Icons";
 import { useSession } from "./Session";
 import { useToast } from "./Toast";
 import { Avatar, Confirm, Sheet } from "./ui";
@@ -86,6 +86,8 @@ export function PostCard({
 
       <ReactionBar post={post} onChange={onChange} />
 
+      {linkToDetail && <CommentPreview post={post} />}
+
       <Sheet open={menu} onClose={() => setMenu(false)}>
         <div className="flex flex-col">
           <button
@@ -117,6 +119,28 @@ export function PostCard({
       />
       {viewer !== null && <ImageViewer images={post.images.map((i) => i.url)} index={viewer} onClose={() => setViewer(null)} />}
     </article>
+  );
+}
+
+function CommentPreview({ post }: { post: Post }) {
+  const count = post.commentCount;
+  return (
+    <div className="mt-4 border-t border-line pt-3">
+      {count > 0 && (
+        <ul className="mb-2 space-y-1">
+          {post.recentComments.map((c) => (
+            <li key={c.id} className="flex gap-2 text-sm">
+              <span className="shrink-0 font-semibold">{c.author.nickname}</span>
+              <span className="min-w-0 flex-1 truncate">{c.content}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+      <Link href={`/posts/${post.id}`} className="inline-flex items-center gap-1.5 text-xs text-sub hover:text-brand-strong">
+        <CommentIcon className="h-4 w-4" />
+        {count >= 3 ? `댓글 ${count}개 모두 보기` : "댓글 달기"}
+      </Link>
+    </div>
   );
 }
 

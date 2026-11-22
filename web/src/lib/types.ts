@@ -51,6 +51,16 @@ export interface Post {
   postedDate: string;
   images: PostImage[];
   reactions: ReactionSummary[];
+  commentCount: number;
+  recentComments: Comment[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Comment {
+  id: UUID;
+  author: Post["author"];
+  content: string;
   createdAt: string;
   updatedAt: string;
 }
