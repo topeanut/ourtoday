@@ -93,10 +93,17 @@ public class UserService {
         return toResponse(user);
     }
 
-    /** 카카오 로그인 때마다 최신 카카오 프로필 사진으로 갱신 (없으면 null) */
+    /**
+     * 카카오 로그인 때마다: 카카오 프로필 사진은 최신으로 갱신(없으면 null),
+     * 닉네임은 가입 전(프로필 미완료)일 때만 가입 화면 기본값으로 채움 — 가입 후 바꾼 닉네임은 덮어쓰지 않음
+     */
     @Transactional
-    public void syncKakaoProfileImage(UUID userId, String kakaoProfileImageUrl) {
-        getUser(userId).updateKakaoProfileImageUrl(kakaoProfileImageUrl);
+    public void syncKakaoProfile(UUID userId, String kakaoProfileImageUrl, String kakaoNickname) {
+        User user = getUser(userId);
+        user.updateKakaoProfileImageUrl(kakaoProfileImageUrl);
+        if (kakaoNickname != null) {
+            user.prefillNickname(kakaoNickname);
+        }
     }
 
     private void replaceProfileImageKey(User user, String key) {

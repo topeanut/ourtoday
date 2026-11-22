@@ -20,6 +20,8 @@ import java.util.UUID;
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class User {
 
+    public static final int NICKNAME_MAX_LENGTH = 20;
+
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
@@ -73,6 +75,13 @@ public class User {
     public void completeProfile(String nickname) {
         this.nickname = nickname;
         this.profileCompleted = true;
+    }
+
+    /** 가입 화면 기본값. 가입을 마친 뒤에는 바꾸지 않음 */
+    public void prefillNickname(String nickname) {
+        if (!profileCompleted) {
+            this.nickname = nickname;
+        }
     }
 
     public void updateNickname(String nickname) {
