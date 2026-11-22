@@ -5,12 +5,11 @@ import { useRouter } from "next/navigation";
 import useSWR, { mutate } from "swr";
 import { api, errorMessage, fetcher } from "@/lib/api";
 import { getToken, logout, takeReturnTo } from "@/lib/auth";
+import { inviteUrl, normalizeInviteCode, takeInviteCode } from "@/lib/invite";
 import { copyText, share } from "@/lib/native";
 import type { InviteResponse, OnboardingStatus } from "@/lib/types";
 import { Button, Card, Field, inputClass } from "@/components/ui";
 import { useToast } from "@/components/Toast";
-
-const APP_STORE_URL = "https://apps.apple.com/kr/app/id6830693170";
 
 export default function CoupleOnboardingPage() {
   const router = useRouter();
@@ -26,6 +25,16 @@ export default function CoupleOnboardingPage() {
     fetcher,
     { refreshInterval: mode === "invite" ? 3000 : 0, refreshWhenHidden: true },
   );
+
+  // 초대 링크(/invite)로 들어왔으면 받은 코드를 채워서 바로 입력 화면으로
+  useEffect(() => {
+    if (!getToken()) return;
+    const pending = normalizeInviteCode(takeInviteCode());
+    if (pending) {
+      setCode(pending);
+      setMode("join");
+    }
+  }, []);
 
   useEffect(() => {
     if (!getToken()) router.replace("/login");
@@ -68,16 +77,14 @@ export default function CoupleOnboardingPage() {
     if (!invite) return;
     const result = await share({
       title: "오늘의 우리 초대",
-      // 받는 사람이 앱 설치 → 로그인 → 코드 입력까지 혼자 할 수 있게 순서를 같이 보냄
+      // 링크는 하나만: 열면 받는 사람 기기에 맞는 설치 버튼과 코드가 나옴 (/invite). 웹에서 바로 시작하면 코드도 채워짐
       text: [
         "오늘의 우리에서 같이 기록해요!",
         `초대코드: ${invite.inviteCode}`,
         "",
-        "1. 앱 설치 (아이폰) " + APP_STORE_URL,
-        "   다른 기기는 아래 링크에서 바로 써도 돼요",
-        "2. 로그인하고 '초대코드 입력하기'에 코드를 넣어 주세요",
+        "아래 링크에서 앱을 받고, 로그인한 뒤 '초대코드 입력하기'에 코드를 넣어 주세요.",
       ].join("\n"),
-      url: window.location.origin,
+      url: inviteUrl(invite.inviteCode),
     });
     if (result === "copied") toast("초대 메시지를 복사했어요");
     else if (result === "failed") toast("복사하지 못했어요. 화면의 코드를 직접 알려 주세요");
