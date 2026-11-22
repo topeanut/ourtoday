@@ -149,7 +149,7 @@ gunzip -c <백업파일> | ssh -i ~/.ssh/ourtoday-key ubuntu@129.225.158.235 \
 
 - Firebase 프로젝트: `ourtoday-15d98` (FCM). 앱 설정 파일은 각 앱 프로젝트에 포함.
 - 서버 환경변수 `FIREBASE_SERVICE_ACCOUNT` = 서비스 계정 JSON 의 **base64**. 발급: Firebase 콘솔 › 프로젝트 설정 › 서비스 계정 › 새 비공개 키. 비어 있으면 푸시 비활성(Noop sender, 서버는 정상 기동).
-- 설정: Oracle VM 의 `.env` 에 `FIREBASE_SERVICE_ACCOUNT=<base64>` 추가(값은 사용자가 서버에서 직접 입력, 저장소에 커밋 금지) → `docker compose -f docker-compose.prod.yml up -d` 로 재기동.
+- 설정: Oracle VM 의 `.env` 에 `FIREBASE_SERVICE_ACCOUNT=<base64>` 추가(값은 사용자가 서버에서 직접 입력, 저장소에 커밋 금지) → `docker compose up -d` 로 재기동(서버는 `.env` 의 COMPOSE_FILE 사용).
 - iOS: APNs 인증 키 ID `P9M8VW552J` 를 Firebase 에 업로드(개발+운영). .p8 파일은 `~/.secrets/ourtoday/` 에만 보관, 커밋 금지.
 - 작년 오늘 알림: 서버 cron 매일 20:00 KST.
 - 앱 버전: Android 1.1.0 (versionCode 2), iOS 1.0.2 (빌드 3).
