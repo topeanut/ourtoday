@@ -26,6 +26,7 @@ target/
 .env.local
 
 # 개인 문서 (저장소 미공개)
+DEPLOY.private.md
 API.md
 API-CONVENTIONS.md
 PLAN.md

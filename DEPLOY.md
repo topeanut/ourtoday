@@ -7,14 +7,14 @@
 
 | 항목 | 값 |
 |------|-----|
-| Oracle 계정 | 테넌시 `ljhh1648` / 사용자 `ljhh1648@gmail.com` / 홈 리전 Japan Central (Osaka, `ap-osaka-1`) |
+| Oracle 계정 | 개인 테넌시 / 홈 리전 Japan Central (Osaka, `ap-osaka-1`) — 계정 정보는 `DEPLOY.private.md`(git 제외) |
 | VM | `ourtoday-api` / VM.Standard.E2.1.Micro (AMD, 1GB + swap 2GB) / Ubuntu 24.04 / 부트 50GB |
-| 공인 IP | `129.225.158.235` (임시 공인 IP — 인스턴스 종료 시 바뀜, 재부팅은 유지) |
+| 공인 IP | `$SERVER_IP` — 실제 값은 `DEPLOY.private.md` (임시 공인 IP — 인스턴스 종료 시 바뀜, 재부팅은 유지) |
 | 네트워크 | `ourtoday-vcn` / `ourtoday-subnet` / 기본 보안 목록: 22 = 개발자 IP /32, 8080 = 전체 |
-| SSH | `ssh -i ~/.ssh/ourtoday-key ubuntu@129.225.158.235` |
+| SSH | `ssh -i ~/.ssh/ourtoday-key ubuntu@$SERVER_IP` |
 | 앱 경로 | `/home/ubuntu/ourtoday` (`.env` 는 서버에만) |
 | GitHub | `topeanut/ourtoday` (2026-11-22 조직 저장소 `BuildUp2026/build-up-be` 에서 이관), 이미지 `ghcr.io/topeanut/ourtoday-api` |
-| Vercel | 계정 `ljhh1648@g.hongik.ac.kr` (CLI 사용자 topeanut), 프로젝트 `topeanuts-projects/ourtoday` |
+| Vercel | CLI 사용자 topeanut, 프로젝트 `topeanuts-projects/ourtoday` |
 | 카카오 | 앱 `오늘의 우리` (ID 1467289), Redirect URI `https://ourtoday.vercel.app/login/oauth2/code/kakao` |
 
 > 무료 ARM(A1) 서버는 오사카 재고 부족("Out of host capacity")으로 못 만들었음. 여유 생기면 A1 로 옮기면 사양↑ + 서버 빌드 가능.
@@ -39,10 +39,10 @@
 (cd api && ./gradlew bootJar)                       # → api/build/libs/app.jar
 rsync -az --delete -e "ssh -i ~/.ssh/ourtoday-key" \
   --exclude build --exclude .gradle --exclude .idea --exclude bin \
-  api docker-compose.prod.yml .env.example ubuntu@129.225.158.235:~/ourtoday/
+  api docker-compose.prod.yml .env.example ubuntu@$SERVER_IP:~/ourtoday/
 rsync -az -e "ssh -i ~/.ssh/ourtoday-key" api/build/libs/app.jar \
-  ubuntu@129.225.158.235:~/ourtoday/api/build/libs/app.jar
-ssh -i ~/.ssh/ourtoday-key ubuntu@129.225.158.235 \
+  ubuntu@$SERVER_IP:~/ourtoday/api/build/libs/app.jar
+ssh -i ~/.ssh/ourtoday-key ubuntu@$SERVER_IP \
   'cd ~/ourtoday && docker compose -f docker-compose.prod.yml up -d --build'
 curl https://ourtoday.vercel.app/api/v1/health      # 기동 ~1분
 ```
@@ -66,7 +66,7 @@ oci network security-list update --security-list-id $SL --force --ingress-securi
 ## 프론트엔드 (Next.js, `web/`) — 2026-10-26~
 
 `https://ourtoday.vercel.app` 는 이제 Next.js 앱. 백엔드 프록시는 `web/next.config.ts` rewrites 가 대신함 (`vercel-proxy/` 는 예전 프록시, 비상용으로만 보관).
-배포 방법은 `web/README.md`. 서버 `.env` 에 `OAUTH2_SUCCESS_REDIRECT_URI=https://ourtoday.vercel.app/auth/callback` 필요 (비우면 로그인 결과가 JSON 으로 보임).
+배포: `main` 에 `web/**` push → Vercel Git 연동이 자동 배포 (Root Directory `web`, 환경변수 `BACKEND_ORIGIN`). 수동 배포는 `web/README.md`. 서버 `.env` 에 `OAUTH2_SUCCESS_REDIRECT_URI=https://ourtoday.vercel.app/auth/callback` 필요 (비우면 로그인 결과가 JSON 으로 보임).
 
 ## 개발 서버 (보류 — 지금은 로컬로 QA)
 
@@ -81,13 +81,13 @@ oci network security-list update --security-list-id $SL --force --ingress-securi
 | 배포 | `develop` 브랜치 push → CI 가 `:develop` 이미지 빌드 → `dev.sh up` 때 받음 |
 
 ```bash
-ssh -i ~/.ssh/ourtoday-key ubuntu@129.225.158.235 'bash ~/ourtoday/ops/dev.sh up'     # 켜기 (1~2분 뒤 사용)
-ssh -i ~/.ssh/ourtoday-key ubuntu@129.225.158.235 'bash ~/ourtoday/ops/dev.sh down'   # 끄기
+ssh -i ~/.ssh/ourtoday-key ubuntu@$SERVER_IP 'bash ~/ourtoday/ops/dev.sh up'     # 켜기 (1~2분 뒤 사용)
+ssh -i ~/.ssh/ourtoday-key ubuntu@$SERVER_IP 'bash ~/ourtoday/ops/dev.sh down'   # 끄기
 ```
 
 - 켜 두면 운영도 메모리가 빠듯해짐 → QA 끝나면 끄기
 - Oracle 보안 목록에 8081 수신 규칙 필요 (Docker 포트라 서버 iptables 는 무관)
-- 프론트 배포: `web/` 를 복사본에서 `npx vercel deploy --prod --yes --build-env NEXT_PUBLIC_DEV=1 --build-env BACKEND_ORIGIN=http://129.225.158.235:8081` (복사본 이름 `ourtoday-develop`)
+- 프론트 배포: `web/` 를 복사본에서 `npx vercel deploy --prod --yes --build-env NEXT_PUBLIC_DEV=1 --build-env BACKEND_ORIGIN=http://$SERVER_IP:8081` (복사본 이름 `ourtoday-develop`)
 
 ## 모바일 앱 (`mobile/`)
 
@@ -132,11 +132,11 @@ npx vercel deploy --cwd /tmp/ourtoday-proxy --prod --yes
 
 ```bash
 # 백업 (로컬로)
-ssh -i ~/.ssh/ourtoday-key ubuntu@129.225.158.235 \
+ssh -i ~/.ssh/ourtoday-key ubuntu@$SERVER_IP \
   'docker exec ourtoday-postgres pg_dump -U ourtoday -d ourtoday --no-owner --clean --if-exists | gzip' \
   > ~/ourtoday-backup/ourtoday_$(date +%Y%m%d_%H%M).sql.gz
 # 복원
-gunzip -c <백업파일> | ssh -i ~/.ssh/ourtoday-key ubuntu@129.225.158.235 \
+gunzip -c <백업파일> | ssh -i ~/.ssh/ourtoday-key ubuntu@$SERVER_IP \
   'docker exec -i ourtoday-postgres psql -U ourtoday -d ourtoday -q'
 ```
 
