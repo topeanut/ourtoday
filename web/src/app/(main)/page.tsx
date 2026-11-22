@@ -11,7 +11,8 @@ import { PageHeader } from "@/components/AppShell";
 import { PlusIcon, SparkIcon } from "@/components/Icons";
 import { PostCard } from "@/components/PostCard";
 import { useSession } from "@/components/Session";
-import { Empty, PageSpinner, Sheet, Spinner } from "@/components/ui";
+import { FeedSkeleton } from "@/components/Skeletons";
+import { Empty, Sheet, Spinner } from "@/components/ui";
 
 const PAGE_SIZE = 10;
 type Filter = "all" | "me" | "partner";
@@ -100,7 +101,7 @@ export default function HomePage() {
         </div>
 
         {!feed.data ? (
-          <PageSpinner />
+          <FeedSkeleton />
         ) : posts.length === 0 ? (
           <Empty
             title={filter === "all" ? "아직 기록이 없어요" : "이 사람의 기록이 아직 없어요"}
@@ -112,7 +113,7 @@ export default function HomePage() {
             }
           />
         ) : (
-          <div className="flex flex-col gap-4">
+          <div className="animate-fade flex flex-col gap-4">
             {posts.map((post) => (
               <PostCard key={post.id} post={post} onChange={updatePost} onDeleted={() => feed.mutate()} />
             ))}

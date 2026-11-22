@@ -9,9 +9,12 @@ import type { Comment } from "@/lib/types";
 import { EditIcon, MoreIcon, TrashIcon } from "./Icons";
 import { useSession } from "./Session";
 import { useToast } from "./Toast";
-import { Avatar, Confirm, inputClass, Sheet, Spinner } from "./ui";
+import { CommentsSkeleton } from "./Skeletons";
+import { Avatar, Confirm, inputClass, Sheet } from "./ui";
 
 const MAX = 200;
+/** 서버 저장 전 임시 댓글 id 앞에 붙음 */
+const PENDING_PREFIX = "pending:";
 const COUNT_FROM = 180;
 
 export function CommentSection({ postId }: { postId: string }) {
@@ -29,16 +32,42 @@ export function CommentSection({ postId }: { postId: string }) {
     revalidateAll();
   };
 
+  /** 서버 응답을 기다리지 않고 바로 목록에 붙임. 실패하면 SWR 이 원래 목록으로 되돌림 */
   const create = async (content: string) => {
-    await api<Comment>(`/posts/${postId}/comments`, { method: "POST", body: { content } });
-    await refresh();
+    const now = new Date().toISOString();
+    const author = { id: me.id, nickname: me.nickname, profileImageUrl: me.profileImageUrl };
+    const temp: Comment = { id: `${PENDING_PREFIX}${now}`, author, content, createdAt: now, updatedAt: now };
+    await mutate(
+      async (cur) => {
+        const saved = await api<Comment>(`/posts/${postId}/comments`, { method: "POST", body: { content } });
+        return [...(cur ?? []), saved];
+      },
+      { optimisticData: (cur) => [...(cur ?? []), temp], rollbackOnError: true, revalidate: false },
+    );
+    revalidateAll();
   };
 
+  /** 시트를 바로 닫고 목록에 먼저 반영, 실패하면 되돌리고 토스트 */
   const saveEdit = async (content: string) => {
     if (!editing) return;
-    await api<Comment>(`/posts/${postId}/comments/${editing.id}`, { method: "PATCH", body: { content } });
+    const target = editing;
     setEditing(null);
-    await refresh();
+    try {
+      await mutate(
+        async (cur) => {
+          const saved = await api<Comment>(`/posts/${postId}/comments/${target.id}`, { method: "PATCH", body: { content } });
+          return (cur ?? []).map((c) => (c.id === saved.id ? saved : c));
+        },
+        {
+          optimisticData: (cur) => (cur ?? []).map((c) => (c.id === target.id ? { ...c, content } : c)),
+          rollbackOnError: true,
+          revalidate: false,
+        },
+      );
+      revalidateAll();
+    } catch (e) {
+      toast(errorMessage(e));
+    }
   };
 
   const remove = async () => {
@@ -65,15 +94,15 @@ export function CommentSection({ postId }: { postId: string }) {
       {error && !data ? (
         <p className="py-8 text-center text-sm text-sub">댓글을 불러오지 못했어요</p>
       ) : !data ? (
-        <div className="flex justify-center py-8">
-          <Spinner />
-        </div>
+        <CommentsSkeleton />
       ) : data.length === 0 ? (
         <p className="py-8 text-center text-sm text-sub">아직 댓글이 없어요</p>
       ) : (
         <ul className="divide-y divide-line">
-          {data.map((c) => (
-            <li key={c.id} className="flex gap-3 px-1 py-3.5">
+          {data.map((c) => {
+            const pending = c.id.startsWith(PENDING_PREFIX);
+            return (
+            <li key={c.id} className={`flex gap-3 px-1 py-3.5 ${pending ? "animate-fade opacity-60" : ""}`} aria-busy={pending || undefined}>
               <Avatar name={c.author.nickname} seed={c.author.id} size={32} />
               <div className="min-w-0 flex-1">
                 <p className="flex items-baseline gap-2">
@@ -82,7 +111,7 @@ export function CommentSection({ postId }: { postId: string }) {
                 </p>
                 <p className="mt-0.5 whitespace-pre-line break-words text-[15px] leading-relaxed">{c.content}</p>
               </div>
-              {c.author.id === me.id && (
+              {c.author.id === me.id && !pending && (
                 <button
                   onClick={() => setMenuFor(c)}
                   className="-mr-2 h-fit rounded-full p-2 text-sub hover:bg-black/5"
@@ -92,7 +121,8 @@ export function CommentSection({ postId }: { postId: string }) {
                 </button>
               )}
             </li>
-          ))}
+            );
+          })}
         </ul>
       )}
 
@@ -156,7 +186,6 @@ function Composer({ onSubmit }: { onSubmit: (content: string) => Promise<void> }
   const wrapRef = useRef<HTMLDivElement>(null);
   const [mobile, setMobile] = useState(false);
   const [text, setText] = useState("");
-  const [sending, setSending] = useState(false);
 
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 767px)");
@@ -169,16 +198,16 @@ function Composer({ onSubmit }: { onSubmit: (content: string) => Promise<void> }
 
   const valid = text.trim().length > 0 && text.length <= MAX;
 
+  // 입력창은 바로 비우고, 실패하면 쓴 내용을 되돌려 줌 (그 사이 새로 쓴 게 없을 때만)
   const submit = async () => {
-    if (!valid || sending) return;
-    setSending(true);
+    if (!valid) return;
+    const content = text.trim();
+    setText("");
     try {
-      await onSubmit(text.trim());
-      setText("");
+      await onSubmit(content);
     } catch (e) {
       toast(errorMessage(e));
-    } finally {
-      setSending(false);
+      setText((cur) => cur || content);
     }
   };
 
@@ -202,10 +231,10 @@ function Composer({ onSubmit }: { onSubmit: (content: string) => Promise<void> }
             <Counter length={text.length} />
             <button
               onClick={submit}
-              disabled={!valid || sending}
-              className="h-11 shrink-0 rounded-2xl bg-brand px-4 text-sm font-semibold text-white hover:bg-brand-strong disabled:opacity-40"
+              disabled={!valid}
+              className="h-11 shrink-0 rounded-2xl bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong active:scale-[0.97] disabled:opacity-40"
             >
-              {sending ? <Spinner className="border-white/40 border-t-white" /> : "등록"}
+              등록
             </button>
           </div>
         </div>
@@ -215,20 +244,11 @@ function Composer({ onSubmit }: { onSubmit: (content: string) => Promise<void> }
 }
 
 function EditForm({ initial, onSubmit }: { initial: string; onSubmit: (content: string) => Promise<void> }) {
-  const toast = useToast();
   const [text, setText] = useState(initial);
-  const [sending, setSending] = useState(false);
   const valid = text.trim().length > 0 && text.length <= MAX && text.trim() !== initial.trim();
 
-  const submit = async () => {
-    if (!valid || sending) return;
-    setSending(true);
-    try {
-      await onSubmit(text.trim());
-    } catch (e) {
-      toast(errorMessage(e));
-      setSending(false);
-    }
+  const submit = () => {
+    if (valid) void onSubmit(text.trim());
   };
 
   return (
@@ -245,10 +265,10 @@ function EditForm({ initial, onSubmit }: { initial: string; onSubmit: (content: 
         <Counter length={text.length} />
         <button
           onClick={submit}
-          disabled={!valid || sending}
-          className="ml-auto h-11 rounded-2xl bg-brand px-5 text-sm font-semibold text-white hover:bg-brand-strong disabled:opacity-40"
+          disabled={!valid}
+          className="ml-auto h-11 rounded-2xl bg-brand px-5 text-sm font-semibold text-white transition hover:bg-brand-strong active:scale-[0.97] disabled:opacity-40"
         >
-          {sending ? <Spinner className="border-white/40 border-t-white" /> : "저장"}
+          저장
         </button>
       </div>
     </div>

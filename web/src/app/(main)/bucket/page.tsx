@@ -11,7 +11,8 @@ import type { BucketItem } from "@/lib/types";
 import { PageHeader } from "@/components/AppShell";
 import { CheckIcon, PlusIcon } from "@/components/Icons";
 import { useToast } from "@/components/Toast";
-import { Button, Confirm, DateField, Empty, Field, inputClass, PageSpinner, Sheet, SheetActions } from "@/components/ui";
+import { Button, Confirm, DateField, Empty, Field, inputClass, Sheet, SheetActions } from "@/components/ui";
+import { BucketSkeleton } from "@/components/Skeletons";
 
 type Status = "ALL" | "TODO" | "DONE";
 
@@ -99,7 +100,7 @@ export default function BucketPage() {
         </div>
 
         {!data ? (
-          <PageSpinner />
+          <BucketSkeleton />
         ) : data.items.length === 0 ? (
           <Empty
             title={status === "DONE" ? "아직 이룬 게 없어요" : "함께 하고 싶은 걸 적어 보세요"}
@@ -107,7 +108,7 @@ export default function BucketPage() {
             action={status !== "DONE" && <Button onClick={() => setEditing("new")}>추가하기</Button>}
           />
         ) : (
-          <ul className="flex flex-col gap-2">
+          <ul className="animate-fade flex flex-col gap-2">
             {data.items.map((item) => (
               <li key={item.id} className="flex items-start gap-3 rounded-3xl bg-white p-4 shadow-sm">
                 <button

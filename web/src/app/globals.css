@@ -87,6 +87,64 @@ select {
     opacity: 1;
   }
 }
+@keyframes dot-pulse {
+  0%,
+  80%,
+  100% {
+    transform: scale(0.6);
+    opacity: 0.35;
+  }
+  40% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+@keyframes dot-fade {
+  0%,
+  80%,
+  100% {
+    opacity: 0.35;
+  }
+  40% {
+    opacity: 1;
+  }
+}
+/* 탭 전환: 새 화면만 옆에서 살짝 밀려 들어옴. fill-mode 기본값이라 끝나면 transform 이 안 남음 (fixed 시트 위치 보호) */
+@keyframes tab-in-right {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+}
+@keyframes tab-in-left {
+  from {
+    transform: translateX(-24px);
+    opacity: 0;
+  }
+}
+/* 링크로 들어가는 화면: 살짝 떠오르며 나타남 */
+@keyframes page-in {
+  from {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+}
+.animate-page {
+  animation: page-in 0.24s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+/* 금방 끝나는 로딩엔 로더가 번쩍이지 않게 0.3초 뒤부터 보임 */
+.animate-delayed {
+  animation: fade-in 0.2s ease-out 0.3s both;
+}
+.animate-tab-right {
+  animation: tab-in-right 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.animate-tab-left {
+  animation: tab-in-left 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+.animate-dot {
+  animation: dot-pulse 0.9s ease-in-out infinite both;
+}
 .animate-sheet {
   animation: sheet-up 0.22s ease-out;
 }
@@ -95,7 +153,13 @@ select {
 }
 @media (prefers-reduced-motion: reduce) {
   .animate-sheet,
-  .animate-fade {
+  .animate-fade,
+  .animate-tab-right,
+  .animate-tab-left,
+  .animate-page {
     animation: none;
+  }
+  .animate-dot {
+    animation-name: dot-fade;
   }
 }

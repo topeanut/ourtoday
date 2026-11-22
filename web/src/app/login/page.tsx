@@ -81,7 +81,7 @@ export default function LoginPage() {
             {/* iOS 시스템 Apple 로그인 창은 뜨기까지 몇 초 걸릴 수 있어서, 누르자마자 진행 중임을 보여 줌 */}
             {appleBusy ? (
               <>
-                <Spinner className="h-4 w-4 border-white/30 border-t-white" />
+                <Spinner size="sm" tone="current" />
                 Apple 로그인 여는 중…
               </>
             ) : (

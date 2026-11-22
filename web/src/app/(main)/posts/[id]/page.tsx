@@ -11,7 +11,8 @@ import { PageHeader } from "@/components/AppShell";
 import { BackIcon } from "@/components/Icons";
 import { CommentSection } from "@/components/CommentSection";
 import { PostCard } from "@/components/PostCard";
-import { Empty, PageSpinner } from "@/components/ui";
+import { PostDetailSkeleton } from "@/components/Skeletons";
+import { Empty } from "@/components/ui";
 
 export default function PostDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -42,12 +43,12 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
             }
           />
         ) : !data ? (
-          <PageSpinner />
+          <PostDetailSkeleton />
         ) : (
-          <>
+          <div className="animate-fade">
             <PostCard post={data} onChange={(p) => mutate(p, { revalidate: false })} onDeleted={() => router.replace("/")} linkToDetail={false} />
             <CommentSection postId={id} />
-          </>
+          </div>
         )}
       </div>
     </>
