@@ -102,25 +102,25 @@ export function CommentSection({ postId }: { postId: string }) {
           {data.map((c) => {
             const pending = c.id.startsWith(PENDING_PREFIX);
             return (
-            <li key={c.id} className={`flex gap-3 px-1 py-3.5 ${pending ? "animate-fade opacity-60" : ""}`} aria-busy={pending || undefined}>
-              <Avatar name={c.author.nickname} seed={c.author.id} src={c.author.profileImageUrl} size={32} />
-              <div className="min-w-0 flex-1">
-                <p className="flex items-baseline gap-2">
-                  <span className="text-sm font-semibold">{c.author.nickname}</span>
-                  <span className="text-xs text-sub">{relativeTime(c.createdAt)}</span>
-                </p>
-                <p className="mt-0.5 whitespace-pre-line break-words text-[15px] leading-relaxed">{c.content}</p>
-              </div>
-              {c.author.id === me.id && !pending && (
-                <button
-                  onClick={() => setMenuFor(c)}
-                  className="-mr-2 h-fit rounded-full p-2 text-sub hover:bg-black/5"
-                  aria-label="댓글 더보기"
-                >
-                  <MoreIcon className="h-5 w-5" />
-                </button>
-              )}
-            </li>
+              <li key={c.id} className={`flex gap-3 px-1 py-3.5 ${pending ? "animate-fade opacity-60" : ""}`} aria-busy={pending || undefined}>
+                <Avatar name={c.author.nickname} seed={c.author.id} src={c.author.profileImageUrl} size={32} />
+                <div className="min-w-0 flex-1">
+                  <p className="flex items-baseline gap-2">
+                    <span className="text-sm font-semibold">{c.author.nickname}</span>
+                    <span className="text-xs text-sub">{relativeTime(c.createdAt)}</span>
+                  </p>
+                  <p className="mt-0.5 whitespace-pre-line break-words text-[15px] leading-relaxed">{c.content}</p>
+                </div>
+                {c.author.id === me.id && !pending && (
+                  <button
+                    onClick={() => setMenuFor(c)}
+                    className="-mr-2 h-fit rounded-full p-2 text-sub hover:bg-black/5"
+                    aria-label="댓글 더보기"
+                  >
+                    <MoreIcon className="h-5 w-5" />
+                  </button>
+                )}
+              </li>
             );
           })}
         </ul>

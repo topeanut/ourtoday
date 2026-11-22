@@ -12,7 +12,8 @@ import { LocationPicker } from "@/components/LocationPicker";
 import type { PickedLocation } from "@/lib/kakaoMap";
 import { useSession } from "@/components/Session";
 import { useToast } from "@/components/Toast";
-import { Button, Confirm, DateField, Field, inputClass, Sheet, Spinner, SheetActions } from "@/components/ui";
+import { DayItemsSkeleton } from "@/components/Skeletons";
+import { Button, Confirm, DateField, Field, inputClass, Sheet, SheetActions } from "@/components/ui";
 
 const COLORS = ["#FF7A8A", "#FFA36C", "#F6C445", "#7CC69A", "#6FB3E8", "#A68EE8"];
 
@@ -157,15 +158,11 @@ export default function CalendarPage() {
               <PlusIcon className="h-4 w-4" /> 메모
             </button>
           </div>
-          {(memos.isLoading || posts.isLoading) && (
-            <div className="flex justify-center py-6">
-              <Spinner />
-            </div>
-          )}
+          {(memos.isLoading || posts.isLoading) && <DayItemsSkeleton />}
           {!memos.isLoading && !posts.isLoading && selectedMemos.length === 0 && selectedPosts.length === 0 && (
             <p className="rounded-3xl bg-white/60 px-5 py-8 text-center text-sm text-sub">이날은 비어 있어요. 일정이나 메모를 남겨 보세요.</p>
           )}
-          <ul className="flex flex-col gap-2">
+          <ul className="animate-fade flex flex-col gap-2">
             {selectedMemos.map((m) => (
               <li key={m.id}>
                 <button onClick={() => setEditing(m)} className="flex w-full items-start gap-3 rounded-3xl bg-white p-4 text-left shadow-sm">

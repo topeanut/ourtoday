@@ -14,6 +14,7 @@ import { ProfilePhotoPicker } from "@/components/ProfilePhotoPicker";
 import { useSession } from "@/components/Session";
 import { useToast } from "@/components/Toast";
 import { Avatar, Button, Card, Confirm, DateField, Field, inputClass, Sheet, Spinner, Toggle } from "@/components/ui";
+import { StatsSkeleton } from "@/components/Skeletons";
 
 export default function MyPage() {
   const { me, partner, couple, refresh } = useSession();
@@ -107,11 +108,9 @@ export default function MyPage() {
         <Card>
           <h2 className="mb-4 font-bold">우리의 기록</h2>
           {!stats.data ? (
-            <div className="flex justify-center py-6">
-              <Spinner />
-            </div>
+            <StatsSkeleton />
           ) : (
-            <>
+            <div className="animate-fade">
               <div className="grid grid-cols-[1fr_auto_auto] items-center gap-x-6 gap-y-3 text-sm">
                 <span />
                 <span className="w-16 text-center text-xs font-semibold text-sub">{me.nickname}</span>
@@ -125,7 +124,7 @@ export default function MyPage() {
               {stats.data.couple.firstPostDate && (
                 <p className="mt-4 border-t border-line pt-4 text-xs text-sub">첫 기록 {formatDay(stats.data.couple.firstPostDate, true)}</p>
               )}
-            </>
+            </div>
           )}
         </Card>
 

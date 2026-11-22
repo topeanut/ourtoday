@@ -96,3 +96,47 @@ export function PostDetailSkeleton() {
     </Loading>
   );
 }
+
+/** 캘린더 선택일 목록 (메모 행 모양: 색 점·제목·작성자) */
+export function DayItemsSkeleton() {
+  return (
+    <Loading className="flex flex-col gap-2">
+      {[0, 1].map((i) => (
+        <div key={i} className="flex items-start gap-3 rounded-3xl bg-white p-4 shadow-sm">
+          <Skeleton className="mt-1.5 h-3 w-3 shrink-0" />
+          <div className="flex flex-1 flex-col gap-2 pt-0.5">
+            <Skeleton className={`h-4 ${i ? "w-2/5" : "w-3/5"}`} />
+            <Skeleton className="h-3 w-12" />
+          </div>
+        </div>
+      ))}
+    </Loading>
+  );
+}
+
+/** 마이페이지 "우리의 기록" 통계 표 (이름 머리줄 + 5행) */
+export function StatsSkeleton() {
+  return (
+    <Loading className="grid grid-cols-[1fr_auto_auto] items-center gap-x-6 gap-y-3 text-sm">
+      <span />
+      {/* 실제 표의 값 칸(w-16)과 같은 폭으로 잡아 데이터가 들어와도 열이 안 움직이게 */}
+      <span className="w-16">
+        <Skeleton className="mx-auto h-3 w-10" />
+      </span>
+      <span className="w-16">
+        <Skeleton className="mx-auto h-3 w-10" />
+      </span>
+      {[0, 1, 2, 3, 4].map((i) => (
+        <div key={i} className="contents">
+          <Skeleton className={`h-4 ${i % 2 ? "w-16" : "w-20"}`} />
+          <span className="w-16">
+            <Skeleton className="mx-auto h-4 w-10" />
+          </span>
+          <span className="w-16">
+            <Skeleton className="mx-auto h-4 w-10" />
+          </span>
+        </div>
+      ))}
+    </Loading>
+  );
+}
