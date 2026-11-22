@@ -1,3 +1,4 @@
+import type { PickedLocation } from "@/components/LocationPicker";
 export type UUID = string;
 
 export type OnboardingStatus = "NEED_PROFILE" | "NO_COUPLE" | "PENDING_INVITE" | "CONNECTED";
@@ -50,6 +51,7 @@ export interface Post {
   content: string;
   postedDate: string;
   images: PostImage[];
+  location: PickedLocation | null;
   reactions: ReactionSummary[];
   commentCount: number;
   recentComments: Comment[];

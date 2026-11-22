@@ -5,6 +5,7 @@ import { errorMessage } from "@/lib/api";
 import { todayKst } from "@/lib/date";
 import { uploadImage } from "@/lib/image";
 import { CloseIcon, ImageIcon } from "./Icons";
+import { LocationPicker, type PickedLocation } from "./LocationPicker";
 import { useToast } from "./Toast";
 import { Button, DateField } from "./ui";
 
@@ -17,6 +18,7 @@ export interface PostFormValue {
   content: string;
   postedDate: string;
   imageKeys: string[];
+  location: PickedLocation | null;
 }
 
 export function PostForm({
@@ -24,7 +26,7 @@ export function PostForm({
   submitLabel,
   onSubmit,
 }: {
-  initial?: { content: string; postedDate: string; images: { url: string; imageKey: string }[] };
+  initial?: { content: string; postedDate: string; images: { url: string; imageKey: string }[]; location?: PickedLocation | null };
   submitLabel: string;
   onSubmit: (value: PostFormValue) => Promise<void>;
 }) {
@@ -35,6 +37,7 @@ export function PostForm({
   const [slots, setSlots] = useState<Slot[]>(
     initial?.images.map((i) => ({ key: i.imageKey, preview: i.url, imageKey: i.imageKey })) ?? [],
   );
+  const [location, setLocation] = useState<PickedLocation | null>(initial?.location ?? null);
   const [saving, setSaving] = useState(false);
   const [progress, setProgress] = useState("");
 
@@ -80,7 +83,7 @@ export function PostForm({
         }
       }
       setProgress("");
-      await onSubmit({ content: content.trim(), postedDate, imageKeys: keys });
+      await onSubmit({ content: content.trim(), postedDate, imageKeys: keys, location });
     } catch (err) {
       toast(err instanceof Error && !("code" in err) ? err.message : errorMessage(err));
       setSaving(false);
@@ -142,6 +145,10 @@ export function PostForm({
         <div className="min-w-0 flex-1">
           <DateField label="기록 날짜" variant="inline" value={postedDate} max={todayKst()} onChange={setPostedDate} />
         </div>
+      </div>
+
+      <div className="group-data-[keyboard=open]:hidden">
+        <LocationPicker value={location} onChange={setLocation} />
       </div>
 
       <Button type="submit" full loading={saving} disabled={!content.trim()}>
