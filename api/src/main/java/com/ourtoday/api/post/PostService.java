@@ -3,6 +3,9 @@ package com.ourtoday.api.post;
 import com.ourtoday.api.bucket.BucketItemRepository;
 import com.ourtoday.api.common.error.BusinessException;
 import com.ourtoday.api.common.error.ErrorCode;
+import com.ourtoday.api.comment.Comment;
+import com.ourtoday.api.comment.CommentRepository;
+import com.ourtoday.api.comment.dto.CommentResponse;
 import com.ourtoday.api.couple.CoupleService;
 import com.ourtoday.api.image.ImageService;
 import com.ourtoday.api.post.dto.PostCreateRequest;
@@ -48,6 +51,7 @@ public class PostService {
     private final PostRepository postRepository;
     private final PostImageRepository postImageRepository;
     private final ReactionRepository reactionRepository;
+    private final CommentRepository commentRepository;
     private final BucketItemRepository bucketItemRepository;
     private final UserRepository userRepository;
     private final CoupleService coupleService;
@@ -85,11 +89,12 @@ public class PostService {
         );
         Page<Post> page = postRepository.findAll(spec, withStableSort(pageable));
 
-        Map<UUID, User> users = loadUsers(page.map(Post::getAuthorId).toSet());
         Set<UUID> postIds = page.map(Post::getId).toSet();
+        Map<UUID, List<Comment>> comments = loadComments(postIds);
+        Map<UUID, User> users = loadUsers(authorIds(page.getContent(), comments));
         Map<UUID, List<PostImage>> images = loadImages(postIds);
         Map<UUID, List<ReactionCount>> reactions = loadReactions(postIds, userId);
-        return page.map(p -> toResponse(p, users, images, reactions));
+        return page.map(p -> toResponse(p, users, images, reactions, comments));
     }
 
     @Transactional(readOnly = true)
@@ -139,6 +144,7 @@ public class PostService {
             .toList();
         postImageRepository.deleteByPostId(postId);
         reactionRepository.deleteByPostId(postId);
+        commentRepository.deleteByPostId(postId);
         postRepository.delete(post);
         bucketItemRepository.unlinkPost(postId);
         imageService.deleteAfterCommit(keys);
@@ -152,15 +158,16 @@ public class PostService {
         List<Post> posts = postRepository.findMemories(coupleId, today.getMonthValue(), today.getDayOfMonth(),
             today.withDayOfYear(1));
 
-        Map<UUID, User> users = loadUsers(posts.stream().map(Post::getAuthorId).collect(Collectors.toSet()));
         Set<UUID> postIds = posts.stream().map(Post::getId).collect(Collectors.toSet());
+        Map<UUID, List<Comment>> comments = loadComments(postIds);
+        Map<UUID, User> users = loadUsers(authorIds(posts, comments));
         Map<UUID, List<PostImage>> images = loadImages(postIds);
         Map<UUID, List<ReactionCount>> reactions = loadReactions(postIds, userId);
 
         Map<Integer, List<PostResponse>> byYear = new LinkedHashMap<>();
         for (Post p : posts) {
             byYear.computeIfAbsent(p.getPostedDate().getYear(), y -> new ArrayList<>())
-                .add(toResponse(p, users, images, reactions));
+                .add(toResponse(p, users, images, reactions, comments));
         }
         return new PostMemoriesResponse(today, byYear.entrySet().stream()
             .map(e -> new PostMemoriesResponse.YearMemories(e.getKey(), e.getValue()))
@@ -260,13 +267,38 @@ public class PostService {
             .collect(Collectors.groupingBy(ReactionCount::postId));
     }
 
+    private Map<UUID, List<Comment>> loadComments(Collection<UUID> postIds) {
+        if (postIds.isEmpty()) {
+            return Map.of();
+        }
+        return commentRepository.findByPostIdInOrderByCreatedAtAsc(postIds).stream()
+            .collect(Collectors.groupingBy(Comment::getPostId));
+    }
+
+    /** 글 작성자 + 미리보기에 나올 댓글 작성자 (한 번에 조회) */
+    private Set<UUID> authorIds(Collection<Post> posts, Map<UUID, List<Comment>> comments) {
+        Set<UUID> ids = new HashSet<>();
+        for (Post p : posts) {
+            ids.add(p.getAuthorId());
+            recent(comments.getOrDefault(p.getId(), List.of())).forEach(c -> ids.add(c.getAuthorId()));
+        }
+        return ids;
+    }
+
+    /** 최신 2개, 오래된 순 유지 */
+    private List<Comment> recent(List<Comment> comments) {
+        return comments.subList(Math.max(0, comments.size() - 2), comments.size());
+    }
+
     private PostResponse toResponse(Post post, UUID viewerId) {
         Set<UUID> ids = Set.of(post.getId());
-        return toResponse(post, loadUsers(Set.of(post.getAuthorId())), loadImages(ids), loadReactions(ids, viewerId));
+        Map<UUID, List<Comment>> comments = loadComments(ids);
+        return toResponse(post, loadUsers(authorIds(List.of(post), comments)), loadImages(ids),
+            loadReactions(ids, viewerId), comments);
     }
 
     private PostResponse toResponse(Post post, Map<UUID, User> users, Map<UUID, List<PostImage>> images,
-                                    Map<UUID, List<ReactionCount>> reactions) {
+                                    Map<UUID, List<ReactionCount>> reactions, Map<UUID, List<Comment>> comments) {
         User author = users.get(post.getAuthorId());
         List<PostResponse.Image> imageResponses = images.getOrDefault(post.getId(), List.of()).stream()
             .map(img -> new PostResponse.Image(
@@ -276,6 +308,10 @@ public class PostService {
             .sorted(Comparator.comparing(ReactionCount::emojiType))
             .map(r -> new PostResponse.Reaction(r.emojiType(), r.count(), r.reactedByMe()))
             .toList();
+        List<Comment> postComments = comments.getOrDefault(post.getId(), List.of());
+        List<CommentResponse> recentComments = recent(postComments).stream()
+            .map(c -> CommentResponse.of(c, users.get(c.getAuthorId())))
+            .toList();
         return new PostResponse(
             post.getId(),
             new PostResponse.Author(author.getId(), author.getNickname(), author.getProfileImageUrl()),
@@ -283,6 +319,8 @@ public class PostService {
             post.getPostedDate(),
             imageResponses,
             reactionResponses,
+            postComments.size(),
+            recentComments,
             post.getCreatedAt(),
             post.getUpdatedAt()
         );

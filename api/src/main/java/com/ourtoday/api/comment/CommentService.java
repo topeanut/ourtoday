@@ -4,7 +4,6 @@ import com.ourtoday.api.comment.dto.CommentResponse;
 import com.ourtoday.api.common.error.BusinessException;
 import com.ourtoday.api.common.error.ErrorCode;
 import com.ourtoday.api.post.PostService;
-import com.ourtoday.api.post.dto.PostResponse;
 import com.ourtoday.api.user.User;
 import com.ourtoday.api.user.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -71,13 +70,6 @@ public class CommentService {
     }
 
     private CommentResponse toResponse(Comment comment, Map<UUID, User> users) {
-        User author = users.get(comment.getAuthorId());
-        return new CommentResponse(
-            comment.getId(),
-            new PostResponse.Author(author.getId(), author.getNickname(), author.getProfileImageUrl()),
-            comment.getContent(),
-            comment.getCreatedAt(),
-            comment.getUpdatedAt()
-        );
+        return CommentResponse.of(comment, users.get(comment.getAuthorId()));
     }
 }

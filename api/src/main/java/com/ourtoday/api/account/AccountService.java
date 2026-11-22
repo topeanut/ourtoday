@@ -2,6 +2,7 @@ package com.ourtoday.api.account;
 
 import com.ourtoday.api.auth.apple.AppleAuthClient;
 import com.ourtoday.api.calendar.CalendarMemoRepository;
+import com.ourtoday.api.comment.CommentRepository;
 import com.ourtoday.api.couple.CoupleService;
 import com.ourtoday.api.image.ImageService;
 import com.ourtoday.api.post.PostService;
@@ -26,6 +27,7 @@ public class AccountService {
 
     private final CoupleService coupleService;
     private final PostService postService;
+    private final CommentRepository commentRepository;
     private final ReactionRepository reactionRepository;
     private final CalendarMemoRepository calendarMemoRepository;
     private final UserSettingsRepository userSettingsRepository;
@@ -42,6 +44,7 @@ public class AccountService {
         userRepository.findById(userId).ifPresent(this::revokeAppleAfterCommit);
         coupleService.leaveAny(userId);
         postService.deleteAllWrittenBy(userId);
+        commentRepository.deleteByAuthorId(userId);
         reactionRepository.deleteByUserId(userId);
         calendarMemoRepository.deleteByAuthorId(userId);
         userSettingsRepository.findById(userId).ifPresent(userSettingsRepository::delete);

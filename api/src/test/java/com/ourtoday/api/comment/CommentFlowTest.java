@@ -37,6 +37,7 @@ class CommentFlowTest {
     @Autowired UserService userService;
     @Autowired CoupleService coupleService;
     @Autowired JwtTokenProvider tokenProvider;
+    @Autowired CommentRepository commentRepository;
 
     String me;
     String partner;
@@ -120,6 +121,57 @@ class CommentFlowTest {
         write(me, "가".repeat(201)).andExpect(status().isBadRequest())
             .andExpect(jsonPath("$.error.code").value("VALIDATION_FAILED"));
         write(me, "가".repeat(200)).andExpect(status().isCreated());
+    }
+
+    @Test
+    void 피드에_최근_댓글_2개와_개수가_나온다() throws Exception {
+        write(me, "1").andExpect(status().isCreated());
+        write(partner, "2").andExpect(status().isCreated());
+        write(me, "3").andExpect(status().isCreated());
+
+        var content = objectMapper.readTree(mvc.perform(get("/api/v1/posts").header("Authorization", me))
+            .andExpect(status().isOk())
+            .andReturn().getResponse().getContentAsString()).get("content");
+        for (var p : content) {
+            if (!p.get("id").asText().equals(postId)) continue;
+            org.assertj.core.api.Assertions.assertThat(p.get("commentCount").asInt()).isEqualTo(3);
+            var recent = p.get("recentComments");
+            org.assertj.core.api.Assertions.assertThat(recent).hasSize(2);
+            org.assertj.core.api.Assertions.assertThat(recent.get(0).get("content").asText()).isEqualTo("2");
+            org.assertj.core.api.Assertions.assertThat(recent.get(0).get("author").get("nickname").asText()).isEqualTo("지호");
+            org.assertj.core.api.Assertions.assertThat(recent.get(1).get("content").asText()).isEqualTo("3");
+            return;
+        }
+        org.junit.jupiter.api.Assertions.fail("피드에 글이 없음");
+    }
+
+    @Test
+    void 댓글이_없으면_빈_목록과_0() throws Exception {
+        mvc.perform(get("/api/v1/posts/" + postId).header("Authorization", me))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.commentCount").value(0))
+            .andExpect(jsonPath("$.recentComments.length()").value(0));
+    }
+
+    @Test
+    void 게시글을_지우면_댓글도_지워진다() throws Exception {
+        write(partner, "좋았어").andExpect(status().isCreated());
+
+        mvc.perform(delete("/api/v1/posts/" + postId).header("Authorization", me))
+            .andExpect(status().isNoContent());
+
+        org.assertj.core.api.Assertions.assertThat(commentRepository.count()).isZero();
+    }
+
+    @Test
+    void 탈퇴하면_상대_글에_단_내_댓글도_지워진다() throws Exception {
+        write(partner, "좋았어").andExpect(status().isCreated());
+        write(me, "나도").andExpect(status().isCreated());
+
+        mvc.perform(delete("/api/v1/users/me").header("Authorization", partner))
+            .andExpect(status().isNoContent());
+
+        org.assertj.core.api.Assertions.assertThat(commentRepository.count()).isEqualTo(1);
     }
 
     private String url() {
