@@ -7,8 +7,9 @@ import { KeyboardSafeScreen } from "@/components/KeyboardSafeScreen";
 import { Spinner } from "@/components/ui";
 import { api, ApiError, errorMessage } from "@/lib/api";
 import { AppleLoginCancelled, canUseAppleLogin, preloadAppleSdk, signInWithApple } from "@/lib/apple";
-import { getToken, setTokens, startKakaoLogin, takeReturnTo } from "@/lib/auth";
+import { getToken, setTokens, takeReturnTo } from "@/lib/auth";
 import { IS_DEV } from "@/lib/env";
+import { preloadKakaoSdk, startKakaoLogin } from "@/lib/kakao";
 import type { OnboardingStatus } from "@/lib/types";
 
 /** 로그인 직후 가입 단계에 맞는 화면으로 */
@@ -31,6 +32,8 @@ export default function LoginPage() {
     setShowApple(apple);
     // 웹 브라우저는 버튼을 누른 뒤 SDK 를 받으면 그만큼 늦어지므로 미리 받아 둠 (iOS 앱은 네이티브라 불필요)
     if (apple) preloadAppleSdk();
+    // 휴대폰은 카카오톡 앱으로 바로 로그인하므로 SDK 를 미리 받아 둠
+    preloadKakaoSdk();
   }, [router]);
 
   const loginWithApple = async () => {
@@ -62,7 +65,7 @@ export default function LoginPage() {
       </div>
       <div className="w-full max-w-sm pb-10 group-data-[keyboard=open]:pb-3">
         <button
-          onClick={startKakaoLogin}
+          onClick={() => void startKakaoLogin()}
           className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[#FEE500] text-[15px] font-semibold text-black/85 transition active:scale-[0.98]"
         >
           <KakaoSymbol />

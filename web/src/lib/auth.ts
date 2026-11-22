@@ -41,10 +41,6 @@ export function takeReturnTo(): string | null {
   }, null);
 }
 
-export function startKakaoLogin() {
-  window.location.href = "/oauth2/authorization/kakao";
-}
-
 export function logout() {
   clearToken();
   window.location.replace("/login");
