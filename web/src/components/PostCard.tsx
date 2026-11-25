@@ -9,6 +9,7 @@ import { haptic, share } from "@/lib/native";
 import type { EmojiType, Post } from "@/lib/types";
 import { CloseIcon, CommentIcon, EditIcon, MapPin, MoreIcon, ShareIcon, TrashIcon } from "./Icons";
 import { useSession } from "./Session";
+import { SkeletonImage } from "./SkeletonImage";
 import { useToast } from "./Toast";
 import { Avatar, Confirm, IconButton, MenuItem, PRESS, Pressable, Sheet } from "./ui";
 
@@ -168,13 +169,13 @@ function ImageGrid({ images, onOpen }: { images: string[]; onOpen: (i: number) =
   return (
     <div className={`mt-3 grid gap-1.5 overflow-hidden rounded-2xl ${layout}`}>
       {images.map((src, i) => (
-        <Pressable key={src} press="none" onClick={() => onOpen(i)} className="relative block bg-line/50 transition active:opacity-80" aria-label={`사진 ${i + 1} 크게 보기`}>
-          <img
-            src={src}
-            alt=""
-            loading="lazy"
-            className={`w-full object-cover ${images.length === 1 ? "max-h-[420px]" : "aspect-square"}`}
-          />
+        <Pressable key={src} press="none" onClick={() => onOpen(i)} className="relative block transition active:opacity-80" aria-label={`사진 ${i + 1} 크게 보기`}>
+          {images.length === 1 ? (
+            // 한 장은 원래 비율로 보여 주므로 로딩 중에만 4:3 자리를 잡음
+            <SkeletonImage src={src} loadingClassName="aspect-[4/3]" imgClassName="max-h-[420px] w-full object-cover" />
+          ) : (
+            <SkeletonImage src={src} className="aspect-square" imgClassName="h-full w-full object-cover" />
+          )}
         </Pressable>
       ))}
     </div>

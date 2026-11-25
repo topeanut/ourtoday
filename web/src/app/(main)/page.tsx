@@ -13,6 +13,7 @@ import { PostCard } from "@/components/PostCard";
 import { PushWelcomeSheet } from "@/components/PushPrompt";
 import { useSession } from "@/components/Session";
 import { FeedSkeleton } from "@/components/Skeletons";
+import { SkeletonImage } from "@/components/SkeletonImage";
 import { Empty, PRESS, Pressable, Sheet, Spinner } from "@/components/ui";
 
 const PAGE_SIZE = 10;
@@ -169,7 +170,7 @@ function MemoriesCard({ data }: { data: Memories }) {
           <p className="mt-1 line-clamp-2 font-semibold leading-snug">{first.posts[0].content}</p>
           <p className="mt-2 text-xs text-sub">추억 {count}개 다시 보기</p>
         </div>
-        {coverUrl && <img src={coverUrl} alt="" className="h-20 w-20 shrink-0 rounded-2xl object-cover" />}
+        {coverUrl && <SkeletonImage src={coverUrl} lazy={false} className="h-20 w-20 shrink-0 rounded-2xl" imgClassName="h-full w-full object-cover" />}
       </Pressable>
       <Sheet open={open} onClose={() => setOpen(false)} title="지난 오늘">
         <div className="flex flex-col gap-6">

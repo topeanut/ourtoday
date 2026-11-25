@@ -13,6 +13,7 @@ import type { PickedLocation } from "@/lib/kakaoMap";
 import { useSession } from "@/components/Session";
 import { useToast } from "@/components/Toast";
 import { DayItemsSkeleton } from "@/components/Skeletons";
+import { SkeletonImage } from "@/components/SkeletonImage";
 import { Button, Confirm, DateField, Field, IconButton, inputClass, PRESS, Pressable, Sheet, SheetActions } from "@/components/ui";
 
 const COLORS = ["#FF7A8A", "#FFA36C", "#F6C445", "#7CC69A", "#6FB3E8", "#A68EE8"];
@@ -185,7 +186,7 @@ export default function CalendarPage() {
               <li key={p.id}>
                 <Link href={`/posts/${p.id}`} className={`flex items-start gap-3 rounded-3xl bg-white p-4 shadow-sm ${PRESS.soft}`}>
                   {p.images[0] ? (
-                    <img src={p.images[0].thumbnailUrl ?? p.images[0].url} alt="" className="h-12 w-12 shrink-0 rounded-xl object-cover" />
+                    <SkeletonImage src={p.images[0].thumbnailUrl ?? p.images[0].url} className="h-12 w-12 shrink-0 rounded-xl" imgClassName="h-full w-full object-cover" />
                   ) : (
                     <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand-strong">
                       <EditIcon className="h-5 w-5" />
