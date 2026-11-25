@@ -41,6 +41,28 @@ public class FcmPushSender implements PushSender {
                     .build())
                 .build())
             .build();
+        return dispatch(fcm);
+    }
+
+    /** 알림·alert 없이 data 만 담은 고우선순위 푸시. iOS 는 background(content-available)로 깨운다 */
+    @Override
+    public SendResult sendData(String token, DataPush push) {
+        Message fcm = Message.builder()
+            .setToken(token)
+            .putAllData(push.data())
+            .putData("type", push.type())
+            .setAndroidConfig(AndroidConfig.builder().setPriority(AndroidConfig.Priority.HIGH).build())
+            .setApnsConfig(ApnsConfig.builder()
+                .putHeader("apns-push-type", "background")
+                // background 푸시는 priority 5 만 허용 (10 은 iOS 가 거부)
+                .putHeader("apns-priority", "5")
+                .setAps(Aps.builder().setContentAvailable(true).build())
+                .build())
+            .build();
+        return dispatch(fcm);
+    }
+
+    private SendResult dispatch(Message fcm) {
         try {
             messaging.send(fcm);
             return SendResult.OK;
