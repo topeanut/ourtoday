@@ -33,11 +33,13 @@ export default function HomePage() {
   const fabHidden = useHideOnScrollDown();
 
   // 작성·수정·삭제 후 돌아왔을 때 항상 최신으로. SWR 기본 재검증은 requestAnimationFrame 이라
-  // 숨김 상태(웹뷰 백그라운드 복귀 직후 등)에서 안 돌 수 있어 직접 호출
+  // 숨김 상태(웹뷰 백그라운드 복귀 직후 등)에서 안 돌 수 있어 직접 호출.
+  // 캐시가 없는 첫 진입은 SWR 이 어차피 받으므로 건너뜀 (안 그러면 첫 페이지를 두 번 요청)
   const { mutate: refreshFeed } = feed;
+  const [hadCache] = useState(() => feed.data !== undefined);
   useEffect(() => {
-    refreshFeed();
-  }, [refreshFeed]);
+    if (hadCache) refreshFeed();
+  }, [hadCache, refreshFeed]);
 
   const posts = feed.data?.flatMap((p) => p.content) ?? [];
   const last = feed.data?.[feed.data.length - 1];
