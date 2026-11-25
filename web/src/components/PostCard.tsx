@@ -89,7 +89,7 @@ export function PostCard({
         </p>
       )}
 
-      {post.images.length > 0 && <ImageGrid images={post.images.map((i) => i.url)} onOpen={setViewer} />}
+      {post.images.length > 0 && <ImageGrid images={post.images.map((i) => i.thumbnailUrl ?? i.url)} onOpen={setViewer} />}
 
       <ReactionBar post={post} onChange={onChange} />
 

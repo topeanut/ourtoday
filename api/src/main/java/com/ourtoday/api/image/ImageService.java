@@ -24,6 +24,7 @@ import java.util.regex.Pattern;
 public class ImageService {
 
     public static final long MAX_BYTES = 10L * 1024 * 1024;
+    private static final String THUMBNAIL_CONTENT_TYPE = "image/jpeg";
     private static final Map<String, String> EXTENSIONS = Map.of(
         "image/jpeg", "jpg",
         "image/png", "png",
@@ -42,7 +43,29 @@ public class ImageService {
 
     public PresignedUrlResponse createUploadUrl(UUID userId, PresignedUrlRequest request) {
         UUID coupleId = coupleService.getConnectedCoupleId(userId);
-        return presign(prefixOf(coupleId), request);
+        PresignedUrlResponse original = presign(prefixOf(coupleId), request);
+        if (request.thumbnailContentLength() == null) {
+            return original;
+        }
+        String thumbnailUrl = storage.presignUpload(
+            thumbnailKeyOf(original.imageKey()), THUMBNAIL_CONTENT_TYPE, request.thumbnailContentLength());
+        return new PresignedUrlResponse(original.uploadUrl(), original.imageKey(), original.expiresInSec(), thumbnailUrl);
+    }
+
+    /**
+     * 게시글 사진의 썸네일 키: couples/{c}/posts/{id}.jpg → couples/{c}/posts/{id}_thumb.jpg.
+     * KEY_PATTERN 에 안 맞으므로 썸네일 키를 게시글 imageKeys 로 붙일 수는 없음
+     */
+    public static String thumbnailKeyOf(String imageKey) {
+        int dot = imageKey.lastIndexOf('.');
+        return imageKey.substring(0, dot) + "_thumb.jpg";
+    }
+
+    /** 썸네일이 실제로 올라갔으면 그 키, 아니면 null (예전 글·썸네일 업로드 실패 → 화면은 원본 사용) */
+    public String uploadedThumbnailKey(String imageKey) {
+        String key = thumbnailKeyOf(imageKey);
+        OptionalLong size = storage.size(key);
+        return size.isPresent() && size.getAsLong() <= MAX_BYTES ? key : null;
     }
 
     /** 프로필 사진: 커플 연결 전(가입 중)에도 올릴 수 있게 사용자 경로에 저장 */
@@ -74,7 +97,7 @@ public class ImageService {
         }
         String key = prefix + UUID.randomUUID() + "." + ext;
         String url = storage.presignUpload(key, contentType, request.contentLength());
-        return new PresignedUrlResponse(url, key, props.uploadUrlTtl().toSeconds());
+        return new PresignedUrlResponse(url, key, props.uploadUrlTtl().toSeconds(), null);
     }
 
     private void verifyUploaded(String key) {

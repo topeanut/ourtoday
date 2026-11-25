@@ -41,6 +41,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Service
 @RequiredArgsConstructor
@@ -115,16 +116,15 @@ public class PostService {
 
         if (request.imageKeys() != null) {
             List<String> newKeys = normalizeImageKeys(request.imageKeys());
-            List<String> oldKeys = postImageRepository.findByPostIdOrderByDisplayOrderAsc(postId).stream()
-                .map(PostImage::getImageKey)
-                .toList();
+            List<PostImage> oldImages = postImageRepository.findByPostIdOrderByDisplayOrderAsc(postId);
+            List<String> oldKeys = oldImages.stream().map(PostImage::getImageKey).toList();
             // 기존 이미지는 이미 검증됨 → 새로 추가된 것만 검증
             imageService.verifyAttachable(post.getCoupleId(), newKeys.stream().filter(k -> !oldKeys.contains(k)).toList());
 
             postImageRepository.deleteByPostId(postId);
             postImageRepository.flush();
             saveImages(postId, newKeys);
-            imageService.deleteAfterCommit(oldKeys.stream().filter(k -> !newKeys.contains(k)).toList());
+            imageService.deleteAfterCommit(fileKeys(oldImages.stream().filter(i -> !newKeys.contains(i.getImageKey())).toList()));
         }
         // 응답의 updatedAt 이 반영되도록 (@UpdateTimestamp 는 flush 때 채워짐)
         postRepository.flush();
@@ -144,9 +144,7 @@ public class PostService {
 
     private void deleteWithRelations(Post post) {
         UUID postId = post.getId();
-        List<String> keys = postImageRepository.findByPostIdOrderByDisplayOrderAsc(postId).stream()
-            .map(PostImage::getImageKey)
-            .toList();
+        List<String> keys = fileKeys(postImageRepository.findByPostIdOrderByDisplayOrderAsc(postId));
         postImageRepository.deleteByPostId(postId);
         reactionRepository.deleteByPostId(postId);
         commentRepository.deleteByPostId(postId);
@@ -247,8 +245,16 @@ public class PostService {
 
     private void saveImages(UUID postId, List<String> keys) {
         for (int i = 0; i < keys.size(); i++) {
-            postImageRepository.save(PostImage.of(postId, keys.get(i), i));
+            String key = keys.get(i);
+            postImageRepository.save(PostImage.of(postId, key, imageService.uploadedThumbnailKey(key), i));
         }
+    }
+
+    /** 저장소에서 지울 파일: 원본 + 있으면 썸네일 */
+    private static List<String> fileKeys(List<PostImage> images) {
+        return images.stream()
+            .flatMap(i -> i.getThumbnailKey() == null ? Stream.of(i.getImageKey()) : Stream.of(i.getImageKey(), i.getThumbnailKey()))
+            .toList();
     }
 
     private Map<UUID, User> loadUsers(Collection<UUID> ids) {
@@ -319,8 +325,11 @@ public class PostService {
                                     Map<UUID, List<ReactionCount>> reactions, Map<UUID, List<Comment>> comments) {
         User author = users.get(post.getAuthorId());
         List<PostResponse.Image> imageResponses = images.getOrDefault(post.getId(), List.of()).stream()
-            .map(img -> new PostResponse.Image(
-                imageService.downloadUrl(img.getImageKey()), img.getImageKey(), img.getDisplayOrder()))
+            .map(img -> {
+                String url = imageService.downloadUrl(img.getImageKey());
+                String thumbnailUrl = img.getThumbnailKey() == null ? url : imageService.downloadUrl(img.getThumbnailKey());
+                return new PostResponse.Image(url, thumbnailUrl, img.getImageKey(), img.getDisplayOrder());
+            })
             .toList();
         List<PostResponse.Reaction> reactionResponses = reactions.getOrDefault(post.getId(), List.of()).stream()
             .sorted(Comparator.comparing(ReactionCount::emojiType))

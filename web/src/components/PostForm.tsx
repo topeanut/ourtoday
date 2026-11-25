@@ -27,7 +27,7 @@ export function PostForm({
   submitLabel,
   onSubmit,
 }: {
-  initial?: { content: string; postedDate: string; images: { url: string; imageKey: string }[]; location?: PickedLocation | null };
+  initial?: { content: string; postedDate: string; images: { url: string; thumbnailUrl?: string; imageKey: string }[]; location?: PickedLocation | null };
   submitLabel: string;
   onSubmit: (value: PostFormValue) => Promise<void>;
 }) {
@@ -36,7 +36,7 @@ export function PostForm({
   const [content, setContent] = useState(initial?.content ?? "");
   const [postedDate, setPostedDate] = useState(initial?.postedDate ?? todayKst());
   const [slots, setSlots] = useState<Slot[]>(
-    initial?.images.map((i) => ({ key: i.imageKey, preview: i.url, imageKey: i.imageKey })) ?? [],
+    initial?.images.map((i) => ({ key: i.imageKey, preview: i.thumbnailUrl ?? i.url, imageKey: i.imageKey })) ?? [],
   );
   const [location, setLocation] = useState<PickedLocation | null>(initial?.location ?? null);
   const [saving, setSaving] = useState(false);

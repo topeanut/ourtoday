@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ourtoday.api.auth.JwtTokenProvider;
 import com.ourtoday.api.couple.CoupleService;
 import com.ourtoday.api.image.FakeImageStorage;
+import com.ourtoday.api.image.ImageService;
 import com.ourtoday.api.image.TestStorageConfig;
 import com.ourtoday.api.user.UserService;
 import com.ourtoday.api.user.dto.UserUpdateRequest;
@@ -27,6 +28,7 @@ import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.endsWith;
 import static org.hamcrest.Matchers.startsWith;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -145,6 +147,41 @@ class PostImageFlowTest {
             .andExpect(status().isNoContent());
 
         assertThat(storage.exists(k)).isFalse();
+    }
+
+    @Test
+    void 썸네일_크기를_보내면_썸네일_업로드_URL도_발급_안_보내면_null() throws Exception {
+        mvc.perform(post("/api/v1/images/presigned-url").header("Authorization", me)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(Map.of(
+                    "contentType", "image/png", "contentLength", 2000, "thumbnailContentLength", 300))))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.thumbnailUploadUrl", endsWith("_thumb.jpg")));
+
+        presign(me, "image/jpeg", 1000).andExpect(jsonPath("$.thumbnailUploadUrl").doesNotExist());
+    }
+
+    @Test
+    void 썸네일이_올라간_사진은_thumbnailUrl_없으면_원본URL_삭제시_썸네일도_삭제() throws Exception {
+        String withThumb = uploaded(me);
+        String thumb = ImageService.thumbnailKeyOf(withThumb);
+        storage.upload(thumb, 300);
+        String plain = uploaded(me);
+
+        String id = idOf(write(me, List.of(withThumb, plain)).andExpect(status().isCreated())
+            .andExpect(jsonPath("$.images[0].thumbnailUrl", endsWith(thumb)))
+            .andExpect(jsonPath("$.images[0].url", endsWith(withThumb)))
+            .andExpect(jsonPath("$.images[1].thumbnailUrl", endsWith(plain))));
+
+        // 썸네일 키는 게시글 사진으로 직접 붙일 수 없음
+        write(me, List.of(thumb)).andExpect(status().isBadRequest());
+
+        mvc.perform(patch("/api/v1/posts/" + id).header("Authorization", me)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body("고침", List.of(plain))))
+            .andExpect(status().isOk());
+        assertThat(storage.exists(withThumb)).isFalse();
+        assertThat(storage.exists(thumb)).isFalse();
     }
 
     private ResultActions presign(String token, String contentType, long size) throws Exception {

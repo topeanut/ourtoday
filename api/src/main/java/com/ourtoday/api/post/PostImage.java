@@ -35,10 +35,15 @@ public class PostImage {
     @Column(name = "display_order", nullable = false)
     private int displayOrder;
 
-    public static PostImage of(UUID postId, String imageKey, int displayOrder) {
+    /** 피드용 작은 사진 키. 예전 글이거나 썸네일 업로드가 실패했으면 null (화면은 원본 사용) */
+    @Column(name = "thumbnail_key", length = 300)
+    private String thumbnailKey;
+
+    public static PostImage of(UUID postId, String imageKey, String thumbnailKey, int displayOrder) {
         PostImage image = new PostImage();
         image.postId = postId;
         image.imageKey = imageKey;
+        image.thumbnailKey = thumbnailKey;
         image.displayOrder = displayOrder;
         return image;
     }

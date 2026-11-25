@@ -150,7 +150,8 @@ function MemoriesCard({ data }: { data: Memories }) {
   const [open, setOpen] = useState(false);
   const first = data.memories[0];
   const count = data.memories.reduce((n, m) => n + m.posts.length, 0);
-  const cover = data.memories.flatMap((m) => m.posts).find((p) => p.images.length > 0)?.images[0]?.url;
+  const cover = data.memories.flatMap((m) => m.posts).find((p) => p.images.length > 0)?.images[0];
+  const coverUrl = cover && (cover.thumbnailUrl ?? cover.url);
 
   return (
     <>
@@ -166,7 +167,7 @@ function MemoriesCard({ data }: { data: Memories }) {
           <p className="mt-1 line-clamp-2 font-semibold leading-snug">{first.posts[0].content}</p>
           <p className="mt-2 text-xs text-sub">추억 {count}개 다시 보기</p>
         </div>
-        {cover && <img src={cover} alt="" className="h-20 w-20 shrink-0 rounded-2xl object-cover" />}
+        {coverUrl && <img src={coverUrl} alt="" className="h-20 w-20 shrink-0 rounded-2xl object-cover" />}
       </Pressable>
       <Sheet open={open} onClose={() => setOpen(false)} title="지난 오늘">
         <div className="flex flex-col gap-6">

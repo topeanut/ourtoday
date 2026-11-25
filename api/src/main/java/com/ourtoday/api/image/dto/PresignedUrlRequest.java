@@ -10,5 +10,13 @@ public record PresignedUrlRequest(
     @NotBlank String contentType,
 
     @Schema(description = "파일 크기(byte). 최대 10MB. 업로드 시 이 크기와 달라지면 거부됨", example = "2048000")
-    @Positive @Max(10 * 1024 * 1024) long contentLength
-) {}
+    @Positive @Max(10 * 1024 * 1024) long contentLength,
+
+    @Schema(description = "피드용 썸네일(image/jpeg) 크기(byte). 넣으면 thumbnailUploadUrl 도 발급 (게시글 사진만, 선택)", example = "120000")
+    @Positive @Max(10 * 1024 * 1024) Long thumbnailContentLength
+) {
+
+    public PresignedUrlRequest(String contentType, long contentLength) {
+        this(contentType, contentLength, null);
+    }
+}
