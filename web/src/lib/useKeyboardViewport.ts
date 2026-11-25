@@ -32,8 +32,16 @@ export function useKeyboardViewport(ref: RefObject<HTMLElement | null>, enabled 
       // 키보드가 화면 높이의 15% 이상 가리면 열린 것으로 봄 (주소창 변화 같은 작은 차이는 무시)
       const covered = window.innerHeight - vv.height > window.innerHeight * 0.15;
       const open = window.__ourtodayKeyboard === "open" || covered;
-      el.style.height = `${vv.height}px`;
       el.dataset.keyboard = open ? "open" : "closed";
+      // 새 iOS 앱: 네이티브가 웹뷰 높이를 키보드 위까지 줄여서 h-dvh 가 이미 맞음.
+      // 여기서 또 height/top 을 덮어쓰면 시트가 더 짧아지고(버튼 아래 빈틈) 포커스 중 스크롤이 막힘 → 표시만 단다.
+      if (window.__ourtodayKeyboard !== undefined) {
+        el.style.height = "";
+        el.style.top = "";
+        return;
+      }
+      // iOS 1.0·Safari: 레이아웃 높이는 그대로고 보이는 영역만 줄어듦 → 요소를 보이는 영역에 맞춤
+      el.style.height = `${vv.height}px`;
       if (resetScroll) {
         if (window.scrollY !== 0 || vv.offsetTop !== 0) window.scrollTo(0, 0);
       } else {

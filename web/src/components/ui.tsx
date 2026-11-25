@@ -308,7 +308,7 @@ export function Sheet({
       aria-label={title}
     >
       <Pressable press="none" className="animate-fade absolute inset-0 cursor-default bg-black/35" onClick={onClose} aria-label="닫기" />
-      <div className="animate-sheet relative max-h-[88%] w-full overflow-y-auto overscroll-contain rounded-t-3xl bg-white px-5 pb-[calc(20px+var(--safe-bottom))] pt-4 shadow-xl group-data-[keyboard=open]:max-h-[calc(100%-12px)] group-data-[keyboard=open]:pb-4 md:max-w-md md:rounded-3xl md:pb-6">
+      <div className="animate-sheet relative max-h-[88%] w-full overflow-y-auto overscroll-contain scroll-pb-24 rounded-t-3xl bg-white px-5 pb-[calc(20px+var(--safe-bottom))] pt-4 shadow-xl group-data-[keyboard=open]:max-h-[calc(100%-12px)] group-data-[keyboard=open]:pb-0 md:max-w-md md:rounded-3xl md:pb-6">
         <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-line md:hidden" />
         {title && (
           <div className="mb-4 flex items-center justify-between">
