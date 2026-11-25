@@ -7,7 +7,7 @@ import { markNavigation } from "@/lib/nav";
 import { formatDay } from "@/lib/date";
 import { BucketIcon, CalendarIcon, HomeIcon, UserIcon } from "./Icons";
 import { useSession } from "./Session";
-import { Avatar } from "./ui";
+import { Avatar, PRESS } from "./ui";
 
 const TABS = [
   { href: "/", label: "홈", Icon: HomeIcon },
@@ -83,8 +83,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 key={href}
                 href={href}
                 onClick={() => markTabClick(tabIndex, i)}
-                className={`flex items-center gap-3 rounded-2xl px-3 py-3 font-medium transition ${
-                  active ? "bg-brand-soft text-brand-strong" : "text-sub hover:bg-black/5"
+                className={`flex items-center gap-3 rounded-2xl px-3 py-3 font-medium ${PRESS.scale} ${
+                  active ? "bg-brand-soft text-brand-strong" : "text-sub hover:bg-black/5 active:bg-black/10"
                 }`}
               >
                 <Icon className="h-5 w-5" />
@@ -93,7 +93,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             );
           })}
         </nav>
-        <Link href="/posts/new" className="mt-6 rounded-2xl bg-brand py-3 text-center font-semibold text-white hover:bg-brand-strong">
+        <Link href="/posts/new" className={`mt-6 rounded-2xl bg-brand py-3 text-center font-semibold text-white hover:bg-brand-strong active:bg-brand-strong ${PRESS.scale}`}>
           오늘 기록하기
         </Link>
         <div className="mt-auto flex items-center gap-3 rounded-2xl bg-white p-3">
@@ -126,12 +126,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                   key={href}
                   href={href}
                   onClick={() => markTabClick(tabIndex, i)}
-                  className={`flex h-[60px] flex-col items-center justify-center gap-1 text-[11px] font-medium ${
+                  className={`group flex h-[60px] flex-col items-center justify-center gap-1 text-[11px] font-medium transition active:opacity-70 ${
                     active ? "text-brand-strong" : "text-sub"
                   }`}
                   aria-current={active ? "page" : undefined}
                 >
-                  <Icon className="h-6 w-6" />
+                  {/* 탭 전체는 누르는 영역, 눌림은 아이콘이 살짝 작아지는 걸로 */}
+                  <Icon className="h-6 w-6 transition group-active:scale-90" />
                   {label}
                 </Link>
               );

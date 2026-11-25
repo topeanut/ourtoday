@@ -82,27 +82,99 @@ export function Empty({ title, desc, action }: { title: string; desc?: string; a
   );
 }
 
+/**
+ * 누름 효과. 모든 버튼·버튼처럼 생긴 링크는 이 중 하나를 씀
+ *  - scale: 작은 버튼 (살짝 작아짐)
+ *  - soft: 카드처럼 큰 버튼 (크게 줄면 어색해서 아주 조금 + 살짝 흐려짐)
+ *  - dim: 줄 전체·투명 버튼 (크기는 그대로, 배경만 어둡게)
+ *  - none: 시트 뒤 배경처럼 효과가 없어야 하는 것
+ */
+export const PRESS = {
+  scale: "transition active:scale-[0.96] disabled:active:scale-100",
+  soft: "transition active:scale-[0.985] active:opacity-90 disabled:active:scale-100",
+  dim: "transition active:bg-black/[0.06]",
+  none: "",
+} as const;
+export type PressKind = keyof typeof PRESS;
+
+type PressableProps = React.ButtonHTMLAttributes<HTMLButtonElement> & { press?: PressKind };
+
+/** 모든 버튼의 기본. 기본 type 은 "button" (폼 안에서 실수로 제출되지 않게) */
+export function Pressable({ press = "scale", className = "", type = "button", ...rest }: PressableProps) {
+  return <button type={type} className={`${PRESS[press]} disabled:cursor-not-allowed ${className}`} {...rest} />;
+}
+
+/** 아이콘만 있는 둥근 버튼. 손가락으로 누르기 쉽게 44px, 화면 읽기용 이름 필수 */
+export function IconButton({
+  label,
+  tone = "plain",
+  className = "",
+  ...rest
+}: Omit<PressableProps, "aria-label"> & { label: string; tone?: "plain" | "sub" | "brand" | "overlay" }) {
+  const tones = {
+    plain: "text-ink hover:bg-black/5 active:bg-black/10",
+    sub: "text-sub hover:bg-black/5 active:bg-black/10",
+    brand: "bg-brand text-white hover:bg-brand-strong",
+    overlay: "bg-white/15 text-white active:bg-white/25",
+  }[tone];
+  return (
+    <Pressable
+      aria-label={label}
+      className={`inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full ${tones} ${className}`}
+      {...rest}
+    />
+  );
+}
+
+/** 시트 안 메뉴 줄 (수정하기 / 삭제하기 등) */
+export function MenuItem({
+  icon,
+  danger,
+  children,
+  className = "",
+  ...rest
+}: PressableProps & { icon?: React.ReactNode; danger?: boolean }) {
+  return (
+    <Pressable
+      press="dim"
+      className={`flex items-center gap-3 rounded-2xl px-3 py-4 text-left font-medium hover:bg-black/5 ${danger ? "text-[#d6404e]" : ""} ${className}`}
+      {...rest}
+    >
+      {icon}
+      {children}
+    </Pressable>
+  );
+}
+
 type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
   variant?: "primary" | "ghost" | "soft" | "danger";
+  /** 높이·글자 크기는 className 으로 덮으면 h-12 와 충돌해 무시되므로 size 로 고름 */
+  size?: "lg" | "md" | "sm";
   loading?: boolean;
   full?: boolean;
 };
 
-export function Button({ variant = "primary", loading, full, className = "", children, disabled, ...rest }: ButtonProps) {
+const BUTTON_SIZE = {
+  lg: "h-12 px-5 text-[15px]",
+  md: "h-11 px-4 text-sm",
+  sm: "h-10 px-4 text-sm",
+};
+
+export function Button({ variant = "primary", size = "lg", loading, full, className = "", children, disabled, ...rest }: ButtonProps) {
   const styles = {
-    primary: "bg-brand text-white hover:bg-brand-strong disabled:bg-brand/40",
+    primary: "bg-brand text-white hover:bg-brand-strong active:bg-brand-strong disabled:bg-brand/40",
     soft: "bg-brand-soft text-brand-strong hover:bg-brand-soft/70 disabled:opacity-50",
-    ghost: "bg-transparent text-ink hover:bg-black/5 disabled:opacity-40",
-    danger: "bg-[#fdecec] text-[#d6404e] hover:bg-[#fbdcdc] disabled:opacity-50",
+    ghost: "bg-transparent text-ink hover:bg-black/5 active:bg-black/10 disabled:opacity-40",
+    danger: "bg-[#fdecec] text-[#d6404e] hover:bg-[#fbdcdc] active:bg-[#fbdcdc] disabled:opacity-50",
   }[variant];
   return (
-    <button
-      className={`inline-flex h-12 items-center justify-center gap-2 rounded-2xl px-5 text-[15px] font-semibold transition active:scale-[0.98] ${styles} ${full ? "w-full" : ""} ${className}`}
+    <Pressable
+      className={`inline-flex items-center justify-center gap-2 rounded-2xl font-semibold ${BUTTON_SIZE[size]} ${styles} ${full ? "w-full" : ""} ${className}`}
       disabled={disabled || loading}
       {...rest}
     >
       {loading ? <Spinner size="sm" tone="current" /> : children}
-    </button>
+    </Pressable>
   );
 }
 
@@ -175,13 +247,13 @@ export function DateField({
         className="absolute inset-0 h-full w-full cursor-pointer appearance-none opacity-0"
       />
       {clearable && value && (
-        <button
-          type="button"
+        <Pressable
+          press="dim"
           onClick={() => onChange("")}
-          className="relative z-10 -my-1 ml-auto rounded-lg px-2 py-1 text-sm text-sub active:bg-black/5"
+          className="relative z-10 -my-2 ml-auto rounded-lg px-2.5 py-2 text-sm text-sub"
         >
           지우기
-        </button>
+        </Pressable>
       )}
       <ChevronDown
         className={`h-5 w-5 shrink-0 text-sub ${variant === "field" && !(clearable && value) ? "ml-auto" : ""}`}
@@ -235,15 +307,15 @@ export function Sheet({
       aria-modal
       aria-label={title}
     >
-      <button className="animate-fade absolute inset-0 bg-black/35" onClick={onClose} aria-label="닫기" />
+      <Pressable press="none" className="animate-fade absolute inset-0 cursor-default bg-black/35" onClick={onClose} aria-label="닫기" />
       <div className="animate-sheet relative max-h-[88%] w-full overflow-y-auto overscroll-contain rounded-t-3xl bg-white px-5 pb-[calc(20px+var(--safe-bottom))] pt-4 shadow-xl group-data-[keyboard=open]:max-h-[calc(100%-12px)] group-data-[keyboard=open]:pb-4 md:max-w-md md:rounded-3xl md:pb-6">
         <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-line md:hidden" />
         {title && (
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-lg font-bold">{title}</h2>
-            <button onClick={onClose} className="-mr-2 rounded-full p-2 text-sub hover:bg-black/5" aria-label="닫기">
+            <IconButton onClick={onClose} tone="sub" label="닫기" className="-mr-2.5">
               <CloseIcon className="h-5 w-5" />
-            </button>
+            </IconButton>
           </div>
         )}
         {children}
@@ -293,14 +365,14 @@ export function Card({ className = "", children }: { className?: string; childre
 
 export function Toggle({ checked, onChange, label }: { checked: boolean; onChange: (v: boolean) => void; label: string }) {
   return (
-    <button
+    <Pressable
       role="switch"
       aria-checked={checked}
       aria-label={label}
       onClick={() => onChange(!checked)}
-      className={`relative h-7 w-12 shrink-0 rounded-full transition ${checked ? "bg-brand" : "bg-line"}`}
+      className={`relative h-7 w-12 shrink-0 rounded-full ${checked ? "bg-brand" : "bg-line"}`}
     >
       <span className={`absolute top-0.5 h-6 w-6 rounded-full bg-white shadow transition ${checked ? "left-[22px]" : "left-0.5"}`} />
-    </button>
+    </Pressable>
   );
 }

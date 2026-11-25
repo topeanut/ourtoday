@@ -11,7 +11,7 @@ import type { BucketItem } from "@/lib/types";
 import { PageHeader } from "@/components/AppShell";
 import { CheckIcon, PlusIcon } from "@/components/Icons";
 import { useToast } from "@/components/Toast";
-import { Button, Confirm, DateField, Empty, Field, inputClass, Sheet, SheetActions } from "@/components/ui";
+import { Button, Confirm, DateField, Empty, Field, IconButton, inputClass, PRESS, Pressable, Sheet, SheetActions } from "@/components/ui";
 import { BucketSkeleton } from "@/components/Skeletons";
 
 type Status = "ALL" | "TODO" | "DONE";
@@ -59,9 +59,9 @@ export default function BucketPage() {
       <PageHeader
         title="버킷리스트"
         right={
-          <button onClick={() => setEditing("new")} className="rounded-full bg-brand p-2 text-white" aria-label="추가">
+          <IconButton onClick={() => setEditing("new")} tone="brand" label="추가">
             <PlusIcon className="h-5 w-5" />
-          </button>
+          </IconButton>
         }
       />
       <div className="mx-auto max-w-2xl px-4 pb-10 md:px-8">
@@ -87,15 +87,15 @@ export default function BucketPage() {
               ["DONE", "이룬 것"],
             ] as [Status, string][]
           ).map(([key, label]) => (
-            <button
+            <Pressable
               key={key}
               role="tab"
               aria-selected={status === key}
               onClick={() => setStatus(key)}
-              className={`h-9 rounded-full px-4 text-sm font-medium ${status === key ? "bg-ink text-white" : "bg-white text-sub"}`}
+              className={`h-9 rounded-full px-4 text-sm font-medium ${status === key ? "bg-ink text-white" : "bg-white text-sub active:bg-black/5"}`}
             >
               {label}
-            </button>
+            </Pressable>
           ))}
         </div>
 
@@ -111,16 +111,21 @@ export default function BucketPage() {
           <ul className="animate-fade flex flex-col gap-2">
             {data.items.map((item) => (
               <li key={item.id} className="flex items-start gap-3 rounded-3xl bg-white p-4 shadow-sm">
-                <button
+                {/* 보이는 동그라미는 28px, 누르는 영역은 44px */}
+                <Pressable
                   onClick={() => (item.completed ? uncomplete(item) : setCompleting(item))}
-                  className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 transition ${
-                    item.completed ? "border-brand bg-brand text-white" : "border-sub/40 text-transparent hover:border-brand/60"
-                  }`}
+                  className="group/check -m-2 shrink-0 p-2"
                   aria-label={item.completed ? "완료 취소" : "완료"}
                 >
-                  <CheckIcon className="h-4 w-4" />
-                </button>
-                <button className="min-w-0 flex-1 text-left" onClick={() => setEditing(item)}>
+                  <span
+                    className={`mt-0.5 flex h-7 w-7 items-center justify-center rounded-full border-2 transition ${
+                      item.completed ? "border-brand bg-brand text-white" : "border-sub/40 text-transparent group-hover/check:border-brand/60 group-active/check:border-brand"
+                    }`}
+                  >
+                    <CheckIcon className="h-4 w-4" />
+                  </span>
+                </Pressable>
+                <Pressable press="none" className="min-w-0 flex-1 rounded-xl text-left transition active:opacity-60" onClick={() => setEditing(item)}>
                   <p className={`font-medium ${item.completed ? "text-sub line-through decoration-brand/50" : ""}`}>{item.title}</p>
                   {item.description && <p className="mt-0.5 line-clamp-2 text-sm text-sub">{item.description}</p>}
                   <p className="mt-1 text-xs text-sub">
@@ -130,9 +135,9 @@ export default function BucketPage() {
                         ? `목표 ${formatDay(item.targetDate)}`
                         : `${item.createdBy.nickname}님이 추가`}
                   </p>
-                </button>
+                </Pressable>
                 {item.completedPostId && (
-                  <Link href={`/posts/${item.completedPostId}`} className="shrink-0 rounded-full bg-brand-soft px-3 py-1.5 text-xs font-semibold text-brand-strong">
+                  <Link href={`/posts/${item.completedPostId}`} className={`shrink-0 rounded-full bg-brand-soft px-3 py-1.5 text-xs font-semibold text-brand-strong active:bg-brand-soft/70 ${PRESS.scale}`}>
                     기록 보기
                   </Link>
                 )}

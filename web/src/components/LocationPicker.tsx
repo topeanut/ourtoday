@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { MapPin, CloseIcon } from "./Icons";
+import { Pressable } from "./ui";
 import { loadKakaoMap, type PickedLocation, type KakaoMapInstance, type KakaoMarkerInstance, type KakaoMaps } from "@/lib/kakaoMap";
 
 export type { PickedLocation };
@@ -116,27 +117,26 @@ export function LocationPicker({ value, onChange }: Props) {
   return (
     <div className="flex flex-col gap-2">
       <div className="flex items-center gap-2">
-        <button
-          type="button"
+        <Pressable
           onClick={useCurrent}
           disabled={busy}
-          className="flex items-center gap-1 rounded-full bg-brand-soft px-3 py-1.5 text-sm font-medium text-brand-strong disabled:opacity-50"
+          className="flex h-9 items-center gap-1 rounded-full bg-brand-soft px-3 text-sm font-medium text-brand-strong active:bg-brand-soft/70 disabled:opacity-50"
         >
           <MapPin className="h-4 w-4" />
           {busy ? "찾는 중..." : "현재 위치"}
-        </button>
+        </Pressable>
         {value && (
-          <button
-            type="button"
+          <Pressable
+            press="dim"
             onClick={() => {
               setNotice(null);
               onChange(null);
             }}
-            className="flex items-center gap-1 rounded-full px-3 py-1.5 text-sm text-sub hover:bg-black/5"
+            className="flex h-9 items-center gap-1 rounded-full px-3 text-sm text-sub hover:bg-black/5"
           >
             <CloseIcon className="h-4 w-4" />
             지우기
-          </button>
+          </Pressable>
         )}
       </div>
       <div ref={boxRef} className="h-56 w-full overflow-hidden rounded-2xl bg-black/5" />

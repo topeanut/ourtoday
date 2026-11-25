@@ -10,7 +10,7 @@ import { EditIcon, MoreIcon, TrashIcon } from "./Icons";
 import { useSession } from "./Session";
 import { useToast } from "./Toast";
 import { CommentsSkeleton } from "./Skeletons";
-import { Avatar, Confirm, inputClass, Sheet } from "./ui";
+import { Avatar, Button, Confirm, IconButton, inputClass, MenuItem, Sheet } from "./ui";
 
 const MAX = 200;
 /** 서버 저장 전 임시 댓글 id 앞에 붙음 */
@@ -112,13 +112,9 @@ export function CommentSection({ postId }: { postId: string }) {
                   <p className="mt-0.5 whitespace-pre-line break-words text-[15px] leading-relaxed">{c.content}</p>
                 </div>
                 {c.author.id === me.id && !pending && (
-                  <button
-                    onClick={() => setMenuFor(c)}
-                    className="-mr-2 h-fit rounded-full p-2 text-sub hover:bg-black/5"
-                    aria-label="댓글 더보기"
-                  >
+                  <IconButton onClick={() => setMenuFor(c)} tone="sub" label="댓글 더보기" className="-mr-2.5 -mt-2">
                     <MoreIcon className="h-5 w-5" />
-                  </button>
+                  </IconButton>
                 )}
               </li>
             );
@@ -132,24 +128,25 @@ export function CommentSection({ postId }: { postId: string }) {
 
       <Sheet open={!!menuFor} onClose={() => setMenuFor(null)}>
         <div className="flex flex-col">
-          <button
-            className="flex items-center gap-3 rounded-2xl px-3 py-4 text-left font-medium hover:bg-black/5"
+          <MenuItem
+            icon={<EditIcon className="h-5 w-5" />}
             onClick={() => {
               setEditing(menuFor);
               setMenuFor(null);
             }}
           >
-            <EditIcon className="h-5 w-5" /> 수정하기
-          </button>
-          <button
-            className="flex items-center gap-3 rounded-2xl px-3 py-4 text-left font-medium text-[#d6404e] hover:bg-black/5"
+            수정하기
+          </MenuItem>
+          <MenuItem
+            danger
+            icon={<TrashIcon className="h-5 w-5" />}
             onClick={() => {
               setDeleting(menuFor);
               setMenuFor(null);
             }}
           >
-            <TrashIcon className="h-5 w-5" /> 삭제하기
-          </button>
+            삭제하기
+          </MenuItem>
         </div>
       </Sheet>
 
@@ -229,13 +226,9 @@ function Composer({ onSubmit }: { onSubmit: (content: string) => Promise<void> }
           />
           <div className="flex flex-col items-end gap-1">
             <Counter length={text.length} />
-            <button
-              onClick={submit}
-              disabled={!valid}
-              className="h-11 shrink-0 rounded-2xl bg-brand px-4 text-sm font-semibold text-white transition hover:bg-brand-strong active:scale-[0.97] disabled:opacity-40"
-            >
+            <Button onClick={submit} disabled={!valid} size="md" className="shrink-0">
               등록
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -263,13 +256,9 @@ function EditForm({ initial, onSubmit }: { initial: string; onSubmit: (content: 
       />
       <div className="flex items-center justify-between">
         <Counter length={text.length} />
-        <button
-          onClick={submit}
-          disabled={!valid}
-          className="ml-auto h-11 rounded-2xl bg-brand px-5 text-sm font-semibold text-white transition hover:bg-brand-strong active:scale-[0.97] disabled:opacity-40"
-        >
+        <Button onClick={submit} disabled={!valid} size="md" className="ml-auto">
           저장
-        </button>
+        </Button>
       </div>
     </div>
   );

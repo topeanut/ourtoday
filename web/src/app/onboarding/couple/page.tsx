@@ -8,7 +8,7 @@ import { getToken, logout, takeReturnTo } from "@/lib/auth";
 import { inviteUrl, normalizeInviteCode, takeInviteCode } from "@/lib/invite";
 import { copyText, share } from "@/lib/native";
 import type { InviteResponse, OnboardingStatus } from "@/lib/types";
-import { Button, Card, Field, inputClass } from "@/components/ui";
+import { Button, Card, Field, inputClass, Pressable } from "@/components/ui";
 import { useToast } from "@/components/Toast";
 
 export default function CoupleOnboardingPage() {
@@ -102,14 +102,14 @@ export default function CoupleOnboardingPage() {
 
       {mode === "choose" && (
         <div className="mt-10 flex flex-col gap-3">
-          <button onClick={createInvite} disabled={busy} className="rounded-3xl bg-white p-5 text-left shadow-sm transition active:scale-[0.99]">
+          <Pressable press="soft" onClick={createInvite} disabled={busy} className="rounded-3xl bg-white p-5 text-left shadow-sm">
             <p className="font-semibold">초대코드 만들기</p>
             <p className="mt-1 text-sm text-sub">코드를 만들어 상대에게 보내요</p>
-          </button>
-          <button onClick={() => setMode("join")} className="rounded-3xl bg-white p-5 text-left shadow-sm transition active:scale-[0.99]">
+          </Pressable>
+          <Pressable press="soft" onClick={() => setMode("join")} className="rounded-3xl bg-white p-5 text-left shadow-sm">
             <p className="font-semibold">초대코드 입력하기</p>
             <p className="mt-1 text-sm text-sub">상대에게 받은 코드가 있어요</p>
-          </button>
+          </Pressable>
           {data?.status === "PENDING_INVITE" && (
             <p className="px-1 text-sm text-sub">이미 만든 코드가 있다면 새로 만들면 이전 코드는 사용할 수 없어요.</p>
           )}
@@ -119,16 +119,15 @@ export default function CoupleOnboardingPage() {
       {mode === "invite" && invite && (
         <Card className="mt-10 text-center">
           <p className="text-sm text-sub">초대코드</p>
-          <button
-            type="button"
+          <Pressable
             onClick={copyCode}
-            className="mt-2 rounded-2xl px-3 py-1 text-brand-strong transition active:scale-95 active:bg-brand/10"
+            className="mt-2 rounded-2xl px-3 py-1 text-brand-strong active:bg-brand/10"
             aria-label={`초대코드 ${invite.inviteCode} 복사`}
           >
             {/* 전역 button { font: inherit } 이 버튼의 글자 크기를 덮어쓰므로 글자 스타일은 span 에.
                 글자 간격이 마지막 글자 뒤에도 붙어서 오른쪽으로 치우치므로 같은 만큼 왼쪽을 띄움 */}
             <span className="block pl-[0.3em] font-mono text-4xl font-bold tracking-[0.3em]">{invite.inviteCode}</span>
-          </button>
+          </Pressable>
           <p className="text-xs text-sub">코드를 누르면 복사돼요</p>
           <p className="mt-1 text-xs text-sub">
             {new Date(invite.expiresAt).toLocaleString("ko-KR", { month: "long", day: "numeric", hour: "numeric", minute: "2-digit" })}
@@ -141,9 +140,9 @@ export default function CoupleOnboardingPage() {
             <span className="h-2 w-2 animate-pulse rounded-full bg-brand" />
             상대가 입력하면 자동으로 넘어가요
           </p>
-          <button className="mt-4 text-sm text-sub underline" onClick={() => setMode("choose")}>
+          <Pressable press="dim" className="mt-4 rounded-lg px-3 py-2 text-sm text-sub underline" onClick={() => setMode("choose")}>
             뒤로
-          </button>
+          </Pressable>
         </Card>
       )}
 
@@ -163,16 +162,16 @@ export default function CoupleOnboardingPage() {
           <Button type="submit" full loading={busy} disabled={code.length < 6}>
             연결하기
           </Button>
-          <button type="button" className="text-sm text-sub underline" onClick={() => setMode("choose")}>
+          <Pressable press="dim" className="mx-auto rounded-lg px-3 py-2 text-sm text-sub underline" onClick={() => setMode("choose")}>
             뒤로
-          </button>
+          </Pressable>
         </form>
       )}
 
       <div className="mt-auto pb-8 pt-10 text-center">
-        <button className="text-sm text-sub" onClick={logout}>
+        <Pressable press="dim" className="rounded-lg px-3 py-2 text-sm text-sub" onClick={logout}>
           다른 계정으로 로그인
-        </button>
+        </Pressable>
       </div>
     </div>
   );

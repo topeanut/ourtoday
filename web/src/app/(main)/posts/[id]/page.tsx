@@ -12,7 +12,7 @@ import { BackIcon } from "@/components/Icons";
 import { CommentSection } from "@/components/CommentSection";
 import { PostCard } from "@/components/PostCard";
 import { PostDetailSkeleton } from "@/components/Skeletons";
-import { Empty } from "@/components/ui";
+import { Empty, IconButton } from "@/components/ui";
 
 export default function PostDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -26,9 +26,9 @@ export default function PostDetailPage({ params }: { params: Promise<{ id: strin
       <PageHeader
         title="기록"
         left={
-          <button onClick={back} className="-ml-2 rounded-full p-2 hover:bg-black/5" aria-label="뒤로">
+          <IconButton onClick={back} label="뒤로" className="-ml-2.5">
             <BackIcon />
-          </button>
+          </IconButton>
         }
       />
       <div className="mx-auto max-w-2xl px-4 pb-10 md:px-8">

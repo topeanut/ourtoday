@@ -12,7 +12,7 @@ import { BackIcon } from "@/components/Icons";
 import { PostForm } from "@/components/PostForm";
 import { useSession } from "@/components/Session";
 import { useToast } from "@/components/Toast";
-import { Empty, PageSpinner } from "@/components/ui";
+import { Empty, IconButton, PageSpinner } from "@/components/ui";
 
 export default function EditPostPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -27,9 +27,9 @@ export default function EditPostPage({ params }: { params: Promise<{ id: string 
       <PageHeader
         title="기록 수정"
         left={
-          <button onClick={() => goBack(router, `/posts/${id}`)} className="-ml-2 rounded-full p-2 hover:bg-black/5" aria-label="뒤로">
+          <IconButton onClick={() => goBack(router, `/posts/${id}`)} label="뒤로" className="-ml-2.5">
             <BackIcon />
-          </button>
+          </IconButton>
         }
       />
       <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-4 pb-[calc(16px+var(--safe-bottom))] group-data-[keyboard=open]:pb-3 md:px-8 md:pb-10">

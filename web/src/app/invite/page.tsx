@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Button, Card } from "@/components/ui";
+import { Button, Card, Pressable } from "@/components/ui";
 import { useToast } from "@/components/Toast";
 import { getToken } from "@/lib/auth";
 import { APP_STORE_URL, normalizeInviteCode, PLAY_STORE_URL, rememberInviteCode } from "@/lib/invite";
@@ -59,15 +59,14 @@ export default function InvitePage() {
       {code && (
         <Card className="mt-8 text-center">
           <p className="text-sm text-sub">초대코드</p>
-          <button
-            type="button"
+          <Pressable
             onClick={copyCode}
-            className="mt-2 rounded-2xl px-3 py-1 text-brand-strong transition active:scale-95 active:bg-brand/10"
+            className="mt-2 rounded-2xl px-3 py-1 text-brand-strong active:bg-brand/10"
             aria-label={`초대코드 ${code} 복사`}
           >
             {/* 전역 button { font: inherit } 때문에 글자 스타일은 span 에 */}
             <span className="block pl-[0.3em] font-mono text-3xl font-bold tracking-[0.3em]">{code}</span>
-          </button>
+          </Pressable>
           <p className="text-xs text-sub">코드를 누르면 복사돼요</p>
         </Card>
       )}

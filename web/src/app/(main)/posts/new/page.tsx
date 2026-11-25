@@ -9,6 +9,7 @@ import type { BucketItem, Post } from "@/lib/types";
 import { PageHeader } from "@/components/AppShell";
 import { KeyboardSafeScreen } from "@/components/KeyboardSafeScreen";
 import { BackIcon } from "@/components/Icons";
+import { IconButton } from "@/components/ui";
 import { PostForm } from "@/components/PostForm";
 import { useToast } from "@/components/Toast";
 
@@ -34,9 +35,9 @@ function NewPost() {
       <PageHeader
         title={item ? "버킷리스트 달성 기록" : "오늘 기록하기"}
         left={
-          <button onClick={() => goBack(router, bucketId ? "/bucket" : "/")} className="-ml-2 rounded-full p-2 hover:bg-black/5" aria-label="뒤로">
+          <IconButton onClick={() => goBack(router, bucketId ? "/bucket" : "/")} label="뒤로" className="-ml-2.5">
             <BackIcon />
-          </button>
+          </IconButton>
         }
       />
       <div className="mx-auto flex w-full max-w-2xl flex-1 flex-col px-4 pb-[calc(16px+var(--safe-bottom))] group-data-[keyboard=open]:pb-3 md:px-8 md:pb-10">
