@@ -1,5 +1,6 @@
 package com.ourtoday.api.push;
 
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Primary;
 import org.springframework.stereotype.Component;
 
@@ -11,8 +12,10 @@ import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
  * 테스트용 발송기. 모든 SpringBootTest 에서 실제 발송기 대신 쓰이며, 보낸 (token, message) 를 기록한다.
- * 테스트 시작 전에 reset() 으로 비울 것
+ * 테스트 시작 전에 reset() 으로 비울 것.
+ * 로컬 실기기 확인(bootTestRun)에서 실제 FCM 으로 보내려면 --app.push.fake-sender=false 로 끈다
  */
+@ConditionalOnProperty(name = "app.push.fake-sender", havingValue = "true", matchIfMissing = true)
 @Primary
 @Component
 public class FakePushSender implements PushSender {
