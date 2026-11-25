@@ -51,17 +51,34 @@ curl https://ourtoday.vercel.app/api/v1/health      # 기동 ~1분
 
 ## SSH 가 타임아웃 나면
 
-개발자 공인 IP 가 바뀐 것. Oracle 콘솔 → Cloud Shell 에서 보안 목록 22번 source 를 새 IP `/32` 로 교체:
+개발자 공인 IP 가 바뀐 것 (맥에서 `curl -s https://api.ipify.org` 로 확인). **맥 터미널이 아니라** Oracle 콘솔 → Cloud Shell 에서 보안 목록 22번 source 를 새 IP `/32` 로 교체.
+
+`update --force` 는 수신 규칙 **전체를 덮어씀** → 먼저 현재 규칙을 보고, 아래 목록에 없는 규칙이 있으면 같이 넣을 것:
 
 ```bash
 C=$OCI_TENANCY
 VCN=$(oci network vcn list -c $C --display-name ourtoday-vcn --query 'data[0].id' --raw-output)
 SL=$(oci network vcn get --vcn-id $VCN --query 'data."default-security-list-id"' --raw-output)
+
+# 1) 현재 규칙 확인 (source / protocol / 포트)
+oci network security-list get --security-list-id $SL \
+ --query 'data."ingress-security-rules"[].[source,protocol,"tcp-options"."destination-port-range".min]' --output table
+
+# 2) 22번만 새 IP 로 바꾸고 나머지는 유지
 oci network security-list update --security-list-id $SL --force --ingress-security-rules \
  '[{"source":"<새IP>/32","protocol":"6","tcpOptions":{"destinationPortRange":{"min":22,"max":22}}},
    {"source":"0.0.0.0/0","protocol":"6","tcpOptions":{"destinationPortRange":{"min":8080,"max":8080}}},
-   {"source":"0.0.0.0/0","protocol":"1","icmpOptions":{"type":3,"code":4}}]'
+   {"source":"0.0.0.0/0","protocol":"1","icmpOptions":{"type":3,"code":4}},
+   {"source":"0.0.0.0/0","protocol":"6","tcpOptions":{"destinationPortRange":{"min":8090,"max":8090}}}]'
 ```
+
+| 포트 | 용도 |
+|---|---|
+| 22 | SSH (개발자 IP 만) |
+| 8080 | 운영 API (Vercel 이 프록시) |
+| 8090 | 같은 서버의 다른 프로젝트 `landings-api` — **빠뜨리면 그 서비스가 끊김** |
+| ICMP 3/4 | 경로 MTU 탐색 (지우지 말 것) |
+| 8081 | 개발 서버 (`dev.sh up`) — 외부에서 쓸 때만 추가 |
 
 ## 프론트엔드 (Next.js, `web/`) — 2026-10-26~
 
