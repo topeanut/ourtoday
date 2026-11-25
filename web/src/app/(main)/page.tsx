@@ -10,6 +10,7 @@ import type { Memories, Page, Post } from "@/lib/types";
 import { PageHeader } from "@/components/AppShell";
 import { PlusIcon, SparkIcon } from "@/components/Icons";
 import { PostCard } from "@/components/PostCard";
+import { PushWelcomeSheet } from "@/components/PushPrompt";
 import { useSession } from "@/components/Session";
 import { FeedSkeleton } from "@/components/Skeletons";
 import { Empty, PRESS, Pressable, Sheet, Spinner } from "@/components/ui";
@@ -67,6 +68,7 @@ export default function HomePage() {
 
   return (
     <>
+      <PushWelcomeSheet />
       <PageHeader
         title={
           <span className="flex items-baseline gap-2">

@@ -124,6 +124,7 @@ export interface CoupleStats {
 export interface Settings {
   notifyMemoryToday: boolean;
   notifyPartnerPost: boolean;
+  notifyReaction: boolean;
 }
 
 export interface PresignedUrl {

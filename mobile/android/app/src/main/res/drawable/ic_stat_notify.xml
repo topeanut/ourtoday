@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 상태 표시줄 알림 아이콘: 앱 아이콘 하트 실루엣 (단색, 시스템이 색을 입힘) -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="48"
+    android:viewportHeight="48">
+    <group
+        android:translateX="-30"
+        android:translateY="-32.5">
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:pathData="M54,76 C54,76 34,63 34,49 C34,42 39.5,37 45.5,37 C49.5,37 52.5,39.2 54,42.3 C55.5,39.2 58.5,37 62.5,37 C68.5,37 74,42 74,49 C74,63 54,76 54,76 Z" />
+    </group>
+</vector>

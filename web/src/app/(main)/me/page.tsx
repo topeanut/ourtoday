@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import useSWR from "swr";
 import { api, errorMessage, fetcher } from "@/lib/api";
 import { clearToken, logout } from "@/lib/auth";
 import { formatDay, todayKst } from "@/lib/date";
 import { uploadProfileImage } from "@/lib/image";
 import { isApp, openExternal } from "@/lib/native";
+import { getPushState, openNotificationSettings, requestPushPermission, type PushState } from "@/lib/push";
 import type { CoupleStats, MemberStats, Settings, User } from "@/lib/types";
 import { PageHeader } from "@/components/AppShell";
 import { CameraIcon, ChevronRight } from "@/components/Icons";
@@ -27,6 +28,22 @@ export default function MyPage() {
   const [editDate, setEditDate] = useState(false);
   const [confirm, setConfirm] = useState<"break" | "withdraw" | null>(null);
   const [busy, setBusy] = useState(false);
+  const [push, setPush] = useState<PushState | null>(null);
+
+  useEffect(() => {
+    void getPushState().then(setPush);
+  }, []);
+
+  const [pushBusy, setPushBusy] = useState(false);
+
+  const askPush = async () => {
+    if (pushBusy) return;
+    setPushBusy(true);
+    const s = await requestPushPermission();
+    setPushBusy(false);
+    setPush(s);
+    if (s.permission === "granted") toast("알림을 켰어요");
+  };
 
   const updateSetting = async (patch: Partial<Settings>) => {
     if (!settings.data) return;
@@ -130,16 +147,42 @@ export default function MyPage() {
 
         <Card>
           <h2 className="mb-1 font-bold">알림</h2>
-          <p className="mb-3 text-xs text-sub">앱 푸시 알림은 준비 중이에요. 미리 원하는 알림을 골라 두세요.</p>
+          {push && !(push.supported && push.permission === "granted") && (
+            <div className="mb-3 flex items-center justify-between gap-3 rounded-2xl bg-cream px-4 py-3">
+              {!push.supported ? (
+                <p className="text-sm text-sub">
+                  {isApp() ? "앱을 최신 버전으로 업데이트하면 알림을 받을 수 있어요" : "알림은 앱에서 받을 수 있어요"}
+                </p>
+              ) : push.permission === "denied" ? (
+                <>
+                  <p className="text-sm text-sub">휴대폰 설정에서 알림이 꺼져 있어요</p>
+                  <Button variant="soft" className="h-9 shrink-0 px-4 text-sm" onClick={openNotificationSettings}>
+                    설정 열기
+                  </Button>
+                </>
+              ) : (
+                <Button variant="soft" className="h-9 px-4 text-sm" loading={pushBusy} onClick={askPush}>
+                  알림 받기
+                </Button>
+              )}
+            </div>
+          )}
           {settings.data ? (
             <div className="flex flex-col divide-y divide-line">
               <label className="flex items-center justify-between py-3">
-                <span>작년 오늘 알림</span>
-                <Toggle label="작년 오늘 알림" checked={settings.data.notifyMemoryToday} onChange={(v) => updateSetting({ notifyMemoryToday: v })} />
-              </label>
-              <label className="flex items-center justify-between py-3">
                 <span>상대가 기록하면 알림</span>
                 <Toggle label="상대가 기록하면 알림" checked={settings.data.notifyPartnerPost} onChange={(v) => updateSetting({ notifyPartnerPost: v })} />
+              </label>
+              <label className="flex items-center justify-between py-3">
+                <span>내 기록에 반응하면 알림</span>
+                <Toggle label="내 기록에 반응하면 알림" checked={settings.data.notifyReaction} onChange={(v) => updateSetting({ notifyReaction: v })} />
+              </label>
+              <label className="flex items-center justify-between gap-3 py-3">
+                <span className="min-w-0">
+                  <span className="block">작년 오늘 알림</span>
+                  <span className="block text-xs text-sub">매일 저녁 8시, 지난 오늘의 기록이 있을 때</span>
+                </span>
+                <Toggle label="작년 오늘 알림" checked={settings.data.notifyMemoryToday} onChange={(v) => updateSetting({ notifyMemoryToday: v })} />
               </label>
             </div>
           ) : (

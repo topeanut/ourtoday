@@ -28,6 +28,8 @@ dependencies {
 	// 이미지 저장소: Cloudflare R2 (S3 호환 API)
 	implementation(platform("software.amazon.awssdk:bom:2.55.11"))
 	implementation("software.amazon.awssdk:s3")
+	// 푸시 알림: FCM 발송
+	implementation("com.google.firebase:firebase-admin:9.4.3")
 	implementation("io.jsonwebtoken:jjwt-api:0.12.6")
 	runtimeOnly("io.jsonwebtoken:jjwt-impl:0.12.6")
 	runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.12.6")

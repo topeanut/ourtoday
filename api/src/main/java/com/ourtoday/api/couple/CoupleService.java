@@ -5,10 +5,12 @@ import com.ourtoday.api.common.error.ErrorCode;
 import com.ourtoday.api.couple.dto.CoupleInviteResponse;
 import com.ourtoday.api.couple.dto.CoupleResponse;
 import com.ourtoday.api.couple.dto.CoupleResponse.CoupleMemberResponse;
+import com.ourtoday.api.push.event.CoupleConnectedEvent;
 import com.ourtoday.api.user.ProfileImageResolver;
 import com.ourtoday.api.user.User;
 import com.ourtoday.api.user.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -38,6 +40,7 @@ public class CoupleService {
     private final UserRepository userRepository;
     private final InviteCodeGenerator inviteCodeGenerator;
     private final Clock clock;
+    private final ApplicationEventPublisher publisher;
     private final ProfileImageResolver profileImages;
 
     /**
@@ -94,6 +97,7 @@ public class CoupleService {
 
         coupleMemberRepository.save(CoupleMember.of(couple.getId(), userId));
         couple.connect(LocalDate.now(clock.withZone(SERVICE_ZONE)));
+        publisher.publishEvent(new CoupleConnectedEvent(couple.getId(), userId));
         return toResponse(couple);
     }
 

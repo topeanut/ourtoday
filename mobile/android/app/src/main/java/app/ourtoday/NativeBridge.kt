@@ -20,6 +20,9 @@ class NativeBridge(
         fun onShare(title: String?, text: String?, url: String)
         fun onOpenExternal(url: String)
         fun onHaptic()
+        fun onPushStatus()
+        fun onPushPermission()
+        fun onOpenNotificationSettings()
     }
 
     private val mainHandler = android.os.Handler(Looper.getMainLooper())
@@ -42,6 +45,9 @@ class NativeBridge(
                     if (url.startsWith("https://") || url.startsWith("http://")) handler.onOpenExternal(url)
                 }
                 "haptic" -> handler.onHaptic()
+                "pushStatus" -> handler.onPushStatus()
+                "pushPermission" -> handler.onPushPermission()
+                "openNotificationSettings" -> handler.onOpenNotificationSettings()
             }
         }
     }

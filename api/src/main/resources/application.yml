@@ -66,5 +66,11 @@ app:
     # 로그인 성공 후 프론트 주소 (예: https://ourtoday.vercel.app/auth/callback). 비우면 JSON 응답
     success-redirect-uri: ${OAUTH2_SUCCESS_REDIRECT_URI:}
 
+  push:
+    # Firebase 서비스 계정 JSON 을 base64 로 인코딩한 값. 비우면 푸시 발송 비활성(로그만)
+    firebase-service-account: ${FIREBASE_SERVICE_ACCOUNT:}
+    async: true
+    schedule: true
+
 server:
   port: 8080

@@ -133,7 +133,8 @@ public class UserService {
     @Transactional
     public UserSettingsResponse updateSettings(UUID userId, UserSettingsUpdateRequest request) {
         UserSettings settings = getOrCreateSettings(userId);
-        settings.updateNotificationSettings(request.notifyMemoryToday(), request.notifyPartnerPost());
+        settings.updateNotificationSettings(request.notifyMemoryToday(), request.notifyPartnerPost(),
+            request.notifyReaction());
         return toResponse(settings);
     }
 
@@ -144,7 +145,8 @@ public class UserService {
     }
 
     private UserSettingsResponse toResponse(UserSettings settings) {
-        return new UserSettingsResponse(settings.isNotifyMemoryToday(), settings.isNotifyPartnerPost());
+        return new UserSettingsResponse(settings.isNotifyMemoryToday(), settings.isNotifyPartnerPost(),
+            settings.isNotifyReaction());
     }
 
     private User getUser(UUID userId) {

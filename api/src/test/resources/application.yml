@@ -57,3 +57,7 @@ app:
     web-redirect-uri: https://ourtoday.vercel.app/login/oauth2/code/apple
   oauth2:
     success-redirect-uri:
+  push:
+    firebase-service-account:
+    async: false
+    schedule: false

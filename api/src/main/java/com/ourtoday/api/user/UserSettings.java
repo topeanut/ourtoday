@@ -37,6 +37,9 @@ public class UserSettings {
     @Column(name = "notify_partner_post", nullable = false)
     private boolean notifyPartnerPost = true;
 
+    @Column(name = "notify_reaction", nullable = false, columnDefinition = "boolean not null default true")
+    private boolean notifyReaction = true;
+
     @UpdateTimestamp
     @Column(name = "updated_at", nullable = false)
     private Instant updatedAt;
@@ -47,8 +50,10 @@ public class UserSettings {
         return settings;
     }
 
-    public void updateNotificationSettings(boolean notifyMemoryToday, boolean notifyPartnerPost) {
-        this.notifyMemoryToday = notifyMemoryToday;
-        this.notifyPartnerPost = notifyPartnerPost;
+    /** null 인 항목은 기존 값을 유지한다. */
+    public void updateNotificationSettings(Boolean memoryToday, Boolean partnerPost, Boolean reaction) {
+        if (memoryToday != null) this.notifyMemoryToday = memoryToday;
+        if (partnerPost != null) this.notifyPartnerPost = partnerPost;
+        if (reaction != null) this.notifyReaction = reaction;
     }
 }

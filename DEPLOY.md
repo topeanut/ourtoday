@@ -162,3 +162,17 @@ gunzip -c <백업파일> | ssh -i ~/.ssh/ourtoday-key ubuntu@$SERVER_IP \
 - Oracle 상시 무료(AMD Micro VM, 부트 볼륨 50GB/200GB, 네트워크). **유료 업그레이드만 안 하면 청구 없음.** 30일 체험 크레딧이 끝나도 상시 무료 자원은 유지.
 - Vercel Hobby, 카카오 무료. AWS 는 2026-10-25 전부 삭제.
 - 놀고 있는 무료 VM 은 Oracle 이 회수할 수 있음 → 정기 백업 권장.
+
+## 푸시 알림 (Firebase)
+
+- Firebase 프로젝트: `ourtoday-15d98` (FCM). 앱 설정 파일은 각 앱 프로젝트에 포함.
+- 서버 환경변수 `FIREBASE_SERVICE_ACCOUNT` = 서비스 계정 JSON 의 **base64**. 발급: Firebase 콘솔 › 프로젝트 설정 › 서비스 계정 › 새 비공개 키. 비어 있으면 푸시 비활성(Noop sender, 서버는 정상 기동).
+- 설정 순서 (값은 사용자가 서버에서 직접 입력, 저장소에 커밋 금지):
+  1. `docker-compose.prod.yml` 의 api `environment:` 에 `FIREBASE_SERVICE_ACCOUNT` 가 들어 있어야 컨테이너가 값을 받음. 자동 배포는 이미지만 바꾸므로 **이 compose 파일을 서버로 직접 복사**:
+     `rsync -az -e "ssh -i ~/.ssh/ourtoday-key" docker-compose.prod.yml docker-compose.image.yml ubuntu@129.225.158.235:~/ourtoday/`
+  2. Oracle VM 의 `~/ourtoday/.env` 에 `FIREBASE_SERVICE_ACCOUNT=<base64>` 추가
+  3. `cd ~/ourtoday && docker compose up -d` 로 재기동 (서버는 `.env` 의 COMPOSE_FILE 사용)
+  4. 확인: `docker logs ourtoday-api 2>&1 | grep -E "푸시 발송 비활성"` 결과가 **없어야** 함. `미설정 → 푸시 발송 비활성` 이 보이면 compose/.env 가 컨테이너에 안 들어간 것, `읽지 못함(...) → 푸시 발송 비활성` 이면 base64·JSON 값이 깨진 것 (둘 다 서버는 정상 기동하고 푸시만 꺼짐)
+- iOS: APNs 인증 키 ID `P9M8VW552J` 를 Firebase 에 업로드(개발+운영). .p8 파일은 `~/.secrets/ourtoday/` 에만 보관, 커밋 금지.
+- 작년 오늘 알림: 서버 cron 매일 20:00 KST.
+- 앱 버전: Android 1.1.0 (versionCode 2), iOS 1.0.2 (빌드 3).

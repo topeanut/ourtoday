@@ -7,7 +7,10 @@ type NativeMessage =
   | { type: "share"; title?: string; text?: string; url: string }
   | { type: "openExternal"; url: string }
   | { type: "haptic" }
-  | { type: "appleLogin" };
+  | { type: "appleLogin" }
+  | { type: "pushStatus" }
+  | { type: "pushPermission" }
+  | { type: "openNotificationSettings" };
 
 declare global {
   interface Window {

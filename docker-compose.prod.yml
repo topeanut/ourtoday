@@ -45,6 +45,8 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       APPLE_KEY_ID: ${APPLE_KEY_ID:-}
       APPLE_PRIVATE_KEY: ${APPLE_PRIVATE_KEY:-}
+      # 서비스 계정 JSON 의 base64. 비우면 푸시만 비활성 (서버는 정상 기동)
+      FIREBASE_SERVICE_ACCOUNT: ${FIREBASE_SERVICE_ACCOUNT:-}
     ports:
       - "8080:8080"
 

@@ -8,6 +8,7 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
+import android.provider.Settings
 import android.view.HapticFeedbackConstants
 import android.view.View
 import android.view.ViewGroup
@@ -24,6 +25,7 @@ import android.widget.Button
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.net.toUri
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -51,6 +53,24 @@ class MainActivity : AppCompatActivity(), NativeBridge.Handler {
         fileCallback?.onReceiveValue(uri?.let { arrayOf(it) } ?: emptyArray())
         fileCallback = null
     }
+
+    /** 권한 요청 직전의 shouldShowRequestPermissionRationale (결과가 "결정" 인지 "그냥 닫음" 인지 가르는 데 씀) */
+    private var rationaleBeforeRequest = false
+
+    /**
+     * Android 13+ 알림 권한. 사용자가 실제로 허용/거부했을 때만 "물어봤음" 을 기록하고 웹에 알림.
+     * 뒤로가기·바깥 탭으로 닫으면 기록하지 않아 웹에는 계속 "default"(다시 물어볼 수 있음)로 보임
+     */
+    private val requestNotificationPermission =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            val rationaleAfter = shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS)
+            if (PushBridge.isRealDecision(granted, rationaleBeforeRequest, rationaleAfter)) {
+                PushBridge.markAsked(this)
+            }
+            sendPushState()
+        }
+
+    private val onPushTokenChanged: (String) -> Unit = { sendPushState() }
 
     /** 웹뷰 geolocation(기록에 장소 첨부 "현재 위치") 가 권한을 기다릴 때 보류해 둔 응답 */
     private var pendingGeolocationOrigin: String? = null
@@ -82,9 +102,25 @@ class MainActivity : AppCompatActivity(), NativeBridge.Handler {
             if (webView.url.isNullOrEmpty()) webView.loadUrl(BuildConfig.START_URL) else webView.reload()
         }
 
-        if (savedInstanceState == null || webView.restoreState(savedInstanceState) == null) {
+        PushBridge.ensureChannel(this)
+        PushBridge.tokenListener = onPushTokenChanged
+
+        // 알림 탭으로 새로 켜진 경우 그 경로 (최근 앱에서 다시 연 경우엔 예전 intent 이므로 무시)
+        val fromHistory = (intent.flags and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) != 0
+        val pushUrl = if (savedInstanceState == null && !fromHistory) notificationUrl(intent) else null
+        if (pushUrl != null) {
+            webView.loadUrl(pushUrl)
+        } else if (savedInstanceState == null || webView.restoreState(savedInstanceState) == null) {
             webView.loadUrl(intent?.data?.takeIf { isAppUrl(it) }?.toString() ?: BuildConfig.START_URL)
         }
+    }
+
+    /** 알림 탭 intent extra "path" → 우리 앱 URL (검증 실패 시 null) */
+    private fun notificationUrl(intent: Intent?): String? {
+        val path = PushBridge.safePath(intent?.getStringExtra(PushBridge.EXTRA_PATH)) ?: return null
+        val start = BuildConfig.START_URL.toUri()
+        val url = "${start.scheme}://${start.encodedAuthority}$path".toUri()
+        return url.takeIf { isAppUrl(it) && it.host == start.host }?.toString()
     }
 
     /** targetSdk 35 는 Android 15 에서 edge-to-edge 강제 → 시스템 바·키보드 영역만큼 여백 */
@@ -145,7 +181,9 @@ class MainActivity : AppCompatActivity(), NativeBridge.Handler {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
-        intent.data?.takeIf { isAppUrl(it) }?.let { webView.loadUrl(it.toString()) }
+        setIntent(intent)
+        val url = notificationUrl(intent) ?: intent.data?.takeIf { isAppUrl(it) }?.toString()
+        url?.let { webView.loadUrl(it) }
     }
 
     override fun onSaveInstanceState(outState: Bundle) {
@@ -165,6 +203,7 @@ class MainActivity : AppCompatActivity(), NativeBridge.Handler {
     }
 
     override fun onDestroy() {
+        if (PushBridge.tokenListener === onPushTokenChanged) PushBridge.tokenListener = null
         fileCallback?.onReceiveValue(null)
         fileCallback = null
         webView.destroy()
@@ -197,6 +236,47 @@ class MainActivity : AppCompatActivity(), NativeBridge.Handler {
 
     override fun onHaptic() {
         webView.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+    }
+
+    override fun onPushStatus() {
+        sendPushState()
+    }
+
+    override fun onPushPermission() {
+        if (PushBridge.needsRuntimePermission(this)) {
+            rationaleBeforeRequest = shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS)
+            requestNotificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            sendPushState()
+        }
+    }
+
+    override fun onOpenNotificationSettings() {
+        val settings = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+            .putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+        try {
+            startActivity(settings)
+        } catch (_: ActivityNotFoundException) {
+            // 설정 화면 없음 → 무시
+        }
+    }
+
+    /**
+     * 현재 권한·토큰을 웹에 "ourtoday:push" 이벤트로 전달 (우리 웹 페이지일 때만).
+     * 허용 상태가 아니면 토큰이 필요 없으니 FCM 조회 없이 바로 응답 (느린 네트워크에서 웹 1.5초 타임아웃 방지)
+     */
+    private fun sendPushState() {
+        val permission = PushBridge.permission(this)
+        if (permission != "granted") {
+            dispatchPushState(permission, null)
+            return
+        }
+        PushBridge.token(this) { token -> dispatchPushState(PushBridge.permission(this), token) }
+    }
+
+    private fun dispatchPushState(permission: String, token: String?) {
+        if (isDestroyed || !NavigationPolicy.isAppPage(currentMainUrl)) return
+        webView.evaluateJavascript(PushBridge.eventScript(permission, token), null)
     }
 
     // ===== 외부 이동 =====
