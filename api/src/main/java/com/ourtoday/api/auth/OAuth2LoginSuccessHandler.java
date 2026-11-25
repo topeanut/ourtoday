@@ -36,7 +36,9 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         String kakaoId = oauth2User.getAttributes().get("id").toString();
 
         User user = userService.findOrCreateByKakaoId(kakaoId);
-        userService.syncKakaoProfileImage(user.getId(), KakaoProfile.imageUrl(oauth2User.getAttributes()));
+        Map<String, Object> attrs = oauth2User.getAttributes();
+        userService.syncKakaoProfile(user.getId(), KakaoProfile.imageUrl(attrs),
+            KakaoProfile.nickname(attrs, User.NICKNAME_MAX_LENGTH));
         String accessToken = tokenProvider.generateAccessToken(user.getId());
         String refreshToken = tokenProvider.generateRefreshToken(user.getId());
 

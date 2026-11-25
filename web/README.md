@@ -36,9 +36,14 @@ User-Agent 에 `OurTodayApp` 이 있으면 앱으로 판단. 자세한 계약은
 
 ## 배포 (Vercel, 프로젝트 `topeanuts-projects/ourtoday`)
 
-git 저장소 안에서 배포하면 커밋 작성자 권한 문제로 막혀서 복사본에서 배포한다.
+**자동 배포**: GitHub `topeanut/ourtoday` 와 Git 연동됨. `main` 에 `web/**` 가 바뀐 커밋을 push 하면 운영 배포, 다른 브랜치는 Preview.
+Vercel 설정: Root Directory `web`, Framework Next.js, 환경변수 `BACKEND_ORIGIN`(백엔드 주소, Production·Preview).
+
+로컬 개발: `BACKEND_ORIGIN` 이 없으면 `http://localhost:8080` 으로 프록시. 운영 백엔드에 붙이려면 `BACKEND_ORIGIN=http://<서버IP>:8080 npm run dev`.
+
+수동 배포가 필요할 때 (작업 폴더가 아니라 커밋된 스냅샷에서):
 
 ```bash
-rm -rf /tmp/ourtoday-web && rsync -a --exclude node_modules --exclude .next ./ /tmp/ourtoday-web/ \
+rm -rf /tmp/ourtoday-web && git archive origin/main web | tar -x -C /tmp && mv /tmp/web /tmp/ourtoday-web \
   && cp -R ../vercel-proxy/.vercel /tmp/ourtoday-web/ && npx vercel deploy --cwd /tmp/ourtoday-web --prod --yes
 ```

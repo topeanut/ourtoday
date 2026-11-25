@@ -8,7 +8,7 @@ import { CloseIcon, ImageIcon } from "./Icons";
 import { LocationPicker } from "./LocationPicker";
 import type { PickedLocation } from "@/lib/kakaoMap";
 import { useToast } from "./Toast";
-import { Button, DateField } from "./ui";
+import { Button, DateField, Pressable } from "./ui";
 
 const MAX_LEN = 300;
 const MAX_IMAGES = 4;
@@ -27,7 +27,7 @@ export function PostForm({
   submitLabel,
   onSubmit,
 }: {
-  initial?: { content: string; postedDate: string; images: { url: string; imageKey: string }[]; location?: PickedLocation | null };
+  initial?: { content: string; postedDate: string; images: { url: string; thumbnailUrl?: string; imageKey: string }[]; location?: PickedLocation | null };
   submitLabel: string;
   onSubmit: (value: PostFormValue) => Promise<void>;
 }) {
@@ -36,7 +36,7 @@ export function PostForm({
   const [content, setContent] = useState(initial?.content ?? "");
   const [postedDate, setPostedDate] = useState(initial?.postedDate ?? todayKst());
   const [slots, setSlots] = useState<Slot[]>(
-    initial?.images.map((i) => ({ key: i.imageKey, preview: i.url, imageKey: i.imageKey })) ?? [],
+    initial?.images.map((i) => ({ key: i.imageKey, preview: i.thumbnailUrl ?? i.url, imageKey: i.imageKey })) ?? [],
   );
   const [location, setLocation] = useState<PickedLocation | null>(initial?.location ?? null);
   const [saving, setSaving] = useState(false);
@@ -118,25 +118,23 @@ export function PostForm({
         {slots.map((s) => (
           <div key={s.key} className="relative h-20 w-20 overflow-hidden rounded-2xl bg-line">
             <img src={s.preview} alt="" className="h-full w-full object-cover" />
-            <button
-              type="button"
+            <Pressable
               onClick={() => removeSlot(s.key)}
-              className="absolute right-1 top-1 rounded-full bg-black/55 p-1 text-white"
+              className="absolute right-0.5 top-0.5 rounded-full bg-black/55 p-1.5 text-white active:bg-black/75"
               aria-label="사진 빼기"
             >
               <CloseIcon className="h-3.5 w-3.5" />
-            </button>
+            </Pressable>
           </div>
         ))}
         {slots.length < MAX_IMAGES && (
-          <button
-            type="button"
+          <Pressable
             onClick={() => fileRef.current?.click()}
-            className="flex h-20 w-20 flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed border-line text-xs text-sub hover:border-brand/40"
+            className="flex h-20 w-20 flex-col items-center justify-center gap-1 rounded-2xl border-2 border-dashed border-line text-xs text-sub hover:border-brand/40 active:border-brand/40 active:bg-brand-soft/40"
           >
             <ImageIcon className="h-6 w-6" />
             {slots.length}/{MAX_IMAGES}
-          </button>
+          </Pressable>
         )}
         <input ref={fileRef} type="file" accept="image/*" multiple hidden onChange={(e) => addFiles(e.target.files)} />
       </div>

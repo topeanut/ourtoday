@@ -13,7 +13,7 @@ import { PostCard } from "@/components/PostCard";
 import { PushWelcomeSheet } from "@/components/PushPrompt";
 import { useSession } from "@/components/Session";
 import { FeedSkeleton } from "@/components/Skeletons";
-import { Empty, Sheet, Spinner } from "@/components/ui";
+import { Empty, PRESS, Pressable, Sheet, Spinner } from "@/components/ui";
 
 const PAGE_SIZE = 10;
 type Filter = "all" | "me" | "partner";
@@ -88,17 +88,17 @@ export default function HomePage() {
               ["partner", partner?.nickname ?? "상대"],
             ] as [Filter, string][]
           ).map(([key, label]) => (
-            <button
+            <Pressable
               key={key}
               role="tab"
               aria-selected={filter === key}
               onClick={() => setFilter(key)}
-              className={`h-9 rounded-full px-4 text-sm font-medium transition ${
-                filter === key ? "bg-ink text-white" : "bg-white text-sub"
+              className={`h-9 rounded-full px-4 text-sm font-medium ${
+                filter === key ? "bg-ink text-white" : "bg-white text-sub active:bg-black/5"
               }`}
             >
               {label}
-            </button>
+            </Pressable>
           ))}
         </div>
 
@@ -109,7 +109,7 @@ export default function HomePage() {
             title={filter === "all" ? "아직 기록이 없어요" : "이 사람의 기록이 아직 없어요"}
             desc="오늘 있었던 일을 세 줄로 남겨 보세요"
             action={
-              <Link href="/posts/new" className="inline-flex h-11 items-center rounded-2xl bg-brand px-5 font-semibold text-white">
+              <Link href="/posts/new" className={`inline-flex h-11 items-center rounded-2xl bg-brand px-5 font-semibold text-white active:bg-brand-strong ${PRESS.scale}`}>
                 첫 기록 남기기
               </Link>
             }
@@ -152,11 +152,13 @@ function MemoriesCard({ data }: { data: Memories }) {
   const [open, setOpen] = useState(false);
   const first = data.memories[0];
   const count = data.memories.reduce((n, m) => n + m.posts.length, 0);
-  const cover = data.memories.flatMap((m) => m.posts).find((p) => p.images.length > 0)?.images[0]?.url;
+  const cover = data.memories.flatMap((m) => m.posts).find((p) => p.images.length > 0)?.images[0];
+  const coverUrl = cover && (cover.thumbnailUrl ?? cover.url);
 
   return (
     <>
-      <button
+      <Pressable
+        press="soft"
         onClick={() => setOpen(true)}
         className="relative mb-4 mt-2 flex w-full items-center gap-4 overflow-hidden rounded-3xl bg-gradient-to-br from-[#ffd9de] to-[#ffeccf] p-5 text-left"
       >
@@ -167,8 +169,8 @@ function MemoriesCard({ data }: { data: Memories }) {
           <p className="mt-1 line-clamp-2 font-semibold leading-snug">{first.posts[0].content}</p>
           <p className="mt-2 text-xs text-sub">추억 {count}개 다시 보기</p>
         </div>
-        {cover && <img src={cover} alt="" className="h-20 w-20 shrink-0 rounded-2xl object-cover" />}
-      </button>
+        {coverUrl && <img src={coverUrl} alt="" className="h-20 w-20 shrink-0 rounded-2xl object-cover" />}
+      </Pressable>
       <Sheet open={open} onClose={() => setOpen(false)} title="지난 오늘">
         <div className="flex flex-col gap-6">
           {data.memories.map((m) => (
@@ -177,7 +179,7 @@ function MemoriesCard({ data }: { data: Memories }) {
               <ul className="flex flex-col gap-2">
                 {m.posts.map((p) => (
                   <li key={p.id}>
-                    <Link href={`/posts/${p.id}`} className="block rounded-2xl bg-cream p-4">
+                    <Link href={`/posts/${p.id}`} className={`block rounded-2xl bg-cream p-4 active:bg-line/60 ${PRESS.soft}`}>
                       <p className="text-xs text-sub">
                         {p.author.nickname} · {formatDay(p.postedDate, true)}
                       </p>

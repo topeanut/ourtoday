@@ -12,7 +12,8 @@ import { LocationPicker } from "@/components/LocationPicker";
 import type { PickedLocation } from "@/lib/kakaoMap";
 import { useSession } from "@/components/Session";
 import { useToast } from "@/components/Toast";
-import { Button, Confirm, DateField, Field, inputClass, Sheet, Spinner, SheetActions } from "@/components/ui";
+import { DayItemsSkeleton } from "@/components/Skeletons";
+import { Button, Confirm, DateField, Field, IconButton, inputClass, PRESS, Pressable, Sheet, SheetActions } from "@/components/ui";
 
 const COLORS = ["#FF7A8A", "#FFA36C", "#F6C445", "#7CC69A", "#6FB3E8", "#A68EE8"];
 
@@ -72,22 +73,22 @@ export default function CalendarPage() {
         title={`${cursor.year}년 ${cursor.month + 1}월`}
         right={
           <div className="flex items-center gap-1">
-            <button
+            <Pressable
               onClick={() => {
                 const d = parseDate(today);
                 setCursor({ year: d.getFullYear(), month: d.getMonth() });
                 setSelected(today);
               }}
-              className="mr-1 rounded-full bg-white px-3 py-1.5 text-sm font-medium text-sub"
+              className="mr-1 h-9 rounded-full bg-white px-3 text-sm font-medium text-sub active:bg-black/5"
             >
               오늘
-            </button>
-            <button onClick={() => move(-1)} className="rounded-full p-2 hover:bg-black/5" aria-label="이전 달">
+            </Pressable>
+            <IconButton onClick={() => move(-1)} label="이전 달">
               <ChevronLeft className="h-5 w-5" />
-            </button>
-            <button onClick={() => move(1)} className="rounded-full p-2 hover:bg-black/5" aria-label="다음 달">
+            </IconButton>
+            <IconButton onClick={() => move(1)} label="다음 달" className="-mr-2.5">
               <ChevronRight className="h-5 w-5" />
-            </button>
+            </IconButton>
           </div>
         }
       />
@@ -108,11 +109,11 @@ export default function CalendarPage() {
               const hasPost = postsByDay.has(day);
               const isSel = day === selected;
               return (
-                <button
+                <Pressable
                   key={day}
                   onClick={() => setSelected(day)}
                   className={`flex aspect-square flex-col items-center justify-start rounded-2xl pt-1.5 transition md:aspect-[1.2] ${
-                    isSel ? "bg-brand-soft" : "hover:bg-cream"
+                    isSel ? "bg-brand-soft" : "hover:bg-cream active:bg-cream"
                   } ${inMonth ? "" : "opacity-35"}`}
                   aria-label={`${formatDay(day)}${dayMemos.length ? `, 메모 ${dayMemos.length}개` : ""}${hasPost ? ", 기록 있음" : ""}`}
                   aria-pressed={isSel}
@@ -130,7 +131,7 @@ export default function CalendarPage() {
                       <span key={m.id} className="h-1.5 w-1.5 rounded-full" style={{ background: m.color ?? "#FF7A8A" }} />
                     ))}
                   </span>
-                </button>
+                </Pressable>
               );
             })}
           </div>
@@ -153,22 +154,18 @@ export default function CalendarPage() {
         <section className="mt-5">
           <div className="mb-3 flex items-center justify-between">
             <h2 className="font-bold">{formatDay(selected)}</h2>
-            <button onClick={() => setEditing("new")} className="flex items-center gap-1 rounded-full bg-brand px-3 py-1.5 text-sm font-semibold text-white">
+            <Pressable onClick={() => setEditing("new")} className="flex h-9 items-center gap-1 rounded-full bg-brand px-3 text-sm font-semibold text-white active:bg-brand-strong">
               <PlusIcon className="h-4 w-4" /> 메모
-            </button>
+            </Pressable>
           </div>
-          {(memos.isLoading || posts.isLoading) && (
-            <div className="flex justify-center py-6">
-              <Spinner />
-            </div>
-          )}
+          {(memos.isLoading || posts.isLoading) && <DayItemsSkeleton />}
           {!memos.isLoading && !posts.isLoading && selectedMemos.length === 0 && selectedPosts.length === 0 && (
             <p className="rounded-3xl bg-white/60 px-5 py-8 text-center text-sm text-sub">이날은 비어 있어요. 일정이나 메모를 남겨 보세요.</p>
           )}
-          <ul className="flex flex-col gap-2">
+          <ul className="animate-fade flex flex-col gap-2">
             {selectedMemos.map((m) => (
               <li key={m.id}>
-                <button onClick={() => setEditing(m)} className="flex w-full items-start gap-3 rounded-3xl bg-white p-4 text-left shadow-sm">
+                <Pressable press="soft" onClick={() => setEditing(m)} className="flex w-full items-start gap-3 rounded-3xl bg-white p-4 text-left shadow-sm">
                   <span className="mt-1.5 h-3 w-3 shrink-0 rounded-full" style={{ background: m.color ?? "#FF7A8A" }} />
                   <span className="min-w-0 flex-1">
                     <span className="block font-medium">{m.title}</span>
@@ -181,14 +178,14 @@ export default function CalendarPage() {
                     )}
                     <span className="mt-1 block text-xs text-sub">{m.author.nickname}</span>
                   </span>
-                </button>
+                </Pressable>
               </li>
             ))}
             {selectedPosts.map((p) => (
               <li key={p.id}>
-                <Link href={`/posts/${p.id}`} className="flex items-start gap-3 rounded-3xl bg-white p-4 shadow-sm">
+                <Link href={`/posts/${p.id}`} className={`flex items-start gap-3 rounded-3xl bg-white p-4 shadow-sm ${PRESS.soft}`}>
                   {p.images[0] ? (
-                    <img src={p.images[0].url} alt="" className="h-12 w-12 shrink-0 rounded-xl object-cover" />
+                    <img src={p.images[0].thumbnailUrl ?? p.images[0].url} alt="" className="h-12 w-12 shrink-0 rounded-xl object-cover" />
                   ) : (
                     <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-brand-soft text-brand-strong">
                       <EditIcon className="h-5 w-5" />
@@ -336,11 +333,10 @@ function MemoEditor({
               <p className="mb-2 text-sm font-medium text-sub">색상</p>
               <div className="flex gap-3">
                 {COLORS.map((c) => (
-                  <button
-                    type="button"
+                  <Pressable
                     key={c}
                     onClick={() => setForm({ ...form, color: c })}
-                    className={`h-8 w-8 rounded-full transition ${form.color === c ? "ring-2 ring-ink ring-offset-2" : ""}`}
+                    className={`h-8 w-8 rounded-full ${form.color === c ? "ring-2 ring-ink ring-offset-2" : ""}`}
                     style={{ background: c }}
                     aria-label={`색상 ${c}`}
                     aria-pressed={form.color === c}

@@ -79,7 +79,7 @@ class ProfileImageFlowTest {
 
     @Test
     void 직접_올린_사진이_카카오_사진보다_우선하고_지우면_카카오로_돌아간다() throws Exception {
-        userService.syncKakaoProfileImage(meId, KAKAO_URL);
+        userService.syncKakaoProfile(meId, KAKAO_URL, null);
         patchMe(me, "민지", null)
             .andExpect(jsonPath("$.profileImageUrl").value(KAKAO_URL))
             .andExpect(jsonPath("$.hasCustomProfileImage").value(false));
@@ -89,7 +89,7 @@ class ProfileImageFlowTest {
             .andExpect(jsonPath("$.profileImageUrl").value("https://fake-storage/download/" + key));
 
         // 다시 카카오로 로그인해도 직접 올린 사진이 유지됨
-        userService.syncKakaoProfileImage(meId, KAKAO_URL);
+        userService.syncKakaoProfile(meId, KAKAO_URL, null);
         mvc.perform(get("/api/v1/users/me").header("Authorization", me))
             .andExpect(jsonPath("$.profileImageUrl").value("https://fake-storage/download/" + key));
 
@@ -120,7 +120,7 @@ class ProfileImageFlowTest {
         patchMe(me, "민지", key);
         UUID partner = userService.findOrCreateByKakaoId("kakao-" + UUID.randomUUID()).getId();
         userService.updateMe(partner, new UserUpdateRequest("지호", null));
-        userService.syncKakaoProfileImage(partner, KAKAO_URL);
+        userService.syncKakaoProfile(partner, KAKAO_URL, null);
         coupleService.join(partner, coupleService.createInvite(meId).inviteCode());
 
         String body = objectMapper.writeValueAsString(Map.of(
@@ -139,6 +139,19 @@ class ProfileImageFlowTest {
         patchMe(me, "민지", key);
         mvc.perform(delete("/api/v1/users/me").header("Authorization", me)).andExpect(status().isNoContent());
         assertThat(storage.exists(key)).isFalse();
+    }
+
+    @Test
+    void 가입_전에는_카카오_닉네임이_기본값으로_들어가고_가입_후에는_덮어쓰지_않는다() throws Exception {
+        userService.syncKakaoProfile(meId, null, "카카오민지");
+        mvc.perform(get("/api/v1/users/me").header("Authorization", me))
+            .andExpect(jsonPath("$.nickname").value("카카오민지"))
+            .andExpect(jsonPath("$.profileCompleted").value(false));
+
+        patchMe(me, "민지", null).andExpect(jsonPath("$.nickname").value("민지"));
+        userService.syncKakaoProfile(meId, null, "카카오민지");
+        mvc.perform(get("/api/v1/users/me").header("Authorization", me))
+            .andExpect(jsonPath("$.nickname").value("민지"));
     }
 
     private ResultActions patchMe(String token, String nickname, String profileImageKey) throws Exception {

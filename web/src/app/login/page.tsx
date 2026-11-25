@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AppleSymbol, KakaoSymbol } from "@/components/Icons";
 import { KeyboardSafeScreen } from "@/components/KeyboardSafeScreen";
-import { Spinner } from "@/components/ui";
+import { Pressable, Spinner } from "@/components/ui";
 import { api, ApiError, errorMessage } from "@/lib/api";
 import { AppleLoginCancelled, canUseAppleLogin, preloadAppleSdk, signInWithApple } from "@/lib/apple";
 import { getToken, setTokens, takeReturnTo } from "@/lib/auth";
@@ -64,19 +64,19 @@ export default function LoginPage() {
         </p>
       </div>
       <div className="w-full max-w-sm pb-10 group-data-[keyboard=open]:pb-3">
-        <button
+        <Pressable
           onClick={() => void startKakaoLogin()}
-          className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[#FEE500] text-[15px] font-semibold text-black/85 transition active:scale-[0.98]"
+          className="flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-[#FEE500] text-[15px] font-semibold text-black/85 active:bg-[#f0d800]"
         >
           <KakaoSymbol />
           카카오로 시작하기
-        </button>
+        </Pressable>
         {showApple && (
-          <button
+          <Pressable
             onClick={loginWithApple}
             disabled={appleBusy}
             aria-busy={appleBusy}
-            className="mt-3 flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-black text-[15px] font-semibold text-white transition active:scale-[0.98] disabled:opacity-80"
+            className="mt-3 flex h-14 w-full items-center justify-center gap-2 rounded-2xl bg-black text-[15px] font-semibold text-white disabled:opacity-80"
           >
             {/* iOS 시스템 Apple 로그인 창은 뜨기까지 몇 초 걸릴 수 있어서, 누르자마자 진행 중임을 보여 줌 */}
             {appleBusy ? (
@@ -90,7 +90,7 @@ export default function LoginPage() {
                 Apple로 계속하기
               </>
             )}
-          </button>
+          </Pressable>
         )}
         {appleError && <p className="mt-2 text-center text-xs text-[#d6404e]">{appleError}</p>}
         {IS_DEV && <DevLogin />}
@@ -145,9 +145,9 @@ function DevLogin() {
           value={name}
           onChange={(e) => setName(e.target.value.replace(/[^a-zA-Z0-9_-]/g, "").slice(0, 20))}
         />
-        <button disabled={busy || !name} className="rounded-xl bg-[#3b7fbf] px-4 font-semibold text-white disabled:opacity-50">
+        <Pressable type="submit" disabled={busy || !name} className="rounded-xl bg-[#3b7fbf] px-4 font-semibold text-white disabled:opacity-50">
           로그인
-        </button>
+        </Pressable>
       </div>
       {error && <p className="mt-2 text-xs text-[#d6404e]">{error}</p>}
     </form>

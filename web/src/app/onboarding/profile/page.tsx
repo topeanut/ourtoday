@@ -14,10 +14,12 @@ import { useToast } from "@/components/Toast";
 export default function ProfileOnboardingPage() {
   const router = useRouter();
   const toast = useToast();
-  const [nickname, setNickname] = useState("");
+  // 직접 입력하기 전까지는 카카오 닉네임(동의했을 때)을 기본값으로 보여줌
+  const [typed, setNickname] = useState<string | null>(null);
   const [photo, setPhoto] = useState<File | null>(null);
   // 카카오로 가입했고 프로필 사진에 동의했으면 그 사진이 이미 들어 있음
   const { data: me } = useSWR<User>(getToken() ? "/users/me" : null, fetcher);
+  const nickname = typed ?? me?.nickname ?? "";
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {

@@ -14,7 +14,8 @@ import { CameraIcon, ChevronRight } from "@/components/Icons";
 import { ProfilePhotoPicker } from "@/components/ProfilePhotoPicker";
 import { useSession } from "@/components/Session";
 import { useToast } from "@/components/Toast";
-import { Avatar, Button, Card, Confirm, DateField, Field, inputClass, Sheet, Spinner, Toggle } from "@/components/ui";
+import { Avatar, Button, Card, Confirm, DateField, Field, inputClass, Pressable, Sheet, Spinner, Toggle } from "@/components/ui";
+import { StatsSkeleton } from "@/components/Skeletons";
 
 export default function MyPage() {
   const { me, partner, couple, refresh } = useSession();
@@ -93,29 +94,29 @@ export default function MyPage() {
         <Card>
           <div className="flex items-center gap-4">
             <div className="flex -space-x-3">
-              <button onClick={() => setEditPhoto(true)} className="relative z-10 rounded-full" aria-label="프로필 사진 변경">
+              <Pressable onClick={() => setEditPhoto(true)} className="relative z-10 rounded-full" aria-label="프로필 사진 변경">
                 <Avatar name={me.nickname} seed={me.id} src={me.profileImageUrl} size={52} />
                 <span className="absolute -bottom-0.5 -left-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-white text-sub shadow-sm ring-1 ring-line">
                   <CameraIcon className="h-3 w-3" />
                 </span>
-              </button>
+              </Pressable>
               {partner && <Avatar name={partner.nickname} seed={partner.id} src={partner.profileImageUrl} size={52} />}
             </div>
             <div className="min-w-0 flex-1">
               <p className="truncate text-lg font-bold">
                 {me.nickname} <span className="text-brand">♥</span> {partner?.nickname}
               </p>
-              <button className="block text-left text-sm text-sub" onClick={() => setEditDate(true)}>
+              <Pressable press="none" className="block rounded-lg text-left text-sm text-sub transition active:opacity-60" onClick={() => setEditDate(true)}>
                 <b className="text-brand-strong">{stats.data?.couple.daysTogether ?? "-"}일째</b>
                 <span className="block text-xs">{formatDay(couple.startedAt, true)}부터</span>
-              </button>
+              </Pressable>
             </div>
           </div>
           <div className="mt-4 grid grid-cols-2 gap-2">
-            <Button variant="soft" className="h-10 text-sm" onClick={() => setEditName(true)}>
+            <Button variant="soft" size="sm" onClick={() => setEditName(true)}>
               닉네임 변경
             </Button>
-            <Button variant="soft" className="h-10 text-sm" onClick={() => setEditDate(true)}>
+            <Button variant="soft" size="sm" onClick={() => setEditDate(true)}>
               사귄 날짜 변경
             </Button>
           </div>
@@ -124,11 +125,9 @@ export default function MyPage() {
         <Card>
           <h2 className="mb-4 font-bold">우리의 기록</h2>
           {!stats.data ? (
-            <div className="flex justify-center py-6">
-              <Spinner />
-            </div>
+            <StatsSkeleton />
           ) : (
-            <>
+            <div className="animate-fade">
               <div className="grid grid-cols-[1fr_auto_auto] items-center gap-x-6 gap-y-3 text-sm">
                 <span />
                 <span className="w-16 text-center text-xs font-semibold text-sub">{me.nickname}</span>
@@ -142,7 +141,7 @@ export default function MyPage() {
               {stats.data.couple.firstPostDate && (
                 <p className="mt-4 border-t border-line pt-4 text-xs text-sub">첫 기록 {formatDay(stats.data.couple.firstPostDate, true)}</p>
               )}
-            </>
+            </div>
           )}
         </Card>
 
@@ -279,13 +278,13 @@ function StatRow({
 
 function MenuRow({ label, desc, onClick, danger, right }: { label: string; desc?: string; onClick: () => void; danger?: boolean; right?: React.ReactNode }) {
   return (
-    <button onClick={onClick} className="flex w-full items-center gap-3 rounded-2xl px-3 py-3.5 text-left hover:bg-black/5">
+    <Pressable press="dim" onClick={onClick} className="flex w-full items-center gap-3 rounded-2xl px-3 py-3.5 text-left hover:bg-black/5">
       <span className="min-w-0 flex-1">
         <span className={`block font-medium ${danger ? "text-[#d6404e]" : ""}`}>{label}</span>
         {desc && <span className="block text-xs text-sub">{desc}</span>}
       </span>
       {right ?? <ChevronRight className="h-4 w-4 text-sub" />}
-    </button>
+    </Pressable>
   );
 }
 

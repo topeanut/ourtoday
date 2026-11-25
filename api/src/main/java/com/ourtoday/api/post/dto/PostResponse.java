@@ -30,7 +30,8 @@ public record PostResponse(
     ) {}
 
     public record Image(
-        @Schema(description = "임시 조회 URL (1시간 유효)") String url,
+        @Schema(description = "원본 임시 조회 URL (1시간 유효). 크게 보기용") String url,
+        @Schema(description = "피드·목록용 작은 사진 URL. 썸네일이 없는 예전 사진은 url 과 같음") String thumbnailUrl,
         @Schema(description = "수정 시 imageKeys 에 다시 넣을 값") String imageKey,
         int order
     ) {}

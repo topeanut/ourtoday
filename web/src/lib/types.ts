@@ -37,7 +37,10 @@ export interface InviteResponse {
 }
 
 export interface PostImage {
+  /** 원본 (크게 보기용) */
   url: string;
+  /** 피드·목록용 작은 사진. 썸네일 없는 예전 사진은 url 과 같음 (구버전 서버면 없음) */
+  thumbnailUrl?: string;
   imageKey: string;
   order: number;
 }
@@ -128,4 +131,6 @@ export interface PresignedUrl {
   uploadUrl: string;
   imageKey: string;
   expiresInSec: number;
+  /** thumbnailContentLength 를 보냈을 때만 */
+  thumbnailUploadUrl?: string | null;
 }

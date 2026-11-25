@@ -4,6 +4,7 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
@@ -12,6 +13,7 @@ import android.view.HapticFeedbackConstants
 import android.view.View
 import android.view.ViewGroup
 import android.webkit.CookieManager
+import android.webkit.GeolocationPermissions
 import android.webkit.ValueCallback
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceError
@@ -24,6 +26,7 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.net.toUri
+import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
@@ -68,6 +71,18 @@ class MainActivity : AppCompatActivity(), NativeBridge.Handler {
         }
 
     private val onPushTokenChanged: (String) -> Unit = { sendPushState() }
+
+    /** 웹뷰 geolocation(기록에 장소 첨부 "현재 위치") 가 권한을 기다릴 때 보류해 둔 응답 */
+    private var pendingGeolocationOrigin: String? = null
+    private var pendingGeolocationCallback: GeolocationPermissions.Callback? = null
+
+    /** 위치 런타임 권한 요청 결과 → 보류해 둔 geolocation 콜백에 허용/거부 전달 */
+    private val requestLocationPermission =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            pendingGeolocationCallback?.invoke(pendingGeolocationOrigin, granted, false)
+            pendingGeolocationOrigin = null
+            pendingGeolocationCallback = null
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -196,6 +211,12 @@ class MainActivity : AppCompatActivity(), NativeBridge.Handler {
     }
 
     private fun isAppUrl(uri: Uri) = NavigationPolicy.decide(uri) == NavigationPolicy.Decision.IN_APP
+
+    private fun hasLocationPermission() =
+        ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) ==
+            PackageManager.PERMISSION_GRANTED ||
+            ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) ==
+            PackageManager.PERMISSION_GRANTED
 
     // ===== 브리지 =====
 
@@ -343,6 +364,33 @@ class MainActivity : AppCompatActivity(), NativeBridge.Handler {
     }
 
     private inner class AppChromeClient : WebChromeClient() {
+
+        /**
+         * 웹(LocationPicker)에서 navigator.geolocation 호출 시.
+         * 우리 앱 도메인에서만 허용하고, 앱이 위치 권한을 쥐고 있으면 바로 허용,
+         * 없으면 런타임 권한을 요청한 뒤 결과에 따라 허용/거부한다. (보존하지 않음 = retain false)
+         */
+        override fun onGeolocationPermissionsShowPrompt(
+            origin: String?,
+            callback: GeolocationPermissions.Callback?
+        ) {
+            if (callback == null) return
+            val host = origin?.let { Uri.parse(it).host?.lowercase() }
+            if (host == null || !isAppUrl(Uri.parse(origin))) {
+                // 우리 도메인이 아니면 거부
+                callback.invoke(origin, false, false)
+                return
+            }
+            if (hasLocationPermission()) {
+                callback.invoke(origin, true, false)
+                return
+            }
+            // 런타임 권한 요청 후 결과에서 응답 (동시 요청은 마지막 것으로 대체)
+            pendingGeolocationCallback?.invoke(pendingGeolocationOrigin, false, false)
+            pendingGeolocationOrigin = origin
+            pendingGeolocationCallback = callback
+            requestLocationPermission.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+        }
 
         override fun onShowFileChooser(
             webView: WebView,

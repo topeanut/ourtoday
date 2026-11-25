@@ -10,7 +10,7 @@ import type { EmojiType, Post } from "@/lib/types";
 import { CloseIcon, CommentIcon, EditIcon, MapPin, MoreIcon, ShareIcon, TrashIcon } from "./Icons";
 import { useSession } from "./Session";
 import { useToast } from "./Toast";
-import { Avatar, Confirm, Sheet } from "./ui";
+import { Avatar, Confirm, IconButton, MenuItem, PRESS, Pressable, Sheet } from "./ui";
 
 export const EMOJIS: { type: EmojiType; emoji: string; label: string }[] = [
   { type: "HEART", emoji: "❤️", label: "좋아" },
@@ -70,13 +70,13 @@ export function PostCard({
           <p className="text-sm font-semibold">{post.author.nickname}</p>
           <p className="text-xs text-sub">{formatDay(post.postedDate)}</p>
         </div>
-        <button onClick={onShare} className="rounded-full p-2 text-sub hover:bg-black/5" aria-label="공유">
+        <IconButton onClick={onShare} tone="sub" label="공유" className={mine ? "" : "-mr-2.5"}>
           <ShareIcon className="h-5 w-5" />
-        </button>
+        </IconButton>
         {mine && (
-          <button onClick={() => setMenu(true)} className="-mr-2 rounded-full p-2 text-sub hover:bg-black/5" aria-label="더보기">
+          <IconButton onClick={() => setMenu(true)} tone="sub" label="더보기" className="-mr-2.5">
             <MoreIcon className="h-5 w-5" />
-          </button>
+          </IconButton>
         )}
       </header>
 
@@ -89,7 +89,7 @@ export function PostCard({
         </p>
       )}
 
-      {post.images.length > 0 && <ImageGrid images={post.images.map((i) => i.url)} onOpen={setViewer} />}
+      {post.images.length > 0 && <ImageGrid images={post.images.map((i) => i.thumbnailUrl ?? i.url)} onOpen={setViewer} />}
 
       <ReactionBar post={post} onChange={onChange} />
 
@@ -97,21 +97,19 @@ export function PostCard({
 
       <Sheet open={menu} onClose={() => setMenu(false)}>
         <div className="flex flex-col">
-          <button
-            className="flex items-center gap-3 rounded-2xl px-3 py-4 text-left font-medium hover:bg-black/5"
-            onClick={() => router.push(`/posts/${post.id}/edit`)}
-          >
-            <EditIcon className="h-5 w-5" /> 수정하기
-          </button>
-          <button
-            className="flex items-center gap-3 rounded-2xl px-3 py-4 text-left font-medium text-[#d6404e] hover:bg-black/5"
+          <MenuItem icon={<EditIcon className="h-5 w-5" />} onClick={() => router.push(`/posts/${post.id}/edit`)}>
+            수정하기
+          </MenuItem>
+          <MenuItem
+            danger
+            icon={<TrashIcon className="h-5 w-5" />}
             onClick={() => {
               setMenu(false);
               setConfirmDelete(true);
             }}
           >
-            <TrashIcon className="h-5 w-5" /> 삭제하기
-          </button>
+            삭제하기
+          </MenuItem>
         </div>
       </Sheet>
       <Confirm
@@ -143,9 +141,22 @@ function CommentPreview({ post }: { post: Post }) {
           ))}
         </ul>
       )}
-      <Link href={`/posts/${post.id}`} className="inline-flex items-center gap-1.5 text-xs text-sub hover:text-brand-strong">
-        <CommentIcon className="h-4 w-4" />
-        {count >= 3 ? `댓글 ${count}개 모두 보기` : "댓글 달기"}
+      {/* 카드 폭 전체를 쓰는 44px 바 — 엄지로 어디를 눌러도 들어가게 */}
+      <Link
+        href={`/posts/${post.id}`}
+        className={`flex h-11 w-full items-center justify-center gap-1.5 rounded-2xl bg-cream text-sm font-medium text-sub hover:text-brand-strong active:bg-brand-soft active:text-brand-strong ${PRESS.soft}`}
+      >
+        <CommentIcon className="h-[18px] w-[18px]" />
+        {/* flex gap 이 글자 조각마다 붙지 않게 한 덩어리로 */}
+        <span>
+          {count > 0 ? (
+            <>
+              댓글 <span className="tabular-nums text-ink">{count}</span>개 · 댓글 달기
+            </>
+          ) : (
+            "댓글 달기"
+          )}
+        </span>
       </Link>
     </div>
   );
@@ -157,14 +168,14 @@ function ImageGrid({ images, onOpen }: { images: string[]; onOpen: (i: number) =
   return (
     <div className={`mt-3 grid gap-1.5 overflow-hidden rounded-2xl ${layout}`}>
       {images.map((src, i) => (
-        <button key={src} onClick={() => onOpen(i)} className="relative block bg-line/50" aria-label={`사진 ${i + 1} 크게 보기`}>
+        <Pressable key={src} press="none" onClick={() => onOpen(i)} className="relative block bg-line/50 transition active:opacity-80" aria-label={`사진 ${i + 1} 크게 보기`}>
           <img
             src={src}
             alt=""
             loading="lazy"
             className={`w-full object-cover ${images.length === 1 ? "max-h-[420px]" : "aspect-square"}`}
           />
-        </button>
+        </Pressable>
       ))}
     </div>
   );
@@ -184,19 +195,22 @@ function ImageViewer({ images, index, onClose }: { images: string[]; index: numb
   return (
     <div className="animate-fade fixed inset-0 z-[70] flex items-center justify-center bg-black/90" onClick={onClose} role="dialog" aria-modal aria-label="사진 보기">
       <img src={images[i]} alt={`사진 ${i + 1} / ${images.length}`} className="max-h-full max-w-full object-contain" />
-      <button
+      <IconButton
         onClick={onClose}
-        className="absolute right-4 rounded-full bg-white/15 p-2 text-white"
+        tone="overlay"
+        label="닫기"
+        className="absolute right-4"
         style={{ top: "calc(16px + var(--safe-top))" }}
-        aria-label="닫기"
         autoFocus
       >
         <CloseIcon className="h-6 w-6" />
-      </button>
+      </IconButton>
       {images.length > 1 && (
-        <div className="pb-safe absolute inset-x-0 bottom-6 flex justify-center gap-2" onClick={(e) => e.stopPropagation()}>
+        <div className="pb-safe absolute inset-x-0 bottom-6 flex justify-center gap-0" onClick={(e) => e.stopPropagation()}>
           {images.map((_, n) => (
-            <button key={n} onClick={() => setI(n)} className={`h-2 w-2 rounded-full ${n === i ? "bg-white" : "bg-white/40"}`} aria-label={`${n + 1}번째 사진`} />
+            <Pressable key={n} press="none" onClick={() => setI(n)} className="flex h-8 w-6 items-center justify-center" aria-label={`${n + 1}번째 사진`}>
+              <span className={`h-2 w-2 rounded-full transition ${n === i ? "bg-white" : "bg-white/40"}`} />
+            </Pressable>
           ))}
         </div>
       )}
@@ -231,18 +245,18 @@ export function ReactionBar({ post, onChange }: { post: Post; onChange: (p: Post
         const r = post.reactions.find((x) => x.emojiType === type);
         const on = r?.reactedByMe;
         return (
-          <button
+          <Pressable
             key={type}
             onClick={() => toggle(type)}
             aria-pressed={!!on}
             aria-label={`${label} ${r?.count ?? 0}`}
-            className={`flex h-9 items-center gap-1 rounded-full px-3 text-sm transition active:scale-95 ${
+            className={`flex h-9 items-center gap-1 rounded-full px-3 text-sm ${
               on ? "bg-brand-soft font-semibold text-brand-strong ring-1 ring-brand/30" : r ? "bg-cream" : "bg-cream/70 grayscale-[35%]"
             }`}
           >
             <span>{emoji}</span>
             {r && <span>{r.count}</span>}
-          </button>
+          </Pressable>
         );
       })}
     </div>
