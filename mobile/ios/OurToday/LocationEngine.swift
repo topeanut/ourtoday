@@ -24,6 +24,8 @@ final class LocationEngine: NSObject, CLLocationManagerDelegate {
     private static let retryBackoff: TimeInterval = 30
     private static let sharingKey = "ourtoday.location.sharing"
     private(set) var isPrecise = false
+    /// 직전 권한 상태 (WhenInUse 로 '바뀔 때'만 Always 승격을 요청하기 위함)
+    private var lastAuthStatus: CLAuthorizationStatus?
 
     var authStatus: CLAuthorizationStatus { manager.authorizationStatus }
 
@@ -84,7 +86,7 @@ final class LocationEngine: NSObject, CLLocationManagerDelegate {
     // MARK: - 정밀
 
     func startPrecise(seconds: TimeInterval = 180) {
-        guard isSharing, isAuthorized else { return }
+        guard isSharing, isAuthorized, TokenStore.shared.access != nil else { return }
         if !isPrecise {
             isPrecise = true
             // Always 일 때만 백그라운드 갱신 허용 (아니면 크래시 위험)
@@ -130,6 +132,12 @@ final class LocationEngine: NSObject, CLLocationManagerDelegate {
     }
 
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
+        let previous = lastAuthStatus
+        lastAuthStatus = authStatus
+        // WhenInUse 로 막 바뀐 경우에만 Always 승격 요청 (반복 호출 방지)
+        if isSharing, authStatus == .authorizedWhenInUse, previous != .authorizedWhenInUse {
+            manager.requestAlwaysAuthorization()
+        }
         if isSharing, isAuthorized {
             startLoose()
         } else {
