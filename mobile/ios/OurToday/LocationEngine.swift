@@ -19,6 +19,10 @@ final class LocationEngine: NSObject, CLLocationManagerDelegate {
     private var uploading = false
     private var preciseTimer: Timer?
     private var flushTimer: Timer?
+    /// 마지막 업로드 실패 시각 (실패 직후 매 업데이트마다 재시도하는 폭주 방지)
+    private var lastUploadFailureAt: Date?
+    private static let retryBackoff: TimeInterval = 30
+    private static let sharingKey = "ourtoday.location.sharing"
     private(set) var isPrecise = false
 
     var authStatus: CLAuthorizationStatus { manager.authorizationStatus }
@@ -30,6 +34,8 @@ final class LocationEngine: NSObject, CLLocationManagerDelegate {
     var isSharing = false {
         didSet {
             guard isSharing != oldValue else { return }
+            // 재실행(significant-change 로 깨어남) 때 다시 무장하도록 저장
+            UserDefaults.standard.set(isSharing, forKey: Self.sharingKey)
             if isSharing {
                 startLoose()
             } else {
@@ -44,6 +50,10 @@ final class LocationEngine: NSObject, CLLocationManagerDelegate {
         super.init()
         manager.delegate = self
         manager.pausesLocationUpdatesAutomatically = false
+        // 재실행 시 저장된 공유 상태 복원 (권한·토큰이 있을 때만)
+        if UserDefaults.standard.bool(forKey: Self.sharingKey), TokenStore.shared.access != nil {
+            isSharing = true
+        }
     }
 
     /// WhenInUse 먼저, 이미 허용돼 있으면 Always 로 업그레이드 요청
@@ -97,16 +107,15 @@ final class LocationEngine: NSObject, CLLocationManagerDelegate {
         guard isPrecise else { return }
         isPrecise = false
         manager.stopUpdatingLocation()
-        if authStatus == .authorizedAlways {
-            manager.allowsBackgroundLocationUpdates = false
-        }
-        flush()
+        manager.allowsBackgroundLocationUpdates = false
+        flush(force: true)
     }
 
     // MARK: - CLLocationManagerDelegate
 
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard isSharing, isAuthorized, TokenStore.shared.access != nil else { return }
+        let wasPrecise = isPrecise
         for loc in locations {
             buffer.append(PointDTO(
                 lat: loc.coordinate.latitude,
@@ -116,7 +125,8 @@ final class LocationEngine: NSObject, CLLocationManagerDelegate {
                 source: isPrecise ? "PRECISE" : "COARSE"))
         }
         if buffer.count > Self.maxBuffer { buffer.removeFirst(buffer.count - Self.maxBuffer) }
-        if buffer.count >= Self.flushCount { flush() }
+        // 느슨(백그라운드 ~10초 깨어남)은 배치를 기다리지 않고 즉시 업로드
+        if !wasPrecise || buffer.count >= Self.flushCount { flush() }
     }
 
     func locationManagerDidChangeAuthorization(_ manager: CLLocationManager) {
@@ -128,6 +138,7 @@ final class LocationEngine: NSObject, CLLocationManagerDelegate {
             stopLoose()
             buffer.removeAll()
         }
+        if authStatus != .authorizedAlways { manager.allowsBackgroundLocationUpdates = false }
     }
 
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
@@ -139,21 +150,27 @@ final class LocationEngine: NSObject, CLLocationManagerDelegate {
     private func startFlushTimer() {
         guard flushTimer == nil else { return }
         flushTimer = Timer.scheduledTimer(withTimeInterval: Self.flushInterval, repeats: true) { [weak self] _ in
-            self?.flush()
+            self?.flush(force: true)
         }
     }
 
-    private func flush() {
+    /// force: 타이머/정밀 종료 시에는 백오프 중이어도 시도
+    private func flush(force: Bool = false) {
         guard isSharing, isAuthorized, TokenStore.shared.access != nil,
               !uploading, !buffer.isEmpty else { return }
+        if !force, let failedAt = lastUploadFailureAt,
+           Date().timeIntervalSince(failedAt) < Self.retryBackoff { return }
         let batch = buffer
         uploading = true
         LocationAPI.shared.uploadPoints(batch) { [weak self] result in
             guard let self = self else { return }
             self.uploading = false
             // 실패하면 버퍼에 남겨 다음 flush 에서 재시도. 공유가 꺼졌으면 이미 비워짐
-            if case .success = result, self.isSharing {
-                self.buffer.removeFirst(min(batch.count, self.buffer.count))
+            if case .success = result {
+                self.lastUploadFailureAt = nil
+                if self.isSharing { self.buffer.removeFirst(min(batch.count, self.buffer.count)) }
+            } else {
+                self.lastUploadFailureAt = Date()
             }
         }
     }
