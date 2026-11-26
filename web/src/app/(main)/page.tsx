@@ -6,9 +6,10 @@ import useSWR from "swr";
 import useSWRInfinite from "swr/infinite";
 import { fetcher } from "@/lib/api";
 import { formatDay } from "@/lib/date";
+import type { Sharing } from "@/lib/location";
 import type { Memories, Page, Post } from "@/lib/types";
 import { PageHeader } from "@/components/AppShell";
-import { PlusIcon, SparkIcon } from "@/components/Icons";
+import { MapPin, PlusIcon, SparkIcon } from "@/components/Icons";
 import { PostCard } from "@/components/PostCard";
 import { PushWelcomeSheet } from "@/components/PushPrompt";
 import { useSession } from "@/components/Session";
@@ -30,6 +31,7 @@ export default function HomePage() {
     { revalidateFirstPage: true },
   );
   const memories = useSWR<Memories>("/posts/memories/today", fetcher);
+  const sharing = useSWR<Sharing>("/location/sharing", fetcher);
   const fabHidden = useHideOnScrollDown();
 
   // 작성·수정·삭제 후 돌아왔을 때 항상 최신으로. SWR 기본 재검증은 requestAnimationFrame 이라
@@ -81,6 +83,15 @@ export default function HomePage() {
         }
       />
       <div className="mx-auto max-w-2xl px-4 pb-8 md:px-8">
+        {sharing.data?.partner === true && (
+          <Link
+            href="/location"
+            className={`mb-3 mt-1 flex items-center gap-3 rounded-3xl bg-brand-soft px-5 py-4 text-brand-strong ${PRESS.scale}`}
+          >
+            <MapPin className="h-5 w-5" />
+            <span className="flex-1 font-semibold">상대 위치 보기</span>
+          </Link>
+        )}
         {memories.data && memories.data.memories.length > 0 && <MemoriesCard data={memories.data} />}
 
         <div className="mb-4 mt-2 flex gap-2" role="tablist">
