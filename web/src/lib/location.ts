@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { api } from "./api";
+import { getRefreshToken, getToken } from "./auth";
 import { isApp, postNative } from "./native";
 
 export interface LatLng {
@@ -33,6 +34,12 @@ export async function setSharing(enabled: boolean) {
   // 서버 반영 성공 후 네이티브에 공유 on/off 알림 (실패해도 토글은 성공 처리)
   if (isApp()) {
     try {
+      // 켤 때 기존 로그인 세션 토큰도 네이티브에 전달 (신규 앱 설치 직후 대비)
+      if (enabled) {
+        const access = getToken();
+        const refresh = getRefreshToken();
+        if (access && refresh) postNative({ type: "authToken", access, refresh });
+      }
       postNative({ type: "locationShare", enabled });
     } catch {
       // 브리지 오류 무시
