@@ -72,4 +72,6 @@ dependencies {
     implementation("androidx.webkit:webkit:1.12.1")
     implementation(platform("com.google.firebase:firebase-bom:33.7.0"))
     implementation("com.google.firebase:firebase-messaging")
+    implementation("com.google.android.gms:play-services-location:21.3.0")
+    implementation("androidx.security:security-crypto:1.1.0-alpha06")
 }
