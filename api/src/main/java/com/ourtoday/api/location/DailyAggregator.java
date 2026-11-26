@@ -29,6 +29,7 @@ public class DailyAggregator {
     private final Clock clock;
 
     @Scheduled(cron = "0 0 4 * * *", zone = "Asia/Seoul")
+    @Transactional
     public void aggregateYesterday() {
         aggregate(LocalDate.now(clock.withZone(KST)).minusDays(1));
     }
@@ -48,7 +49,10 @@ public class DailyAggregator {
             Instant firstAt = points.get(0).getCapturedAt();
             Instant lastAt = points.get(points.size() - 1).getCapturedAt();
             dailyRepository.findByUserIdAndDate(userId, date).ifPresentOrElse(
-                d -> d.update(points.size(), firstAt, lastAt, polyline),
+                d -> {
+                    d.update(points.size(), firstAt, lastAt, polyline);
+                    dailyRepository.save(d); // 자기호출로 트랜잭션이 없어도 반영되도록 명시 저장
+                },
                 () -> dailyRepository.save(LocationDaily.of(userId, date, points.size(), firstAt, lastAt, polyline)));
         }
     }
