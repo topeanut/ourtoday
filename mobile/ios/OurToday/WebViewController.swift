@@ -117,6 +117,25 @@ final class WebViewController: UIViewController {
             PushManager.shared.requestPermission { [weak self] in self?.sendPushState($0) }
         case "openNotificationSettings":
             PushManager.shared.openSettings()
+        case "authToken":
+            // 로그아웃이면 토큰 삭제와 공유 중단을 함께 처리
+            if dict["clear"] as? Bool == true {
+                TokenStore.shared.clear()
+                LocationEngine.shared.isSharing = false
+            } else if let access = dict["access"] as? String, let refresh = dict["refresh"] as? String {
+                TokenStore.shared.save(access: access, refresh: refresh)
+            }
+        case "locationShare":
+            guard let enabled = dict["enabled"] as? Bool else { return }
+            if enabled {
+                LocationEngine.shared.requestAuthorization()
+                LocationEngine.shared.isSharing = true
+            } else {
+                LocationEngine.shared.isSharing = false
+            }
+            sendLocationStatus()
+        case "locationStatus":
+            sendLocationStatus()
         default:
             break
         }
@@ -198,6 +217,27 @@ extension WebViewController {
         guard let data = try? JSONSerialization.data(withJSONObject: state.detail),
               let json = String(data: data, encoding: .utf8) else { return }
         webView.evaluateJavaScript("window.dispatchEvent(new CustomEvent('ourtoday:push', { detail: \(json) }))")
+    }
+
+    /// 위치 공유 상태는 우리 페이지에만 전달 (sendPushState 와 같은 출처 확인)
+    fileprivate func sendLocationStatus() {
+        let start = AppConfig.startURL
+        guard let current = webView.url,
+              current.scheme?.lowercased() == start.scheme?.lowercased(),
+              current.host?.lowercased() == start.host?.lowercased(),
+              current.port == start.port else { return }
+        let authorization: String
+        switch LocationEngine.shared.authStatus {
+        case .authorizedAlways: authorization = "always"
+        case .authorizedWhenInUse: authorization = "whenInUse"
+        case .denied: authorization = "denied"
+        case .restricted: authorization = "restricted"
+        default: authorization = "notDetermined"
+        }
+        let detail: [String: Any] = ["sharing": LocationEngine.shared.isSharing, "authorization": authorization]
+        guard let data = try? JSONSerialization.data(withJSONObject: detail),
+              let json = String(data: data, encoding: .utf8) else { return }
+        webView.evaluateJavaScript("window.dispatchEvent(new CustomEvent('ourtoday:locationStatus', { detail: \(json) }))")
     }
 
     /// path 는 PushManager 에서 "/" 로 시작("//" 제외)하는지 확인됨. 합친 결과도 시작 URL 과 같은 출처일 때만 이동
