@@ -19,6 +19,16 @@ export interface KakaoLatLng {
 export interface KakaoMapInstance {
   setCenter(latlng: KakaoLatLng): void;
   relayout(): void;
+  setBounds(bounds: KakaoLatLngBounds): void;
+}
+export interface KakaoLatLngBounds {
+  extend(latlng: KakaoLatLng): void;
+}
+export interface KakaoPolylineInstance {
+  setMap(map: KakaoMapInstance | null): void;
+}
+export interface KakaoCircleInstance {
+  setMap(map: KakaoMapInstance | null): void;
 }
 export interface KakaoMarkerInstance {
   setPosition(latlng: KakaoLatLng): void;
@@ -37,6 +47,21 @@ export interface KakaoMaps {
   LatLng: new (lat: number, lng: number) => KakaoLatLng;
   Map: new (container: HTMLElement, options: { center: KakaoLatLng; level: number }) => KakaoMapInstance;
   Marker: new (options: { position: KakaoLatLng; map?: KakaoMapInstance; draggable?: boolean }) => KakaoMarkerInstance;
+  LatLngBounds: new () => KakaoLatLngBounds;
+  Polyline: new (options: {
+    path: KakaoLatLng[];
+    strokeWeight?: number;
+    strokeColor?: string;
+    strokeOpacity?: number;
+  }) => KakaoPolylineInstance;
+  Circle: new (options: {
+    center: KakaoLatLng;
+    radius: number;
+    strokeWeight?: number;
+    strokeColor?: string;
+    fillColor?: string;
+    fillOpacity?: number;
+  }) => KakaoCircleInstance;
   event: {
     addListener(target: object, type: string, handler: (e: KakaoMouseEvent) => void): void;
   };
