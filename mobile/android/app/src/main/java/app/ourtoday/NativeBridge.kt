@@ -23,6 +23,9 @@ class NativeBridge(
         fun onPushStatus()
         fun onPushPermission()
         fun onOpenNotificationSettings()
+        fun onAuthToken(access: String?, refresh: String?, clear: Boolean)
+        fun onLocationShare(enabled: Boolean)
+        fun onLocationStatus()
     }
 
     private val mainHandler = android.os.Handler(Looper.getMainLooper())
@@ -48,6 +51,13 @@ class NativeBridge(
                 "pushStatus" -> handler.onPushStatus()
                 "pushPermission" -> handler.onPushPermission()
                 "openNotificationSettings" -> handler.onOpenNotificationSettings()
+                "authToken" -> handler.onAuthToken(
+                    message.optStringOrNull("access"),
+                    message.optStringOrNull("refresh"),
+                    message.optBoolean("clear", false),
+                )
+                "locationShare" -> handler.onLocationShare(message.optBoolean("enabled", false))
+                "locationStatus" -> handler.onLocationStatus()
             }
         }
     }

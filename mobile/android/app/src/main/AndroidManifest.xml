@@ -7,6 +7,11 @@
     <!-- 기록에 장소를 첨부할 때 "현재 위치"를 한 번 가져오기 위한 포그라운드 위치 (웹뷰 geolocation) -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+    <!-- 실시간 위치 공유: 백그라운드 위치, 포그라운드 서비스(위치 타입), 재부팅 후 복구 -->
+    <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <!-- Android 11+ 에서 카카오톡·플레이스토어 등 외부 앱 확인용 -->
     <queries>
@@ -59,5 +64,20 @@
                 <action android:name="com.google.firebase.MESSAGING_EVENT" />
             </intent-filter>
         </service>
+
+        <!-- 정밀 위치 공유 포그라운드 서비스 (targetSdk 34+: 위치 타입 필수) -->
+        <service
+            android:name=".LocationForegroundService"
+            android:foregroundServiceType="location"
+            android:exported="false" />
+
+        <!-- 재부팅 후 위치 공유 복구 -->
+        <receiver
+            android:name=".BootReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
     </application>
 </manifest>

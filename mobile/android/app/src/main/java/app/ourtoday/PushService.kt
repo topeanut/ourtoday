@@ -19,6 +19,18 @@ class PushService : FirebaseMessagingService() {
     }
 
     override fun onMessageReceived(message: RemoteMessage) {
+        // 위치 정밀 모드 깨우기(data-only): 알림 없이 FGS 만 켜고 끈다.
+        // 공유 의사(isSharing)는 사용자 것이므로 건드리지 않고, 서비스가 isSharing/권한/토큰을 스스로 확인한다
+        when (message.data["type"]) {
+            "location_precise_on" -> {
+                LocationForegroundService.start(this)
+                return
+            }
+            "location_precise_off" -> {
+                LocationForegroundService.stop(this)
+                return
+            }
+        }
         val title = message.notification?.title ?: message.data["title"] ?: getString(R.string.app_name)
         val body = message.notification?.body ?: message.data["body"] ?: return
         val path = PushBridge.safePath(message.data[PushBridge.EXTRA_PATH])
