@@ -123,6 +123,11 @@ object LocationEngine {
 
     /** 단일 스레드 executor 에서만 실행 → flush 끼리 직렬. 실패 시 버퍼에 되돌려 다음 flush 에서 재시도 */
     private fun flush() {
+        // 공유 해제·로그아웃 후에는 업로드하지 않고 버퍼도 비움 (다른 사용자 토큰으로 새는 것 방지)
+        if (!isSharing || TokenStore.access == null) {
+            synchronized(lock) { buffer.clear() }
+            return
+        }
         val batch: List<PointDTO>
         synchronized(lock) {
             if (buffer.isEmpty()) return
@@ -131,6 +136,11 @@ object LocationEngine {
         val ok = try { LocationApi.uploadPoints(batch) } catch (_: Exception) { false }
         if (!ok) {
             synchronized(lock) {
+                // 업로드 중 공유가 꺼지거나 토큰이 사라졌으면 되돌리지 않고 전부 폐기
+                if (!isSharing || TokenStore.access == null) {
+                    buffer.clear()
+                    return
+                }
                 batch.asReversed().forEach { buffer.addFirst(it) }
                 while (buffer.size > MAX_BUFFER) buffer.removeFirst()
             }

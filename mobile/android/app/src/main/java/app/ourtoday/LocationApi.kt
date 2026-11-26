@@ -21,6 +21,7 @@ object LocationApi {
     private const val BASE = "https://ourtoday.vercel.app/api/v1"
     private const val TIMEOUT_MS = 10_000
 
+    /** true = 배치 처리 완료(성공 또는 영구 거부 4xx → 호출자는 버림), false = 일시 실패(재시도 대상) */
     fun uploadPoints(points: List<PointDTO>): Boolean {
         if (points.isEmpty()) return true
         val body = JSONObject().put("points", JSONArray().also { arr ->
@@ -37,17 +38,26 @@ object LocationApi {
 
         val first = post("/location/points", body, TokenStore.access ?: return false)
         if (first in 200..299) return true
+        if (isPermanentReject(first)) return true // 잘못된 페이로드 등: 재버퍼링하면 영구 재시도가 되므로 버림
         if (first != 401) return false
         // 액세스 토큰 만료 → 갱신 후 한 번만 재시도
         if (!refresh()) return false
         val retry = post("/location/points", body, TokenStore.access ?: return false)
-        return retry in 200..299
+        return retry in 200..299 || isPermanentReject(retry)
     }
+
+    /** 401(갱신 대상)·408·429 를 제외한 4xx */
+    private fun isPermanentReject(code: Int) = code in 400..499 && code != 401 && code != 408 && code != 429
 
     @Synchronized
     fun refresh(): Boolean {
         val refreshToken = TokenStore.refresh ?: return false
         val (code, text) = request("/auth/refresh", JSONObject().put("refreshToken", refreshToken).toString(), null)
+        // 서버가 리프레시 토큰을 거부(400/401/403) → 죽은 토큰이므로 지워서 이후 업로드가 no-op 이 되게 함 (네트워크 오류는 유지)
+        if (code == 400 || code == 401 || code == 403) {
+            TokenStore.clear()
+            return false
+        }
         if (code !in 200..299 || text == null) return false
         return try {
             val json = JSONObject(text)

@@ -43,7 +43,11 @@ class LocationForegroundService : Service() {
         }
 
         fun stop(context: Context) {
-            context.startService(Intent(context, LocationForegroundService::class.java).setAction(ACTION_STOP))
+            try {
+                context.startService(Intent(context, LocationForegroundService::class.java).setAction(ACTION_STOP))
+            } catch (_: Exception) {
+                // 백그라운드에서 미실행 서비스 시작 시 IllegalStateException — 이미 꺼진 상태이므로 무시
+            }
         }
     }
 
