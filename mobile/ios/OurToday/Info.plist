@@ -38,7 +38,14 @@
 	<key>NSCameraUsageDescription</key>
 	<string>게시글에 올릴 사진을 촬영하기 위해 카메라를 사용합니다.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>기록에 장소를 첨부할 때 현재 위치를 가져오기 위해 위치를 사용합니다.</string>
+	<string>기록에 장소를 첨부하거나 연인과 위치를 공유할 때 현재 위치를 사용합니다.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>연인과 실시간 위치를 공유하기 위해 백그라운드에서도 위치를 사용합니다.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+		<string>remote-notification</string>
+	</array>
 	<key>UILaunchScreen</key>
 	<dict>
 		<key>UIColorName</key>
