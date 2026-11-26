@@ -95,6 +95,26 @@ class LocationSharingFlowTest {
     }
 
     @Test
+    void wasSharingAt은_타임라인_중간과_경계를_정확히_판정한다() {
+        Instant t1 = Instant.parse("2026-01-01T00:00:00Z");
+        Instant t2 = Instant.parse("2026-01-01T01:00:00Z");
+        Instant t3 = Instant.parse("2026-01-01T02:00:00Z");
+        eventRepository.save(LocationShareEvent.of(meId, true, t1));
+        eventRepository.save(LocationShareEvent.of(meId, false, t2));
+        eventRepository.save(LocationShareEvent.of(meId, true, t3));
+
+        assertThat(locationService.wasSharingAt(meId, t1.minusSeconds(1))).isFalse();
+        assertThat(locationService.wasSharingAt(meId, t1)).isTrue();
+        assertThat(locationService.wasSharingAt(meId, t1.plusSeconds(1800))).isTrue();
+        assertThat(locationService.wasSharingAt(meId, t2.minusSeconds(1))).isTrue();
+        assertThat(locationService.wasSharingAt(meId, t2)).isFalse();
+        assertThat(locationService.wasSharingAt(meId, t2.plusSeconds(1800))).isFalse();
+        assertThat(locationService.wasSharingAt(meId, t3.minusSeconds(1))).isFalse();
+        assertThat(locationService.wasSharingAt(meId, t3)).isTrue();
+        assertThat(locationService.wasSharingAt(meId, t3.plusSeconds(3600))).isTrue();
+    }
+
+    @Test
     void 커플이_아니면_거부한다() throws Exception {
         toggle(solo, true).andExpect(jsonPath("$.error.code").value("COUPLE_REQUIRED"));
         mvc.perform(get("/api/v1/location/sharing").header("Authorization", solo))
