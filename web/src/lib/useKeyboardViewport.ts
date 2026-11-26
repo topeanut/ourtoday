@@ -36,6 +36,9 @@ export function useKeyboardViewport(ref: RefObject<HTMLElement | null>, enabled 
       // 새 iOS 앱: 네이티브가 웹뷰 높이를 키보드 위까지 줄여서 h-dvh 가 이미 맞음.
       // 여기서 또 height/top 을 덮어쓰면 시트가 더 짧아지고(버튼 아래 빈틈) 포커스 중 스크롤이 막힘 → 표시만 단다.
       if (window.__ourtodayKeyboard !== undefined) {
+        // 웹뷰가 이미 키보드 위에서 끝나는데 env(safe-area-inset-bottom) 은 홈 인디케이터 값(~34pt)을 그대로 줄 수 있음.
+        // --safe-bottom 을 쓰는 모든 하단 여백(버튼 아래 틈)을 열린 동안 0 으로 — 개별 컨테이너가 빠져도 틈이 안 생김
+        document.documentElement.style.setProperty("--safe-bottom", open ? "0px" : "");
         el.style.height = "";
         el.style.top = "";
         return;
@@ -59,6 +62,7 @@ export function useKeyboardViewport(ref: RefObject<HTMLElement | null>, enabled 
       window.removeEventListener("ourtoday:keyboard", update);
       el.style.height = "";
       el.style.top = "";
+      document.documentElement.style.removeProperty("--safe-bottom");
       delete el.dataset.keyboard;
     };
   }, [ref, enabled, resetScroll]);
