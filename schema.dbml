@@ -145,6 +145,23 @@ Table bucket_items {
   completed_at timestamp
 }
 
+Table location_shares {
+  user_id uuid [pk, note: '사용자별 위치 공유 현재 상태']
+  enabled boolean [not null, default: false]
+  updated_at timestamp [not null, default: `now()`]
+}
+
+Table location_share_events {
+  id uuid [pk]
+  user_id uuid [not null]
+  enabled boolean [not null, note: '실제 상태 변경마다 1행 append']
+  at timestamp [not null]
+
+  Indexes {
+    (user_id, at) [name: 'idx_location_share_events_user_at']
+  }
+}
+
 // ===== References =====
 
 Ref: user_settings.user_id > users.id
@@ -169,3 +186,6 @@ Ref: calendar_memos.author_id > users.id
 Ref: bucket_items.couple_id > couples.id
 Ref: bucket_items.created_by > users.id
 Ref: bucket_items.completed_post_id > posts.id
+
+Ref: location_shares.user_id > users.id
+Ref: location_share_events.user_id > users.id
