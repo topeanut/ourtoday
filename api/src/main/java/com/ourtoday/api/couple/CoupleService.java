@@ -129,6 +129,7 @@ public class CoupleService {
     @Transactional
     public void breakUp(UUID userId) {
         Couple couple = getConnectedCouple(userId);
+        publisher.publishEvent(new CoupleUnlinkingEvent(couple.getId(), userId));
         couple.breakUp();
         coupleMemberRepository.deleteByCoupleId(couple.getId());
     }
@@ -138,6 +139,7 @@ public class CoupleService {
     public void leaveAny(UUID userId) {
         coupleRepository.findByMemberUserId(userId).ifPresent(couple -> {
             if (couple.isConnected()) {
+                publisher.publishEvent(new CoupleUnlinkingEvent(couple.getId(), userId));
                 couple.breakUp();
                 coupleMemberRepository.deleteByCoupleId(couple.getId());
             } else {
@@ -163,6 +165,25 @@ public class CoupleService {
             .filter(id -> !id.equals(userId))
             .findFirst()
             .orElseThrow(() -> new BusinessException(ErrorCode.COUPLE_REQUIRED));
+    }
+
+    /** 커플 멤버 전원의 ID (해제 직전 정리용) */
+    @Transactional(readOnly = true)
+    public List<UUID> getMemberIds(UUID coupleId) {
+        return coupleMemberRepository.findByCoupleIdOrderByJoinedAtAsc(coupleId).stream()
+            .map(CoupleMember::getUserId)
+            .toList();
+    }
+
+    /** 연결된 커플의 상대 ID. 예외 없이 Optional (트랜잭션을 rollback-only 로 만들지 않음) */
+    @Transactional(readOnly = true)
+    public Optional<UUID> findPartnerId(UUID userId) {
+        return coupleRepository.findByMemberUserId(userId)
+            .filter(Couple::isConnected)
+            .flatMap(c -> coupleMemberRepository.findByCoupleIdOrderByJoinedAtAsc(c.getId()).stream()
+                .map(CoupleMember::getUserId)
+                .filter(id -> !id.equals(userId))
+                .findFirst());
     }
 
     private CoupleResponse toResponse(Couple couple) {

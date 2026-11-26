@@ -194,6 +194,17 @@ Content-Type: application/json
 
 { "startedAt": "2025-03-14" }
 
+### 위치 공유 ON/OFF
+PUT {{host}}/api/v1/location/sharing
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "enabled": true }
+
+### 위치 공유 상태 (나/상대)
+GET {{host}}/api/v1/location/sharing
+Authorization: Bearer {{token}}
+
 ### 데이터 내보내기 (zip URL)
 POST {{host}}/api/v1/users/me/export
 Authorization: Bearer {{token}}
@@ -203,3 +214,28 @@ POST {{host}}/api/v1/auth/refresh
 Content-Type: application/json
 
 { "refreshToken": "여기에_refreshToken" }
+
+### ===== 위치 =====
+
+### 위치 포인트 배치 업로드 (현재 공유 OFF 면 403, 캡처 시각이 OFF 구간인 점은 조용히 버림)
+POST {{host}}/api/v1/location/points
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "points": [ { "lat": 37.5447, "lng": 127.0558, "accuracy": 12.5, "capturedAt": "2026-11-22T10:00:00Z", "source": "PRECISE" } ] }
+
+### 상대 최신 위치 (상대가 공유 OFF 면 partnerSharing=false, latest=null)
+GET {{host}}/api/v1/location/partner
+Authorization: Bearer {{token}}
+
+### 상대에게 정밀 위치 요청 (3분 활성, 재요청은 만료 연장, 상대에 무음 푸시) → 204
+POST {{host}}/api/v1/location/precise
+Authorization: Bearer {{token}}
+
+### 정밀 위치 요청 해제 (즉시 만료 + 상대에 off 푸시) → 204
+DELETE {{host}}/api/v1/location/precise
+Authorization: Bearer {{token}}
+
+### 상대의 일자(KST)별 이동 경로 (요약 있으면 polyline, 없으면 raw, 상대 비공유면 빈 path)
+GET {{host}}/api/v1/location/track?date=2026-11-21
+Authorization: Bearer {{token}}

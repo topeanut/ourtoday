@@ -13,4 +13,10 @@ public class NoopPushSender implements PushSender {
         log.debug("푸시 비활성 — 발송 생략 type={}", message.type());
         return SendResult.OK;
     }
+
+    @Override
+    public SendResult sendData(String token, DataPush push) {
+        log.debug("푸시 비활성 — 무음 발송 생략 type={}", push.type());
+        return SendResult.OK;
+    }
 }

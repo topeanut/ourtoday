@@ -53,4 +53,27 @@ public class PushDispatcher {
             }
         }
     }
+
+    /** 무음(data-only) 푸시를 사용자들의 모든 기기로 보낸다. 호출한 스레드에서 바로 보낸다 */
+    public void sendDataToUsers(Collection<UUID> userIds, DataPush push) {
+        if (userIds == null || userIds.isEmpty()) {
+            return;
+        }
+        List<PushToken> tokens;
+        try {
+            tokens = tokenRepository.findByUserIdIn(userIds);
+        } catch (RuntimeException e) {
+            log.warn("푸시 토큰 조회 실패 type={}", push.type(), e);
+            return;
+        }
+        for (PushToken t : tokens) {
+            try {
+                if (sender.sendData(t.getToken(), push) == SendResult.INVALID_TOKEN) {
+                    tokenRepository.deleteByToken(t.getToken());
+                }
+            } catch (RuntimeException e) {
+                log.warn("무음 푸시 발송 실패 type={}", push.type(), e);
+            }
+        }
+    }
 }

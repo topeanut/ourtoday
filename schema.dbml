@@ -145,6 +145,52 @@ Table bucket_items {
   completed_at timestamp
 }
 
+Table location_shares {
+  user_id uuid [pk, note: '사용자별 위치 공유 현재 상태']
+  enabled boolean [not null, default: false]
+  updated_at timestamp [not null, default: `now()`]
+}
+
+Table location_share_events {
+  id uuid [pk]
+  user_id uuid [not null]
+  enabled boolean [not null, note: '실제 상태 변경마다 1행 append']
+  at timestamp [not null]
+
+  Indexes {
+    (user_id, at) [name: 'idx_location_share_events_user_at']
+  }
+}
+
+Table location_points {
+  id uuid [pk]
+  user_id uuid [not null]
+  lat double [not null]
+  lng double [not null]
+  accuracy double [note: 'nullable (m)']
+  captured_at timestamp [not null]
+  source varchar(20) [not null, note: 'COARSE | PRECISE']
+  created_at timestamp [not null]
+
+  Indexes {
+    (user_id, captured_at) [name: 'idx_location_points_user_captured']
+  }
+}
+
+Table location_daily {
+  id uuid [pk]
+  user_id uuid [not null]
+  date date [not null, note: 'KST 기준 일자']
+  point_count int [not null]
+  first_at timestamp [not null]
+  last_at timestamp [not null]
+  polyline text [not null, note: 'Douglas-Peucker 단순화 "lat,lng;lat,lng"']
+
+  Indexes {
+    (user_id, date) [unique, name: 'uk_location_daily_user_date']
+  }
+}
+
 // ===== References =====
 
 Ref: user_settings.user_id > users.id
@@ -169,3 +215,37 @@ Ref: calendar_memos.author_id > users.id
 Ref: bucket_items.couple_id > couples.id
 Ref: bucket_items.created_by > users.id
 Ref: bucket_items.completed_post_id > posts.id
+
+Ref: location_shares.user_id > users.id
+Table location_precise_requests {
+  id uuid [pk]
+  requester_id uuid [not null]
+  target_id uuid [not null]
+  expires_at timestamp [not null, note: '지나면 비활성 (생성 +3분, 재요청 시 연장)']
+  created_at timestamp [not null]
+
+  Indexes {
+    (target_id, expires_at) [name: 'idx_precise_requests_target_expires']
+    (requester_id, target_id) [name: 'idx_precise_requests_requester_target']
+  }
+}
+
+Table location_access_log {
+  id uuid [pk]
+  viewer_id uuid [not null]
+  target_id uuid [not null]
+  kind varchar(10) [not null, note: 'COARSE | PRECISE']
+  started_at timestamp [not null, note: '정밀 요청 성공마다 1행 append']
+
+  Indexes {
+    (target_id, started_at) [name: 'idx_location_access_log_target_started']
+  }
+}
+
+Ref: location_share_events.user_id > users.id
+Ref: location_points.user_id > users.id
+Ref: location_daily.user_id > users.id
+Ref: location_precise_requests.requester_id > users.id
+Ref: location_precise_requests.target_id > users.id
+Ref: location_access_log.viewer_id > users.id
+Ref: location_access_log.target_id > users.id

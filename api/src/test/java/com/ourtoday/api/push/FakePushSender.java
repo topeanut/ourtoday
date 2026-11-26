@@ -40,6 +40,21 @@ public class FakePushSender implements PushSender {
         return invalidTokens.contains(token) ? SendResult.INVALID_TOKEN : SendResult.OK;
     }
 
+    public record SentData(String token, DataPush push) {
+    }
+
+    private final List<SentData> sentData = new CopyOnWriteArrayList<>();
+
+    @Override
+    public SendResult sendData(String token, DataPush push) {
+        sentData.add(new SentData(token, push));
+        return invalidTokens.contains(token) ? SendResult.INVALID_TOKEN : SendResult.OK;
+    }
+
+    public List<SentData> sentData() {
+        return new ArrayList<>(sentData);
+    }
+
     public List<Sent> sent() {
         return new ArrayList<>(sent);
     }
@@ -58,6 +73,7 @@ public class FakePushSender implements PushSender {
 
     public void reset() {
         sent.clear();
+        sentData.clear();
         invalidTokens.clear();
         throwingTokens.clear();
         failure = null;

@@ -5,6 +5,7 @@ import com.ourtoday.api.calendar.CalendarMemoRepository;
 import com.ourtoday.api.comment.CommentRepository;
 import com.ourtoday.api.couple.CoupleService;
 import com.ourtoday.api.image.ImageService;
+import com.ourtoday.api.location.LocationService;
 import com.ourtoday.api.post.PostService;
 import com.ourtoday.api.push.PushTokenService;
 import com.ourtoday.api.reaction.ReactionRepository;
@@ -36,6 +37,7 @@ public class AccountService {
     private final ImageService imageService;
     private final AppleAuthClient appleAuthClient;
     private final PushTokenService pushTokenService;
+    private final LocationService locationService;
 
     /**
      * 커플은 해제(상대는 커플 없음 상태), 내가 쓴 글·사진·반응·댓글·메모와 계정 삭제.
@@ -44,7 +46,8 @@ public class AccountService {
     @Transactional
     public void withdraw(UUID userId) {
         userRepository.findById(userId).ifPresent(this::revokeAppleAfterCommit);
-        coupleService.leaveAny(userId);
+        coupleService.leaveAny(userId); // 연결된 커플이면 해제 직전 이벤트로 위치 정리 + 상대 off 푸시
+        locationService.purgeOnWithdraw(userId); // 남은 위치 데이터 + 일자 요약까지 완전 삭제
         postService.deleteAllWrittenBy(userId);
         commentRepository.deleteByAuthorId(userId);
         reactionRepository.deleteByUserId(userId);
