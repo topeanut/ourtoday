@@ -79,10 +79,19 @@ class MainActivity : AppCompatActivity(), NativeBridge.Handler {
     /** 위치 런타임 권한 요청 결과 → 보류해 둔 geolocation 콜백에 허용/거부 전달 */
     private val requestLocationPermission =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            // 위치 공유 켜기 요청으로 띄운 권한창이었다면 결과 반영
+            if (pendingShareEnable) {
+                pendingShareEnable = false
+                if (granted) enableSharing()
+                sendLocationState()
+            }
             pendingGeolocationCallback?.invoke(pendingGeolocationOrigin, granted, false)
             pendingGeolocationOrigin = null
             pendingGeolocationCallback = null
         }
+
+    /** 웹의 위치 공유 켜기 요청으로 권한창을 띄운 상태 */
+    private var pendingShareEnable = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -101,6 +110,10 @@ class MainActivity : AppCompatActivity(), NativeBridge.Handler {
             errorView.visibility = View.GONE
             if (webView.url.isNullOrEmpty()) webView.loadUrl(BuildConfig.START_URL) else webView.reload()
         }
+
+        // 프로세스 재생성 복구: 공유 중 + 토큰 + 권한이 있으면 느슨 수집 재무장 (Application 클래스 없음)
+        LocationEngine.init(applicationContext)
+        LocationEngine.requestArm(applicationContext)
 
         PushBridge.ensureChannel(this)
         PushBridge.tokenListener = onPushTokenChanged
@@ -259,6 +272,65 @@ class MainActivity : AppCompatActivity(), NativeBridge.Handler {
         } catch (_: ActivityNotFoundException) {
             // 설정 화면 없음 → 무시
         }
+    }
+
+    override fun onAuthToken(access: String?, refresh: String?, clear: Boolean) {
+        if (clear) {
+            // 로그아웃: 토큰·공유·정밀 FGS 모두 끔
+            LocationEngine.init(applicationContext)
+            TokenStore.clear()
+            LocationEngine.isSharing = false
+            LocationForegroundService.stop(this)
+        } else if (access != null && refresh != null) {
+            LocationEngine.init(applicationContext)
+            TokenStore.save(access, refresh)
+            // 공유 중인데 토큰이 늦게 도착한 경우 느슨 수집 시작
+            LocationEngine.requestArm(applicationContext)
+        }
+    }
+
+    override fun onLocationShare(enabled: Boolean) {
+        LocationEngine.init(applicationContext)
+        if (!enabled) {
+            LocationEngine.isSharing = false
+            LocationForegroundService.stop(this)
+            sendLocationState()
+            return
+        }
+        if (LocationEngine.hasLocationPermission(this)) {
+            enableSharing()
+            sendLocationState()
+        } else {
+            // 권한 결과 콜백에서 켜고 회신
+            pendingShareEnable = true
+            requestLocationPermission.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+        }
+    }
+
+    override fun onLocationStatus() {
+        LocationEngine.init(applicationContext)
+        sendLocationState()
+    }
+
+    private fun enableSharing() {
+        LocationEngine.isSharing = true
+    }
+
+    /** 위치 공유 상태를 웹에 "ourtoday:locationStatus" 로 전달 (우리 웹 페이지일 때만) */
+    private fun sendLocationState() {
+        if (isDestroyed || !NavigationPolicy.isAppPage(currentMainUrl)) return
+        val authorization = when {
+            !LocationEngine.hasLocationPermission(this) -> "denied"
+            ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_BACKGROUND_LOCATION) ==
+                PackageManager.PERMISSION_GRANTED -> "background"
+            else -> "granted"
+        }
+        val detail = org.json.JSONObject()
+            .put("sharing", LocationEngine.isSharing)
+            .put("authorization", authorization)
+        webView.evaluateJavascript(
+            "window.dispatchEvent(new CustomEvent('ourtoday:locationStatus',{detail:$detail}))", null,
+        )
     }
 
     /**
