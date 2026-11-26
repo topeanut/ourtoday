@@ -10,7 +10,11 @@ type NativeMessage =
   | { type: "appleLogin" }
   | { type: "pushStatus" }
   | { type: "pushPermission" }
-  | { type: "openNotificationSettings" };
+  | { type: "openNotificationSettings" }
+  | { type: "authToken"; access: string; refresh: string }
+  | { type: "authToken"; clear: true }
+  | { type: "locationShare"; enabled: boolean }
+  | { type: "locationStatus" };
 
 declare global {
   interface Window {
