@@ -6,6 +6,7 @@ import { api, errorMessage, fetcher } from "@/lib/api";
 import { clearToken, logout } from "@/lib/auth";
 import { formatDay, todayKst } from "@/lib/date";
 import { uploadProfileImage } from "@/lib/image";
+import { getSharing, setSharing, type Sharing } from "@/lib/location";
 import { isApp, openExternal } from "@/lib/native";
 import { getPushState, openNotificationSettings, requestPushPermission, type PushState } from "@/lib/push";
 import type { CoupleStats, MemberStats, Settings, User } from "@/lib/types";
@@ -22,6 +23,7 @@ export default function MyPage() {
   const toast = useToast();
   const stats = useSWR<CoupleStats>("/couples/me/stats", fetcher);
   const settings = useSWR<Settings>("/users/me/settings", fetcher);
+  const sharing = useSWR<Sharing>("/location/sharing", () => getSharing());
 
   const [editName, setEditName] = useState(false);
   const [editPhoto, setEditPhoto] = useState(false);
@@ -53,6 +55,18 @@ export default function MyPage() {
       await api("/users/me/settings", { method: "PATCH", body: next });
     } catch (e) {
       settings.mutate();
+      toast(errorMessage(e));
+    }
+  };
+
+  const toggleSharing = async (enabled: boolean) => {
+    const prev: Sharing = sharing.data ?? { mine: false, partner: false };
+    sharing.mutate({ ...prev, mine: enabled }, { revalidate: false });
+    try {
+      const next = await setSharing(enabled);
+      sharing.mutate(next, { revalidate: false });
+    } catch (e) {
+      sharing.mutate(prev, { revalidate: false });
       toast(errorMessage(e));
     }
   };
@@ -188,6 +202,19 @@ export default function MyPage() {
           ) : (
             <Spinner />
           )}
+        </Card>
+
+        <Card>
+          <h2 className="mb-1 font-bold">위치</h2>
+          <label className="flex items-center justify-between gap-3 py-3">
+            <span className="min-w-0">
+              <span className="block">위치 공유</span>
+              <span className="block text-xs text-sub">
+                상대도 켜야 서로 위치를 볼 수 있어요{sharing.data?.partner ? " · 상대는 켜 둔 상태예요" : ""}
+              </span>
+            </span>
+            <Toggle label="위치 공유" checked={sharing.data?.mine ?? false} onChange={toggleSharing} />
+          </label>
         </Card>
 
         <Card className="p-2">
