@@ -82,7 +82,7 @@ class MainActivity : AppCompatActivity(), NativeBridge.Handler {
             // 위치 공유 켜기 요청으로 띄운 권한창이었다면 결과 반영
             if (pendingShareEnable) {
                 pendingShareEnable = false
-                if (granted) enableSharing()
+                if (LocationEngine.hasLocationPermission(this)) enableSharing()
                 sendLocationState()
             }
             pendingGeolocationCallback?.invoke(pendingGeolocationOrigin, granted, false)

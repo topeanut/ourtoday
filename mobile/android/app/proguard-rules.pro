@@ -2,3 +2,8 @@
 -keepclassmembers class app.ourtoday.NativeBridge {
     @android.webkit.JavascriptInterface <methods>;
 }
+
+# EncryptedSharedPreferences(Tink) R8 보호
+-keep class com.google.crypto.tink.** { *; }
+-keep class androidx.security.crypto.** { *; }
+-dontwarn com.google.crypto.tink.**
