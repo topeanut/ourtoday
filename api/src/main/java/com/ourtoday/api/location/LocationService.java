@@ -1,6 +1,9 @@
 package com.ourtoday.api.location;
 
+import com.ourtoday.api.common.error.BusinessException;
+import com.ourtoday.api.common.error.ErrorCode;
 import com.ourtoday.api.couple.CoupleService;
+import com.ourtoday.api.location.dto.PointsUploadRequest;
 import com.ourtoday.api.location.dto.SharingResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -8,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -16,6 +20,7 @@ public class LocationService {
 
     private final LocationShareRepository shareRepository;
     private final LocationShareEventRepository eventRepository;
+    private final LocationPointRepository pointRepository;
     private final CoupleService coupleService;
     private final Clock clock;
 
@@ -53,6 +58,19 @@ public class LocationService {
         return eventRepository.findTopByUserIdAndAtLessThanEqualOrderByAtDesc(userId, at)
             .map(LocationShareEvent::isEnabled)
             .orElse(false);
+    }
+
+    /** 현재 공유 OFF 면 거부. ON 이면 캡처 시각에 공유 중이던 점만 저장(나머지는 조용히 버림) */
+    @Transactional
+    public void uploadPoints(UUID userId, PointsUploadRequest request) {
+        if (!isSharing(userId)) {
+            throw new BusinessException(ErrorCode.FORBIDDEN, "위치 공유가 꺼져 있습니다.");
+        }
+        List<LocationPoint> kept = request.points().stream()
+            .filter(p -> wasSharingAt(userId, p.capturedAt()))
+            .map(p -> LocationPoint.of(userId, p.lat(), p.lng(), p.accuracy(), p.capturedAt(), p.source()))
+            .toList();
+        pointRepository.saveAll(kept);
     }
 
     private SharingResponse response(UUID coupleId, UUID userId, boolean mine) {

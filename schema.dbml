@@ -162,6 +162,21 @@ Table location_share_events {
   }
 }
 
+Table location_points {
+  id uuid [pk]
+  user_id uuid [not null]
+  lat double [not null]
+  lng double [not null]
+  accuracy double [note: 'nullable (m)']
+  captured_at timestamp [not null]
+  source varchar(20) [not null, note: 'COARSE | PRECISE']
+  created_at timestamp [not null]
+
+  Indexes {
+    (user_id, captured_at) [name: 'idx_location_points_user_captured']
+  }
+}
+
 // ===== References =====
 
 Ref: user_settings.user_id > users.id
@@ -189,3 +204,4 @@ Ref: bucket_items.completed_post_id > posts.id
 
 Ref: location_shares.user_id > users.id
 Ref: location_share_events.user_id > users.id
+Ref: location_points.user_id > users.id

@@ -214,3 +214,12 @@ POST {{host}}/api/v1/auth/refresh
 Content-Type: application/json
 
 { "refreshToken": "여기에_refreshToken" }
+
+### ===== 위치 =====
+
+### 위치 포인트 배치 업로드 (현재 공유 OFF 면 403, 캡처 시각이 OFF 구간인 점은 조용히 버림)
+POST {{host}}/api/v1/location/points
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{ "points": [ { "lat": 37.5447, "lng": 127.0558, "accuracy": 12.5, "capturedAt": "2026-11-22T10:00:00Z", "source": "PRECISE" } ] }
