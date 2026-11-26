@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -55,5 +56,19 @@ public class LocationController {
     @GetMapping("/partner")
     public PartnerLocationResponse getPartner(@AuthenticationPrincipal UUID userId) {
         return locationService.getPartnerLocation(userId);
+    }
+
+    @Operation(summary = "상대에게 정밀 위치 요청 (3분 활성, 재요청은 연장 + 무음 푸시)")
+    @PostMapping("/precise")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void requestPrecise(@AuthenticationPrincipal UUID userId) {
+        locationService.requestPrecise(userId);
+    }
+
+    @Operation(summary = "정밀 위치 요청 해제 (즉시 만료)")
+    @DeleteMapping("/precise")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void releasePrecise(@AuthenticationPrincipal UUID userId) {
+        locationService.releasePrecise(userId);
     }
 }

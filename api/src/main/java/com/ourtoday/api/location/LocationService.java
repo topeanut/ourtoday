@@ -7,22 +7,31 @@ import com.ourtoday.api.location.dto.LatLng;
 import com.ourtoday.api.location.dto.PartnerLocationResponse;
 import com.ourtoday.api.location.dto.PointsUploadRequest;
 import com.ourtoday.api.location.dto.SharingResponse;
+import com.ourtoday.api.push.DataPush;
+import com.ourtoday.api.push.PushDispatcher;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
 public class LocationService {
 
+    static final Duration PRECISE_TTL = Duration.ofMinutes(3);
+
     private final LocationShareRepository shareRepository;
     private final LocationShareEventRepository eventRepository;
     private final LocationPointRepository pointRepository;
+    private final PreciseRequestRepository preciseRequestRepository;
+    private final LocationAccessLogRepository accessLogRepository;
+    private final PushDispatcher pushDispatcher;
     private final CoupleService coupleService;
     private final Clock clock;
 
@@ -83,12 +92,46 @@ public class LocationService {
         if (!isSharing(partnerId)) {
             return new PartnerLocationResponse(false, null, null, false);
         }
-        // TODO(Task 5): hasActivePreciseRequest(partnerId)
-        boolean preciseActive = false;
+        boolean preciseActive = hasActivePreciseRequest(partnerId);
         return pointRepository.findTopByUserIdOrderByCapturedAtDesc(partnerId)
             .map(p -> new PartnerLocationResponse(true, new LatLng(p.getLat(), p.getLng()),
                 p.getCapturedAt(), preciseActive))
             .orElseGet(() -> new PartnerLocationResponse(true, null, null, preciseActive));
+    }
+
+    /** 활성 요청이면 만료만 연장(멱등), 아니면 새로 생성. 성공마다 접근로그 1행 + 상대에게 무음 푸시(매번, 깨우기 신뢰성) */
+    @Transactional
+    public void requestPrecise(UUID userId) {
+        UUID coupleId = coupleService.getConnectedCoupleId(userId);
+        UUID partnerId = coupleService.getPartnerId(coupleId, userId);
+        Instant now = clock.instant();
+        Instant expiresAt = now.plus(PRECISE_TTL);
+        List<PreciseRequest> active = preciseRequestRepository
+            .findByRequesterIdAndTargetIdAndExpiresAtAfter(userId, partnerId, now);
+        if (active.isEmpty()) {
+            preciseRequestRepository.save(PreciseRequest.of(userId, partnerId, expiresAt));
+        } else {
+            active.forEach(r -> r.expireAt(expiresAt));
+        }
+        accessLogRepository.save(LocationAccessLog.of(userId, partnerId, AccessKind.PRECISE, now));
+        pushDispatcher.sendDataToUsers(List.of(partnerId),
+            new DataPush("location_precise_on", Map.of("expiresAt", expiresAt.toString())));
+    }
+
+    /** 내가 건 활성 요청을 즉시 만료하고 상대에게 off 푸시 */
+    @Transactional
+    public void releasePrecise(UUID userId) {
+        UUID coupleId = coupleService.getConnectedCoupleId(userId);
+        UUID partnerId = coupleService.getPartnerId(coupleId, userId);
+        Instant now = clock.instant();
+        preciseRequestRepository.findByRequesterIdAndTargetIdAndExpiresAtAfter(userId, partnerId, now)
+            .forEach(r -> r.expireAt(now));
+        pushDispatcher.sendDataToUsers(List.of(partnerId), new DataPush("location_precise_off", Map.of()));
+    }
+
+    @Transactional(readOnly = true)
+    public boolean hasActivePreciseRequest(UUID targetUserId) {
+        return preciseRequestRepository.existsByTargetIdAndExpiresAtAfter(targetUserId, clock.instant());
     }
 
     private SharingResponse response(UUID coupleId, UUID userId, boolean mine) {
