@@ -7,6 +7,7 @@ import com.ourtoday.api.location.dto.LatLng;
 import com.ourtoday.api.location.dto.PartnerLocationResponse;
 import com.ourtoday.api.location.dto.PointsUploadRequest;
 import com.ourtoday.api.location.dto.SharingResponse;
+import com.ourtoday.api.location.dto.TrackResponse;
 import com.ourtoday.api.push.DataPush;
 import com.ourtoday.api.push.PushDispatcher;
 import lombok.RequiredArgsConstructor;
@@ -16,6 +17,8 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -25,10 +28,12 @@ import java.util.UUID;
 public class LocationService {
 
     static final Duration PRECISE_TTL = Duration.ofMinutes(3);
+    private static final ZoneId KST = ZoneId.of("Asia/Seoul");
 
     private final LocationShareRepository shareRepository;
     private final LocationShareEventRepository eventRepository;
     private final LocationPointRepository pointRepository;
+    private final LocationDailyRepository dailyRepository;
     private final PreciseRequestRepository preciseRequestRepository;
     private final LocationAccessLogRepository accessLogRepository;
     private final PushDispatcher pushDispatcher;
@@ -97,6 +102,25 @@ public class LocationService {
             .map(p -> new PartnerLocationResponse(true, new LatLng(p.getLat(), p.getLng()),
                 p.getCapturedAt(), preciseActive))
             .orElseGet(() -> new PartnerLocationResponse(true, null, null, preciseActive));
+    }
+
+    /** 상대 일자(KST) 경로. 상대가 비공유면 없는 날과 구분되지 않도록 빈 경로. 요약이 있으면 polyline, 없으면 raw */
+    @Transactional(readOnly = true)
+    public TrackResponse getTrack(UUID userId, LocalDate date) {
+        UUID coupleId = coupleService.getConnectedCoupleId(userId);
+        UUID partnerId = coupleService.getPartnerId(coupleId, userId);
+        if (!isSharing(partnerId)) {
+            return new TrackResponse(List.of(), 0);
+        }
+        return dailyRepository.findByUserIdAndDate(partnerId, date)
+            .map(d -> new TrackResponse(PolylineSimplifier.decode(d.getPolyline()), d.getPointCount()))
+            .orElseGet(() -> {
+                List<LatLng> path = pointRepository
+                    .findByUserIdAndCapturedAtGreaterThanEqualAndCapturedAtLessThanOrderByCapturedAtAsc(
+                        partnerId, date.atStartOfDay(KST).toInstant(), date.plusDays(1).atStartOfDay(KST).toInstant())
+                    .stream().map(p -> new LatLng(p.getLat(), p.getLng())).toList();
+                return new TrackResponse(path, path.size());
+            });
     }
 
     /** 활성 요청이면 만료만 연장(멱등), 아니면 새로 생성. 성공마다 접근로그 1행 + 상대에게 무음 푸시(매번, 깨우기 신뢰성) */

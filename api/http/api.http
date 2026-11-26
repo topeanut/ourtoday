@@ -235,3 +235,7 @@ Authorization: Bearer {{token}}
 ### 정밀 위치 요청 해제 (즉시 만료 + 상대에 off 푸시) → 204
 DELETE {{host}}/api/v1/location/precise
 Authorization: Bearer {{token}}
+
+### 상대의 일자(KST)별 이동 경로 (요약 있으면 polyline, 없으면 raw, 상대 비공유면 빈 path)
+GET {{host}}/api/v1/location/track?date=2026-11-21
+Authorization: Bearer {{token}}

@@ -177,6 +177,20 @@ Table location_points {
   }
 }
 
+Table location_daily {
+  id uuid [pk]
+  user_id uuid [not null]
+  date date [not null, note: 'KST 기준 일자']
+  point_count int [not null]
+  first_at timestamp [not null]
+  last_at timestamp [not null]
+  polyline text [not null, note: 'Douglas-Peucker 단순화 "lat,lng;lat,lng"']
+
+  Indexes {
+    (user_id, date) [unique, name: 'uk_location_daily_user_date']
+  }
+}
+
 // ===== References =====
 
 Ref: user_settings.user_id > users.id
@@ -230,6 +244,7 @@ Table location_access_log {
 
 Ref: location_share_events.user_id > users.id
 Ref: location_points.user_id > users.id
+Ref: location_daily.user_id > users.id
 Ref: location_precise_requests.requester_id > users.id
 Ref: location_precise_requests.target_id > users.id
 Ref: location_access_log.viewer_id > users.id

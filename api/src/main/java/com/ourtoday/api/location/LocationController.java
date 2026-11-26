@@ -5,10 +5,12 @@ import com.ourtoday.api.location.dto.PartnerLocationResponse;
 import com.ourtoday.api.location.dto.PointsUploadRequest;
 import com.ourtoday.api.location.dto.SharingRequest;
 import com.ourtoday.api.location.dto.SharingResponse;
+import com.ourtoday.api.location.dto.TrackResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,8 +20,10 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 @Tag(name = "Location", description = "실시간 위치 공유")
@@ -70,5 +74,12 @@ public class LocationController {
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void releasePrecise(@AuthenticationPrincipal UUID userId) {
         locationService.releasePrecise(userId);
+    }
+
+    @Operation(summary = "상대의 일자(KST)별 이동 경로 (요약 우선, 없으면 raw; 상대 비공유면 빈 경로)")
+    @GetMapping("/track")
+    public TrackResponse getTrack(@AuthenticationPrincipal UUID userId,
+                                  @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
+        return locationService.getTrack(userId, date);
     }
 }
