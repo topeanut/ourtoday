@@ -167,30 +167,42 @@ public class LocationService {
     @EventListener
     @Transactional
     public void onCoupleUnlinking(CoupleUnlinkingEvent event) {
-        purgeOnUnlink(event.userId());
+        // 한쪽만 정리하면 남은 사람의 공유 ON/기록이 다음 커플에게 노출되므로 양쪽 모두 정리. off 푸시는 해제한 사람 기준 1회만
+        purge(event.userId(), false, true);
+        coupleService.getMemberIds(event.coupleId()).stream()
+            .filter(id -> !id.equals(event.userId()))
+            .forEach(id -> purge(id, false, false));
     }
 
     @Transactional
     public void purgeOnUnlink(UUID userId) {
-        purge(userId, false);
+        purge(userId, false, true);
     }
 
     /** 탈퇴는 완전 삭제: 해제 정리 + 일자 요약. 호출 시점엔 이미 커플이 해제돼 있을 수 있어 off 푸시는 건너뜀 */
     @Transactional
     public void purgeOnWithdraw(UUID userId) {
-        purge(userId, true);
+        purge(userId, true, true);
     }
 
-    private void purge(UUID userId, boolean deleteSummaries) {
+    private void purge(UUID userId, boolean deleteSummaries, boolean notifyPartner) {
         // 상대 조회는 커플이 끊기기 전에만 가능하므로 off 푸시를 먼저 보낸다 (커플 없으면 생략)
-        coupleService.findPartnerId(userId).ifPresent(partnerId ->
-            pushDispatcher.sendDataToUsers(List.of(partnerId), new DataPush("location_precise_off", Map.of())));
-        shareRepository.findById(userId).ifPresent(share -> {
-            if (share.isEnabled()) {
-                share.changeTo(false);
-                eventRepository.save(LocationShareEvent.of(userId, false, clock.instant()));
-            }
-        });
+        if (notifyPartner) {
+            coupleService.findPartnerId(userId).ifPresent(partnerId ->
+                pushDispatcher.sendDataToUsers(List.of(partnerId), new DataPush("location_precise_off", Map.of())));
+        }
+        if (deleteSummaries) {
+            // 탈퇴: 공유 상태·이력 행까지 완전 삭제 (OFF 이벤트를 남기지 않음)
+            shareRepository.deleteById(userId);
+            eventRepository.deleteByUserId(userId);
+        } else {
+            shareRepository.findById(userId).ifPresent(share -> {
+                if (share.isEnabled()) {
+                    share.changeTo(false);
+                    eventRepository.save(LocationShareEvent.of(userId, false, clock.instant()));
+                }
+            });
+        }
         pointRepository.deleteByUserId(userId);
         preciseRequestRepository.deleteByRequesterIdOrTargetId(userId, userId);
         if (deleteSummaries) {

@@ -167,6 +167,14 @@ public class CoupleService {
             .orElseThrow(() -> new BusinessException(ErrorCode.COUPLE_REQUIRED));
     }
 
+    /** 커플 멤버 전원의 ID (해제 직전 정리용) */
+    @Transactional(readOnly = true)
+    public List<UUID> getMemberIds(UUID coupleId) {
+        return coupleMemberRepository.findByCoupleIdOrderByJoinedAtAsc(coupleId).stream()
+            .map(CoupleMember::getUserId)
+            .toList();
+    }
+
     /** 연결된 커플의 상대 ID. 예외 없이 Optional (트랜잭션을 rollback-only 로 만들지 않음) */
     @Transactional(readOnly = true)
     public Optional<UUID> findPartnerId(UUID userId) {

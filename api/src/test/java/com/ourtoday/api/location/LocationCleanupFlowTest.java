@@ -45,6 +45,8 @@ class LocationCleanupFlowTest {
     @Autowired LocationPointRepository pointRepository;
     @Autowired PreciseRequestRepository requestRepository;
     @Autowired LocationDailyRepository dailyRepository;
+    @Autowired LocationShareRepository shareRepository;
+    @Autowired LocationShareEventRepository shareEventRepository;
     @Autowired LocationAccessLogRepository accessLogRepository;
     @Autowired FakePushSender pushSender;
     @Autowired MutableClock clock;
@@ -79,6 +81,10 @@ class LocationCleanupFlowTest {
         assertThat(dailyRepository.findAll()).noneMatch(d -> d.getUserId().equals(meId));
         assertThat(locationService.isSharing(meId)).isFalse();
         assertThat(accessLogRepository.findAll()).hasSize(1);
+        assertThat(shareRepository.findById(meId)).isEmpty();
+        assertThat(shareEventRepository.findAll()).noneMatch(e -> e.getUserId().equals(meId));
+        assertThat(locationService.isSharing(partnerId)).isFalse();
+        assertThat(pointRepository.findAll()).noneMatch(p -> p.getUserId().equals(partnerId));
     }
 
     @Test
@@ -90,7 +96,9 @@ class LocationCleanupFlowTest {
         mvc.perform(delete("/api/v1/couples/me").header("Authorization", me)).andExpect(status().isNoContent());
 
         assertThat(locationService.isSharing(meId)).isFalse();
+        assertThat(locationService.isSharing(partnerId)).isFalse();
         assertThat(pointRepository.findAll()).noneMatch(p -> p.getUserId().equals(meId));
+        assertThat(pointRepository.findAll()).noneMatch(p -> p.getUserId().equals(partnerId));
         assertThat(requestRepository.findAll())
             .noneMatch(r -> r.getRequesterId().equals(meId) || r.getTargetId().equals(meId));
         assertThat(dailyRepository.findAll()).anyMatch(d -> d.getUserId().equals(meId));
