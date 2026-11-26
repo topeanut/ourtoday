@@ -1,6 +1,7 @@
 package com.ourtoday.api.location;
 
 import com.ourtoday.api.common.guard.RequireCouple;
+import com.ourtoday.api.location.dto.PartnerLocationResponse;
 import com.ourtoday.api.location.dto.PointsUploadRequest;
 import com.ourtoday.api.location.dto.SharingRequest;
 import com.ourtoday.api.location.dto.SharingResponse;
@@ -48,5 +49,11 @@ public class LocationController {
     public void uploadPoints(@AuthenticationPrincipal UUID userId,
                              @Valid @RequestBody PointsUploadRequest request) {
         locationService.uploadPoints(userId, request);
+    }
+
+    @Operation(summary = "상대 최신 위치 (상대가 공유 중일 때만)")
+    @GetMapping("/partner")
+    public PartnerLocationResponse getPartner(@AuthenticationPrincipal UUID userId) {
+        return locationService.getPartnerLocation(userId);
     }
 }

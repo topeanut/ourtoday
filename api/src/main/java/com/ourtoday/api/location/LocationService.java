@@ -3,6 +3,8 @@ package com.ourtoday.api.location;
 import com.ourtoday.api.common.error.BusinessException;
 import com.ourtoday.api.common.error.ErrorCode;
 import com.ourtoday.api.couple.CoupleService;
+import com.ourtoday.api.location.dto.LatLng;
+import com.ourtoday.api.location.dto.PartnerLocationResponse;
 import com.ourtoday.api.location.dto.PointsUploadRequest;
 import com.ourtoday.api.location.dto.SharingResponse;
 import lombok.RequiredArgsConstructor;
@@ -71,6 +73,22 @@ public class LocationService {
             .map(p -> LocationPoint.of(userId, p.lat(), p.lng(), p.accuracy(), p.capturedAt(), p.source()))
             .toList();
         pointRepository.saveAll(kept);
+    }
+
+    /** 상대가 공유 중일 때만 최신 점을 준다. OFF 면 점이 남아 있어도 노출하지 않음 */
+    @Transactional(readOnly = true)
+    public PartnerLocationResponse getPartnerLocation(UUID userId) {
+        UUID coupleId = coupleService.getConnectedCoupleId(userId);
+        UUID partnerId = coupleService.getPartnerId(coupleId, userId);
+        if (!isSharing(partnerId)) {
+            return new PartnerLocationResponse(false, null, null, false);
+        }
+        // TODO(Task 5): hasActivePreciseRequest(partnerId)
+        boolean preciseActive = false;
+        return pointRepository.findTopByUserIdOrderByCapturedAtDesc(partnerId)
+            .map(p -> new PartnerLocationResponse(true, new LatLng(p.getLat(), p.getLng()),
+                p.getCapturedAt(), preciseActive))
+            .orElseGet(() -> new PartnerLocationResponse(true, null, null, preciseActive));
     }
 
     private SharingResponse response(UUID coupleId, UUID userId, boolean mine) {

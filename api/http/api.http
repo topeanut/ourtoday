@@ -223,3 +223,7 @@ Authorization: Bearer {{token}}
 Content-Type: application/json
 
 { "points": [ { "lat": 37.5447, "lng": 127.0558, "accuracy": 12.5, "capturedAt": "2026-11-22T10:00:00Z", "source": "PRECISE" } ] }
+
+### 상대 최신 위치 (상대가 공유 OFF 면 partnerSharing=false, latest=null)
+GET {{host}}/api/v1/location/partner
+Authorization: Bearer {{token}}
