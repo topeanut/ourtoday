@@ -3,6 +3,7 @@ package com.ourtoday.api.location;
 import com.ourtoday.api.common.error.BusinessException;
 import com.ourtoday.api.common.error.ErrorCode;
 import com.ourtoday.api.couple.CoupleService;
+import com.ourtoday.api.couple.CoupleUnlinkingEvent;
 import com.ourtoday.api.location.dto.LatLng;
 import com.ourtoday.api.location.dto.PartnerLocationResponse;
 import com.ourtoday.api.location.dto.PointsUploadRequest;
@@ -11,6 +12,7 @@ import com.ourtoday.api.location.dto.TrackResponse;
 import com.ourtoday.api.push.DataPush;
 import com.ourtoday.api.push.PushDispatcher;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -156,6 +158,44 @@ public class LocationService {
     @Transactional(readOnly = true)
     public boolean hasActivePreciseRequest(UUID targetUserId) {
         return preciseRequestRepository.existsByTargetIdAndExpiresAtAfter(targetUserId, clock.instant());
+    }
+
+    /**
+     * 커플 해제 직전(동기 이벤트, 같은 트랜잭션)에 호출돼 상대가 아직 조회되는 시점에 정리한다.
+     * 일자 요약은 본인 기록이라 유지(탈퇴 때만 삭제), 접근 로그는 법적 기록이라 항상 유지
+     */
+    @EventListener
+    @Transactional
+    public void onCoupleUnlinking(CoupleUnlinkingEvent event) {
+        purgeOnUnlink(event.userId());
+    }
+
+    @Transactional
+    public void purgeOnUnlink(UUID userId) {
+        purge(userId, false);
+    }
+
+    /** 탈퇴는 완전 삭제: 해제 정리 + 일자 요약. 호출 시점엔 이미 커플이 해제돼 있을 수 있어 off 푸시는 건너뜀 */
+    @Transactional
+    public void purgeOnWithdraw(UUID userId) {
+        purge(userId, true);
+    }
+
+    private void purge(UUID userId, boolean deleteSummaries) {
+        // 상대 조회는 커플이 끊기기 전에만 가능하므로 off 푸시를 먼저 보낸다 (커플 없으면 생략)
+        coupleService.findPartnerId(userId).ifPresent(partnerId ->
+            pushDispatcher.sendDataToUsers(List.of(partnerId), new DataPush("location_precise_off", Map.of())));
+        shareRepository.findById(userId).ifPresent(share -> {
+            if (share.isEnabled()) {
+                share.changeTo(false);
+                eventRepository.save(LocationShareEvent.of(userId, false, clock.instant()));
+            }
+        });
+        pointRepository.deleteByUserId(userId);
+        preciseRequestRepository.deleteByRequesterIdOrTargetId(userId, userId);
+        if (deleteSummaries) {
+            dailyRepository.deleteByUserId(userId);
+        }
     }
 
     private SharingResponse response(UUID coupleId, UUID userId, boolean mine) {

@@ -19,5 +19,7 @@ public interface LocationPointRepository extends JpaRepository<LocationPoint, UU
     @Query("select distinct p.userId from LocationPoint p where p.capturedAt >= :from and p.capturedAt < :to")
     List<UUID> findDistinctUserIdsCapturedBetween(@Param("from") Instant from, @Param("to") Instant to);
 
+    void deleteByUserId(UUID userId);
+
     void deleteByCapturedAtBefore(Instant cutoff);
 }

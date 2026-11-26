@@ -8,5 +8,7 @@ import java.util.UUID;
 
 public interface LocationDailyRepository extends JpaRepository<LocationDaily, UUID> {
 
+    void deleteByUserId(UUID userId);
+
     Optional<LocationDaily> findByUserIdAndDate(UUID userId, LocalDate date);
 }
