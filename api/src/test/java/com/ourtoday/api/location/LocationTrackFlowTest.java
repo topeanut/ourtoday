@@ -58,7 +58,8 @@ class LocationTrackFlowTest {
     void 요약이_있으면_polyline을_준다() throws Exception {
         toggle(partner, true);
         Instant at = DAY.atTime(10, 0).atZone(KST).toInstant();
-        dailyRepository.save(LocationDaily.of(partnerId, DAY, 50, at, at.plusSeconds(3600), "37.1,127.1;37.2,127.2"));
+        dailyRepository.save(LocationDaily.of(partnerId, coupleService.getConnectedCoupleId(partnerId),
+            DAY, 50, at, at.plusSeconds(3600), "37.1,127.1;37.2,127.2"));
         pointRepository.save(LocationPoint.of(partnerId, 1, 1, null, at, PointSource.COARSE));
 
         mvc.perform(get("/api/v1/location/track").param("date", "2026-11-20").header("Authorization", me))
@@ -112,6 +113,32 @@ class LocationTrackFlowTest {
         assertThat(d.getPolyline()).isEqualTo("37.0,127.0;37.001,127.001");
 
         aggregator.aggregate(DAY); // 재실행은 upsert
+        assertThat(dailyRepository.findAll().stream().filter(x -> x.getUserId().equals(partnerId))).hasSize(1);
+    }
+
+    @Test
+    void 해제후_새_상대는_이전_관계의_경로를_볼_수_없다() throws Exception {
+        // 이전 커플(민지-지호) 시절: 지호가 공유하며 이동 → 요약 생성, 민지는 볼 수 있음
+        toggle(partner, true);
+        save(partnerId, 37.0, 127.0, DAY.atTime(9, 0));
+        save(partnerId, 37.001, 127.001, DAY.atTime(9, 10));
+        aggregator.aggregate(DAY);
+        mvc.perform(get("/api/v1/location/track").param("date", "2026-11-20").header("Authorization", me))
+            .andExpect(jsonPath("$.pointCount").value(2));
+
+        // 지호가 해제 후 새 사람(서연)과 연결하고 다시 공유를 켬
+        coupleService.breakUp(partnerId);
+        UUID newId = newUser("서연");
+        coupleService.join(newId, coupleService.createInvite(partnerId).inviteCode());
+        String newcomer = "Bearer " + tokenProvider.generateAccessToken(newId);
+        toggle(partner, true);
+
+        // 서연은 이전 관계 날짜의 지호 경로를 받으면 안 됨
+        mvc.perform(get("/api/v1/location/track").param("date", "2026-11-20").header("Authorization", newcomer))
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$.pointCount").value(0))
+            .andExpect(jsonPath("$.path.length()").value(0));
+        // 기록 자체는 본인 것으로 보존
         assertThat(dailyRepository.findAll().stream().filter(x -> x.getUserId().equals(partnerId))).hasSize(1);
     }
 

@@ -175,6 +175,14 @@ public class CoupleService {
             .toList();
     }
 
+    /** 연결된 커플 ID. 예외 없이 Optional (트랜잭션을 rollback-only 로 만들지 않음) */
+    @Transactional(readOnly = true)
+    public Optional<UUID> findConnectedCoupleId(UUID userId) {
+        return coupleRepository.findByMemberUserId(userId)
+            .filter(Couple::isConnected)
+            .map(Couple::getId);
+    }
+
     /** 연결된 커플의 상대 ID. 예외 없이 Optional (트랜잭션을 rollback-only 로 만들지 않음) */
     @Transactional(readOnly = true)
     public Optional<UUID> findPartnerId(UUID userId) {

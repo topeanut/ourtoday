@@ -106,7 +106,11 @@ public class LocationService {
             .orElseGet(() -> new PartnerLocationResponse(true, null, null, preciseActive));
     }
 
-    /** 상대 일자(KST) 경로. 상대가 비공유면 없는 날과 구분되지 않도록 빈 경로. 요약이 있으면 polyline, 없으면 raw */
+    /**
+     * 상대 일자(KST) 경로. 상대가 비공유면 없는 날과 구분되지 않도록 빈 경로. 요약이 있으면 polyline, 없으면 raw.
+     * 요약은 현재 커플에서 만든 것만 — 해제 후 새 상대에게 이전 관계 시절 경로가 보이지 않게 한다
+     * (raw 는 해제 때 삭제되므로 남은 건 현재 커플 기간 것)
+     */
     @Transactional(readOnly = true)
     public TrackResponse getTrack(UUID userId, LocalDate date) {
         UUID coupleId = coupleService.getConnectedCoupleId(userId);
@@ -114,7 +118,7 @@ public class LocationService {
         if (!isSharing(partnerId)) {
             return new TrackResponse(List.of(), 0);
         }
-        return dailyRepository.findByUserIdAndDate(partnerId, date)
+        return dailyRepository.findByUserIdAndDateAndCoupleId(partnerId, date, coupleId)
             .map(d -> new TrackResponse(PolylineSimplifier.decode(d.getPolyline()), d.getPointCount()))
             .orElseGet(() -> {
                 List<LatLng> path = pointRepository

@@ -127,7 +127,8 @@ class LocationCleanupFlowTest {
         pointRepository.save(LocationPoint.of(partnerId, 37.6, 127.1, 10.0, now, PointSource.COARSE));
         requestRepository.save(PreciseRequest.of(meId, partnerId, now.plus(Duration.ofMinutes(3))));
         requestRepository.save(PreciseRequest.of(partnerId, meId, now.plus(Duration.ofMinutes(3))));
-        dailyRepository.save(LocationDaily.of(meId, LocalDate.of(2026, 11, 20), 2, now, now, "abc"));
+        dailyRepository.save(LocationDaily.of(meId, coupleService.getConnectedCoupleId(meId),
+            LocalDate.of(2026, 11, 20), 2, now, now, "abc"));
         accessLogRepository.save(LocationAccessLog.of(partnerId, meId, AccessKind.PRECISE, now));
     }
 

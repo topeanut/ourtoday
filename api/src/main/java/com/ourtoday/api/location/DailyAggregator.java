@@ -1,5 +1,6 @@
 package com.ourtoday.api.location;
 
+import com.ourtoday.api.couple.CoupleService;
 import com.ourtoday.api.location.dto.LatLng;
 import lombok.RequiredArgsConstructor;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -26,6 +27,7 @@ public class DailyAggregator {
 
     private final LocationPointRepository pointRepository;
     private final LocationDailyRepository dailyRepository;
+    private final CoupleService coupleService;
     private final Clock clock;
 
     @Scheduled(cron = "0 0 4 * * *", zone = "Asia/Seoul")
@@ -48,12 +50,15 @@ public class DailyAggregator {
             String polyline = PolylineSimplifier.encode(PolylineSimplifier.simplify(path, SIMPLIFY_EPSILON_DEGREES));
             Instant firstAt = points.get(0).getCapturedAt();
             Instant lastAt = points.get(points.size() - 1).getCapturedAt();
+            // 해제 시 원본 포인트가 지워지므로 남아 있는 포인트는 현재 커플 기간의 것 → 현재 커플로 귀속
+            UUID coupleId = coupleService.findConnectedCoupleId(userId).orElse(null);
             dailyRepository.findByUserIdAndDate(userId, date).ifPresentOrElse(
                 d -> {
-                    d.update(points.size(), firstAt, lastAt, polyline);
+                    d.update(coupleId, points.size(), firstAt, lastAt, polyline);
                     dailyRepository.save(d); // 자기호출로 트랜잭션이 없어도 반영되도록 명시 저장
                 },
-                () -> dailyRepository.save(LocationDaily.of(userId, date, points.size(), firstAt, lastAt, polyline)));
+                () -> dailyRepository.save(
+                    LocationDaily.of(userId, coupleId, date, points.size(), firstAt, lastAt, polyline)));
         }
     }
 }

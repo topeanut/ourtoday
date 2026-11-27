@@ -32,6 +32,13 @@ public class LocationDaily {
     @Column(name = "user_id", nullable = false)
     private UUID userId;
 
+    /**
+     * 집계 시점의 커플. 상대 경로 조회는 현재 커플과 같은 요약만 돌려준다
+     * (해제 후 새 상대에게 이전 관계 시절 경로가 노출되지 않도록). 커플이 없을 때 쌓인 요약은 null → 누구에게도 안 보임
+     */
+    @Column(name = "couple_id")
+    private UUID coupleId;
+
     @Column(nullable = false)
     private LocalDate date;
 
@@ -47,16 +54,17 @@ public class LocationDaily {
     @Column(nullable = false, columnDefinition = "text")
     private String polyline;
 
-    public static LocationDaily of(UUID userId, LocalDate date, int pointCount,
+    public static LocationDaily of(UUID userId, UUID coupleId, LocalDate date, int pointCount,
                                    Instant firstAt, Instant lastAt, String polyline) {
         LocationDaily d = new LocationDaily();
         d.userId = userId;
         d.date = date;
-        d.update(pointCount, firstAt, lastAt, polyline);
+        d.update(coupleId, pointCount, firstAt, lastAt, polyline);
         return d;
     }
 
-    public void update(int pointCount, Instant firstAt, Instant lastAt, String polyline) {
+    public void update(UUID coupleId, int pointCount, Instant firstAt, Instant lastAt, String polyline) {
+        this.coupleId = coupleId;
         this.pointCount = pointCount;
         this.firstAt = firstAt;
         this.lastAt = lastAt;
